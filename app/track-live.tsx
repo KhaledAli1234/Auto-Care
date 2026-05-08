@@ -223,10 +223,10 @@ export default function TrackLiveScreen() {
 
         <View style={styles.headerActions}>
           <Pressable style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={26} color={COLORS.text} />
+            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
           </Pressable>
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
-            <Ionicons name="person-outline" size={26} color={COLORS.text} />
+            <Ionicons name="person-outline" size={22} color={COLORS.text} />
           </Pressable>
         </View>
       </View>

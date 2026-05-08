@@ -166,9 +166,14 @@ export default function TripsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Trip History</Text>
-        <Pressable style={styles.profileButton} onPress={() => router.push('/account')}>
-          <Ionicons name="person-outline" size={20} color={COLORS.text} />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable style={styles.headerIconButton}>
+            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
+          </Pressable>
+          <Pressable style={styles.headerIconButton} onPress={() => router.push('/account')}>
+            <Ionicons name="person-outline" size={22} color={COLORS.text} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -389,9 +394,9 @@ function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void })
 ════════════════════════════════════════ */
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
-  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 10 },
-  title:        { color: COLORS.text, fontSize: 28, fontWeight: '800' },
-  profileButton:{ width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16 },
+  title:        { color: COLORS.text, fontSize: 24, fontWeight: '800' },
+  profileButton:{ width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border,backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
   scroll:       { flex: 1 },
   content:      { paddingHorizontal: 20, paddingTop: 8 },
 
@@ -438,5 +443,11 @@ const styles = StyleSheet.create({
   confirmSub:   { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: '800' },
-
+  headerActions:    { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerIconButton: { 
+  width: 40, height: 40, borderRadius: 20, 
+  borderWidth: 1, borderColor: COLORS.border,
+  backgroundColor: COLORS.surfaceLight,
+  alignItems: 'center', justifyContent: 'center' 
+},
 });

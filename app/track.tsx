@@ -8,6 +8,7 @@ import { BottomNavbar } from '@/components/bottom-navbar';
 const COLORS = {
   background: '#09182d',
   border: 'rgba(255,255,255,0.08)',
+  surfaceLight: "#172b44",
   text: '#f8fafc',
   muted: '#b8c3d6',
   primary: '#3f7cff',
@@ -29,10 +30,10 @@ export default function TrackScreen() {
 
         <View style={styles.headerActions}>
           <Pressable style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={26} color={COLORS.text} />
+            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
           </Pressable>
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
-            <Ionicons name="person-outline" size={26} color={COLORS.text} />
+            <Ionicons name="person-outline" size={22} color={COLORS.text} />
           </Pressable>
         </View>
       </View>
@@ -64,30 +65,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    paddingHorizontal: 22,
-    paddingBottom: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+  header:{ paddingHorizontal: 22,paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+
   title: {
     color: COLORS.text,
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 16,
   },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  headerIcon: { width: 40, height: 40, borderRadius: 20,borderWidth: 1,backgroundColor: COLORS.surfaceLight,borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
+
   divider: {
     height: 1,
     backgroundColor: COLORS.border,

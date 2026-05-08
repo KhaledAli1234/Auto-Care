@@ -26,6 +26,7 @@ const COLORS = {
   background:  "#09182d",
   surface:     "#13243a",
   surfaceDark: "#102036",
+  surfaceLight: "#172b44",
   border:      "rgba(255,255,255,0.08)",
   divider:     "rgba(255,255,255,0.07)",
   text:        "#f8fafc",
@@ -310,8 +311,11 @@ export default function AIAssistantScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>AI Assistant</Text>
         <View style={styles.headerActions}>
+          <Pressable style={styles.headerIcon} hitSlop={10}>
+            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
+          </Pressable>
           <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => router.push("/account")}>
-            <Ionicons name="person-outline" size={25} color={COLORS.text} />
+            <Ionicons name="person-outline" size={22} color={COLORS.text} />
           </Pressable>
         </View>
       </View>
@@ -467,10 +471,10 @@ function TypingIndicator() {
 ════════════════════════════════════════ */
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
-  header:       { paddingHorizontal: 22, paddingBottom: 24, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  header:       { paddingHorizontal: 22,paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title:        { color: COLORS.text, fontSize: 24, fontWeight: "800" },
   headerActions:{ flexDirection: "row", alignItems: "center", gap: 16 },
-  headerIcon:   { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  headerIcon:   { width: 40, height: 40, borderRadius: 20,borderWidth: 1,borderColor: COLORS.border,backgroundColor: COLORS.surfaceLight, alignItems: "center", justifyContent: "center" },
   divider:      { height: 1, backgroundColor: COLORS.divider },
   keyboardArea: { flex: 1 },
   content:      { flex: 1, paddingHorizontal: 22, paddingTop: 20 },

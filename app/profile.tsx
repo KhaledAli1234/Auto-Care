@@ -274,34 +274,60 @@ export default function DashboardScreen() {
      RENDER
   ════════════════════════════════════════ */
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 110 }]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => fetchDashboard(true)} tintColor={COLORS.primary} />
-        }
-      >
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+
         {/* ── HEADER ── */}
         <View style={styles.header}>
           <Text style={styles.title}>Dashboard</Text>
+
           <View style={styles.headerActions}>
-            {/* Notifications bell */}
-            <Pressable style={styles.headerIconButton} onPress={() => setShowNotifModal(true)}>
-              <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+            <Pressable
+              style={styles.headerIcon}
+              onPress={() => setShowNotifModal(true)}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color={COLORS.text}
+              />
+
               {unreadCount > 0 && (
                 <View style={styles.badgeWrap}>
-                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
                 </View>
               )}
             </Pressable>
-            <Pressable style={styles.headerIconButton} onPress={() => router.push('/account')}>
-              <Ionicons name="person-outline" size={20} color={COLORS.text} />
+
+            <Pressable
+              style={styles.headerIcon}
+              onPress={() => router.push('/account')}
+            >
+              <Ionicons
+                name="person-outline"
+                size={22}
+                color={COLORS.text}
+              />
             </Pressable>
           </View>
         </View>
 
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: insets.bottom + 110 }
+          ]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchDashboard(true)}
+              tintColor={COLORS.primary}
+            />
+          }
+        >
         {/* ── MAINTENANCE ALERT BANNER ── */}
         {d && d.maintenance.upcomingCount > 0 && (
           <View style={styles.alertCard}>
@@ -510,12 +536,11 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container:  { flex: 1, backgroundColor: COLORS.background },
   scroll:     { flex: 1 },
-  content:    { paddingHorizontal: 18, gap: 14 },
-
-  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8 },
-  title:         { color: COLORS.text, fontSize: 30, fontWeight: '700' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerIconButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  content:    { paddingHorizontal: 20,paddingTop: 8, gap: 14 },
+  header:     {  flexDirection: "row", justifyContent: "space-between", alignItems: "center",paddingHorizontal: 22,paddingTop: 14, paddingBottom: 16 },
+  title:         { color: COLORS.text, fontSize: 24, fontWeight: '800' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerIcon: { width: 40, height: 40, borderRadius: 20,borderWidth: 1,backgroundColor: COLORS.surfaceLight,borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
   badgeWrap:  { position: 'absolute', top: -2, right: -1, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: '#ff425a', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
   badgeText:  { color: '#fff', fontSize: 9, fontWeight: '700' },
 
@@ -525,7 +550,7 @@ const styles = StyleSheet.create({
   alertBody:     { color: '#e6e1d2', lineHeight: 20, fontSize: 14 },
 
   metricsGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  metricCard:     { width: '48.5%', backgroundColor: COLORS.card, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, padding: 12, minHeight: 168 },
+  metricCard:     { width: '48%',flexGrow: 1, backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: COLORS.border, padding: 12, minHeight: 168 },
   metricHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   metricTitle:    { color: COLORS.muted, fontSize: 14, fontWeight: '500' },
   metricValueRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
@@ -548,7 +573,7 @@ const styles = StyleSheet.create({
   badgesChip:      { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(245,200,76,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
   badgesChipText:  { color: COLORS.warning, fontSize: 12, fontWeight: '700' },
 
-  bottomStatsRow: { flexDirection: 'row', gap: 10 },
+  bottomStatsRow: { flexDirection: 'row', gap: 10  ,marginTop: 2,},
   bottomStatCard: { flex: 1, borderRadius: 12, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 12, paddingHorizontal: 10 },
   bottomStatTitle:{ color: COLORS.muted, fontSize: 12, marginBottom: 4 },
   bottomStatValue:{ color: COLORS.text, fontSize: 28, fontWeight: '800' },
