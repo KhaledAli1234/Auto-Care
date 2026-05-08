@@ -248,7 +248,7 @@ export default function AccountScreen() {
   const [saving,       setSaving]       = useState(false);
 
   const myName    = `${profile?.user?.firstName ?? ''} ${profile?.user?.lastName ?? ''}`.trim() || 'You';
-  const myVehicle = profile?.vehicle ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ') : '';
+  const myVehicle = profile?.vehicle ? [profile.vehicle.brand, profile.vehicle.model].filter(Boolean).join(' ') : '';
   const fullName  = myName;
 
   /* ── load profile + posts ── */

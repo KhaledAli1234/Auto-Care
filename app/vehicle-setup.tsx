@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_COLORS } from '@/constants/app-colors';
-import { BottomNavbar } from '@/components/bottom-navbar';
 import { useUserProfile } from '@/context/user-profile-context';
 import { vehicleSetupStyles as styles } from '@/styles/vehicle-setup.styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -137,26 +136,31 @@ export default function VehicleSetupScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={C.text} />
-          <Text style={styles.backLabel}>Back</Text>
-        </Pressable>
-        <View style={styles.headerCenter}>
-          <View style={styles.logoRow}>
-            <View style={styles.logoIcon}>
-              <Text style={styles.logoIconText}>B</Text>
-            </View>
-            <Text style={styles.logoAi}>AI</Text>
+    <View style={styles.header}>
+      <Pressable
+        onPress={() => router.back()}
+        style={styles.backButton}
+        hitSlop={12}>
+        <Ionicons name="arrow-back" size={24} color={C.text} />
+        <Text style={styles.backLabel}>Back</Text>
+      </Pressable>
+
+      <View style={styles.headerCenter}>
+        <View style={styles.logoRow}>
+          <View style={styles.logoIcon}>
+            <Text style={styles.logoIconText}>B</Text>
           </View>
-          <Text style={styles.appTitle} numberOfLines={1}>
-            Smart Car AI Assistant App
-          </Text>
+          <Text style={styles.logoAi}>AI</Text>
         </View>
-        <Pressable style={styles.viewChatButton} onPress={() => router.push('/account')}>
-          <Ionicons name="person-circle-outline" size={22} color={C.text} />
-        </Pressable>
+
+        <Text style={styles.appTitle} numberOfLines={1}>
+          Smart Car AI Assistant App
+        </Text>
       </View>
+
+      {/* Right side removed (empty for balance) */}
+      <View style={styles.backButton} />
+    </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -283,7 +287,6 @@ export default function VehicleSetupScreen() {
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
-      <BottomNavbar activeTab="home" />
 
       <Modal visible={showFuelModal} transparent animationType="slide">
         <Pressable style={styles.modalOverlay} onPress={() => setShowFuelModal(false)}>

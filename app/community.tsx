@@ -159,10 +159,15 @@ function formatCreatedAt(dateStr?: string) {
   return `${diffDays}d ago`;
 }
 
-function resolveAuthorId(createdBy: ApiPost["createdBy"]): string {
-  if (typeof createdBy === "string") return createdBy;
-  return createdBy._id ?? "";
-}
+const resolveAuthorId = (author: any) => {
+  if (!author) return '';
+
+  if (typeof author === 'string') {
+    return author;
+  }
+
+  return author?._id || '';
+};
 
 // FIX #3: When createdBy is a populated object, always use its fields.
 // Only fall back to myName when the ID matches the logged-in user.
@@ -171,27 +176,56 @@ function resolveAuthorName(
   myUserId?: string,
   myName?: string,
 ): string {
-  if (typeof createdBy === "string") {
-    // createdBy is just an ID string — only show our own name if it's us
-    if (myUserId && myName && createdBy === myUserId) return myName;
-    // For other users whose data wasn't populated, we can't know their name
+
+  if (!createdBy) {
     return "User";
   }
-  // createdBy is a populated object — use it directly
-  if (createdBy.username) return createdBy.username;
-  const fullName = `${createdBy.firstName ?? ""} ${createdBy.lastName ?? ""}`.trim();
-  if (fullName) return fullName;
-  // Last resort: check if it's the logged-in user
-  if (myUserId && myName && createdBy._id === myUserId) return myName;
+
+  if (typeof createdBy === "string") {
+
+    if (myUserId && myName && createdBy === myUserId) {
+      return myName;
+    }
+
+    return "User";
+  }
+
+  if (createdBy?.username) {
+    return createdBy.username;
+  }
+
+  const fullName =
+    `${createdBy?.firstName ?? ""} ${createdBy?.lastName ?? ""}`.trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  if (
+    myUserId &&
+    myName &&
+    createdBy?._id === myUserId
+  ) {
+    return myName;
+  }
+
   return "User";
 }
 
 // FIX #6: Extract vehicle from populated createdBy (after backend populate fix)
 function resolveAuthorVehicle(createdBy: ApiPost["createdBy"]): string {
+
+  if (!createdBy) return "";
+
   if (typeof createdBy === "string") return "";
-  const v = (createdBy as any).vehicleId;
+
+  const v = (createdBy as any)?.vehicleId;
+
   if (!v) return "";
-  return [v.brand, v.model, v.year].filter(Boolean).join(" ");
+
+  return [v.brand, v.model, v.year]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function normalizeComment(c: ApiComment, myUserId: string, myName: string): CommunityComment {
