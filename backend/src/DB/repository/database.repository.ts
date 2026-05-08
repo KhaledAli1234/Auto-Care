@@ -294,4 +294,30 @@ export abstract class DatabaseRepository<
       })
       .exec();
   }
+
+  async updateMany({
+    filter,
+    update,
+    options,
+  }: {
+    filter: Filter<TRawDocument>;
+    update: UpdateQuery<TDocument>;
+    options?: MongooseUpdateQueryOptions<TDocument> | null;
+  }): Promise<UpdateWriteOpResult> {
+    if (Array.isArray(update)) {
+      update.push({
+        $set: {
+          __v: { $add: ['$__v', 1] },
+        },
+      });
+
+      return await this.model.updateMany(filter || {}, update, options);
+    }
+
+    return await this.model.updateMany(
+      filter,
+      { $inc: { __v: 1 }, ...update },
+      options,
+    );
+  }
 }

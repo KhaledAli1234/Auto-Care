@@ -17,6 +17,7 @@ import { VehicleModule } from './modules/vehicle/vehicle.module';
 import { PostModule } from './modules/post/post.module';
 import { CommentModule } from './modules/comment/comment.module';
 import { FollowModule } from './modules/follow/follow.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 
 @Module({
@@ -38,7 +39,8 @@ import { FollowModule } from './modules/follow/follow.module';
     VehicleModule,
     PostModule,
     CommentModule,
-    FollowModule
+    FollowModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [AppService],

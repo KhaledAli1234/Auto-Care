@@ -4,12 +4,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { CommentRepository, FollowRepository, PostRepository, UserRepository } from 'src/DB';
+import {
+  CommentRepository,
+  FollowRepository,
+  PostRepository,
+  UserRepository,
+} from 'src/DB';
 import {
   AllowCommentsEnum,
   LikeActionEnum,
   PostAvailabilityEnum,
 } from './dto/post.dto';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class PostService {
@@ -18,6 +24,7 @@ export class PostService {
     private readonly userRepository: UserRepository,
     private readonly followRepository: FollowRepository,
     private readonly commentRepository: CommentRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async validateTags(tags: string[], userId: string) {
@@ -85,17 +92,40 @@ export class PostService {
   }
 
   async likePost(postId: string, userId: string, action: LikeActionEnum) {
+    const post = await this.postRepository.findOne({
+      filter: { _id: new Types.ObjectId(postId) },
+    });
+
+    if (!post) throw new NotFoundException('post not found');
+
     const update =
       action === 'unlike'
         ? { $pull: { likes: new Types.ObjectId(userId) } }
         : { $addToSet: { likes: new Types.ObjectId(userId) } };
 
-    const post = await this.postRepository.findOneAndUpdate({
+    await this.postRepository.updateOne({
       filter: { _id: new Types.ObjectId(postId) },
       update,
     });
 
-    if (!post) throw new NotFoundException('post not found');
+    if (action === 'like') {
+      const postOwnerId = post.createdBy.toString();
+
+      if (postOwnerId !== userId) {
+        const sender = await this.userRepository.findById({
+          id: new Types.ObjectId(userId),
+        });
+
+        if (sender) {
+          await this.notificationService.createLikeNotification(
+            userId,
+            postOwnerId,
+            sender.username, // 👈 fixed (مش userName)
+            postId,
+          );
+        }
+      }
+    }
   }
 
   async postList(user: any, page: number, size: number) {

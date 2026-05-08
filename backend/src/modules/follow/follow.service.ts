@@ -1,10 +1,15 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { FollowRepository } from 'src/DB';
+import { FollowRepository, UserRepository } from 'src/DB';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class FollowService {
-  constructor(private readonly followRepository: FollowRepository) {}
+  constructor(
+    private readonly followRepository: FollowRepository,
+    private readonly notificationService: NotificationService,
+    private readonly userRepository: UserRepository,
+  ) {}
 
   async followUser(followerId: string, followingId: string) {
     if (followerId === followingId) {
@@ -30,6 +35,21 @@ export class FollowService {
         },
       ],
     });
+    const sender = await this.userRepository.findById({
+      id: new Types.ObjectId(followerId),
+    });
+
+    if (!sender) {
+      throw new BadRequestException('Sender not found');
+    }
+
+    const senderName = sender.username;
+
+    await this.notificationService.createFollowNotification(
+      followerId,
+      followingId,
+      senderName,
+    );
     const followersCount = await this.countFollowers(followingId);
     const followingCount = await this.countFollowing(followerId);
     return { isFollowing: true, followersCount, followingCount };

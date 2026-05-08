@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CommentRepository, PostRepository, UserRepository } from 'src/DB';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class CommentService {
@@ -12,6 +13,7 @@ export class CommentService {
     private readonly commentRepository: CommentRepository,
     private readonly postRepository: PostRepository,
     private readonly userRepository: UserRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async validateTags(tags: string[], userId: string) {
@@ -54,6 +56,24 @@ export class CommentService {
     });
 
     if (!comment) throw new BadRequestException('fail to create comment');
+    const postOwner = await this.postRepository.findOne({
+      filter: { _id: new Types.ObjectId(postId) },
+    });
+    if (postOwner && postOwner.createdBy.toString() !== userId) {
+      const sender = await this.userRepository.findById({
+        id: new Types.ObjectId(userId),
+      });
+
+      if (sender) {
+        await this.notificationService.createCommentNotification(
+          userId,
+          postOwner.createdBy.toString(),
+          sender.username,
+          postId,
+          comment._id.toString(),
+        );
+      }
+    }
 
     return comment;
   }
@@ -87,7 +107,26 @@ export class CommentService {
     });
 
     if (!reply) throw new BadRequestException('fail to reply');
-    
+    const parentComment = await this.commentRepository.findOne({
+      filter: { _id: new Types.ObjectId(commentId) },
+    });
+
+    if (parentComment && parentComment.createdBy.toString() !== userId) {
+      const sender = await this.userRepository.findById({
+        id: new Types.ObjectId(userId),
+      });
+
+      if (sender) {
+        await this.notificationService.createReplyNotification(
+          userId,
+          parentComment.createdBy.toString(),
+          sender.username,
+          postId,
+          commentId,
+        );
+      }
+    }
+
     return reply;
   }
 
