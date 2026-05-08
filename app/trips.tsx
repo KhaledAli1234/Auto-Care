@@ -167,13 +167,14 @@ export default function TripsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Trip History</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={styles.headerActions}>
           <NotificationBell iconSize={20} color={COLORS.text} />
           <Pressable style={styles.profileButton} onPress={() => router.push('/account')}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
         </View>
       </View>
+      <View style={styles.divider} />
 
       <ScrollView
         style={styles.scroll}
@@ -442,6 +443,7 @@ const styles = StyleSheet.create({
   confirmSub:   { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: '800' },
+  divider: { height: 1, backgroundColor: COLORS.divider },
   headerActions:    { flexDirection: 'row', alignItems: 'center', gap: 16 },
   headerIconButton: { 
   width: 40, height: 40, borderRadius: 20, 

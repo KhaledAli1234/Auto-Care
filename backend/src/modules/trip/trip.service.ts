@@ -40,7 +40,7 @@ Avg Speed: ${trip?.trip_summary?.avg_speed ?? 0} km/h
 
     const tripToSave = {
       user: new Types.ObjectId(userId),
-
+      confirmed: true,
       trip_id: rawData.trip_id,
       date: rawData.date,
 
