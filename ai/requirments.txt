@@ -1,0 +1,14 @@
+# Web Framework
+flask
+
+# Data & ML
+pandas
+numpy
+scikit-learn
+joblib
+
+# Dashboard / UI
+streamlit
+
+# HTTP Requests
+requests

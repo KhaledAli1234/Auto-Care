@@ -1,0 +1,855 @@
+﻿ID,brand,model,year,engine_cc,engine_power_hp,transmission,fuel_type,weight_kg,tank_capacity_l,fuel_combined_l_100km,body_type
+1,Nissan,Sunny,1999,1300,87,Manual,Petrol,1050,50,7.2,Sedan
+2,Nissan,Sunny,2000,1300,87,Manual,Petrol,1055,50,7.1,Sedan
+3,Nissan,Sunny,2001,1300,87,Manual,Petrol,1060,50,7.1,Sedan
+4,Nissan,Sunny,2002,1300,90,Manual,Petrol,1080,50,7.0,Sedan
+5,Nissan,Sunny,2003,1300,90,Manual,Petrol,1090,50,7.0,Sedan
+6,Nissan,Sunny,2004,1500,98,Manual,Petrol,1100,50,6.9,Sedan
+7,Nissan,Sunny,2005,1500,98,Manual,Petrol,1110,50,6.8,Sedan
+8,Nissan,Sunny,2006,1500,105,Manual,Petrol,1120,50,6.8,Sedan
+9,Nissan,Sunny,2007,1500,105,Automatic,Petrol,1130,50,7.2,Sedan
+10,Nissan,Sunny,2008,1500,105,Automatic,Petrol,1140,50,7.3,Sedan
+11,Nissan,Sunny,2009,1600,108,Manual,Petrol,1150,52,7.0,Sedan
+12,Nissan,Sunny,2010,1600,108,Automatic,Petrol,1160,52,7.4,Sedan
+13,Nissan,Sunny,2011,1600,108,Automatic,Petrol,1170,52,7.5,Sedan
+14,Nissan,Sunny,2012,1500,99,Manual,Petrol,1180,41,6.9,Sedan
+15,Nissan,Sunny,2013,1500,99,Automatic,Petrol,1190,41,7.2,Sedan
+16,Nissan,Sunny,2014,1500,99,Automatic,Petrol,1200,41,7.3,Sedan
+17,Nissan,Sunny,2015,1500,99,Automatic,Petrol,1210,41,7.3,Sedan
+18,Nissan,Sunny,2016,1500,99,Automatic,Petrol,1220,41,7.2,Sedan
+19,Nissan,Sunny,2017,1500,99,Automatic,Petrol,1230,41,7.1,Sedan
+20,Nissan,Sunny,2018,1500,108,Automatic,Petrol,1240,41,7.0,Sedan
+21,Nissan,Sunny,2019,1500,108,Automatic,Petrol,1250,41,7.0,Sedan
+22,Nissan,Sunny,2020,1500,108,Automatic,Petrol,1260,41,6.9,Sedan
+23,Nissan,Sunny,2021,1500,108,Automatic,Petrol,1270,41,6.9,Sedan
+24,Nissan,Sunny,2022,1500,108,Automatic,Petrol,1280,41,6.8,Sedan
+25,Nissan,Sunny,2023,1500,108,Automatic,Petrol,1290,41,6.8,Sedan
+26,Nissan,Sunny,2024,1500,108,Automatic,Petrol,1300,41,6.7,Sedan
+27,Nissan,Sunny,2025,1500,108,CVT,Petrol,1310,41,6.7,Sedan
+28,Nissan,Sunny,2026,1500,110,CVT,Petrol,1320,41,6.6,Sedan
+29,Toyota,Corolla,1999,1600,110,Manual,Petrol,1100,50,7.5,Sedan
+30,Toyota,Corolla,2000,1600,110,Manual,Petrol,1105,50,7.4,Sedan
+31,Toyota,Corolla,2001,1600,110,Manual,Petrol,1110,50,7.4,Sedan
+32,Toyota,Corolla,2002,1600,110,Manual,Petrol,1120,50,7.3,Sedan
+33,Toyota,Corolla,2003,1600,110,Automatic,Petrol,1130,50,7.6,Sedan
+34,Toyota,Corolla,2004,1600,120,Automatic,Petrol,1150,55,7.5,Sedan
+35,Toyota,Corolla,2005,1600,120,Automatic,Petrol,1160,55,7.4,Sedan
+36,Toyota,Corolla,2006,1600,120,Automatic,Petrol,1170,55,7.4,Sedan
+37,Toyota,Corolla,2007,1600,124,Automatic,Petrol,1180,55,7.3,Sedan
+38,Toyota,Corolla,2008,1600,124,Automatic,Petrol,1190,55,7.3,Sedan
+39,Toyota,Corolla,2009,1600,124,Automatic,Petrol,1200,55,7.2,Sedan
+40,Toyota,Corolla,2010,1600,124,Automatic,Petrol,1210,55,7.2,Sedan
+41,Toyota,Corolla,2011,1600,124,Automatic,Petrol,1220,55,7.1,Sedan
+42,Toyota,Corolla,2012,1600,124,Automatic,Petrol,1230,55,7.1,Sedan
+43,Toyota,Corolla,2013,1600,122,Automatic,Petrol,1240,55,7.0,Sedan
+44,Toyota,Corolla,2014,1600,122,CVT,Petrol,1250,55,6.8,Sedan
+45,Toyota,Corolla,2015,1600,122,CVT,Petrol,1260,55,6.8,Sedan
+46,Toyota,Corolla,2016,1600,122,CVT,Petrol,1270,55,6.7,Sedan
+47,Toyota,Corolla,2017,1600,122,CVT,Petrol,1280,55,6.7,Sedan
+48,Toyota,Corolla,2018,1600,122,CVT,Petrol,1290,55,6.6,Sedan
+49,Toyota,Corolla,2019,1600,120,CVT,Petrol,1300,50,6.5,Sedan
+50,Toyota,Corolla,2020,1600,120,CVT,Petrol,1310,50,6.5,Sedan
+51,Toyota,Corolla,2021,1600,120,CVT,Petrol,1320,50,6.4,Sedan
+52,Toyota,Corolla,2022,1600,120,CVT,Petrol,1330,50,6.4,Sedan
+53,Toyota,Corolla,2023,1600,120,CVT,Petrol,1340,50,6.3,Sedan
+54,Toyota,Corolla,2024,1600,121,CVT,Petrol,1350,50,6.3,Sedan
+55,Toyota,Corolla,2025,1600,121,CVT,Petrol,1360,50,6.2,Sedan
+56,Toyota,Corolla,2026,1600,122,CVT,Petrol,1370,50,6.2,Sedan
+57,Hyundai,Elantra,1999,1600,105,Manual,Petrol,1150,55,7.8,Sedan
+58,Hyundai,Elantra,2000,1600,105,Manual,Petrol,1160,55,7.7,Sedan
+59,Hyundai,Elantra,2001,1600,107,Manual,Petrol,1170,55,7.6,Sedan
+60,Hyundai,Elantra,2002,1600,107,Automatic,Petrol,1180,55,7.9,Sedan
+61,Hyundai,Elantra,2003,1600,107,Automatic,Petrol,1190,55,7.8,Sedan
+62,Hyundai,Elantra,2004,1600,107,Automatic,Petrol,1200,55,7.7,Sedan
+63,Hyundai,Elantra,2005,1600,112,Automatic,Petrol,1210,55,7.6,Sedan
+64,Hyundai,Elantra,2006,1600,112,Automatic,Petrol,1220,55,7.6,Sedan
+65,Hyundai,Elantra,2007,1600,112,Automatic,Petrol,1230,55,7.5,Sedan
+66,Hyundai,Elantra,2008,1600,121,Automatic,Petrol,1240,53,7.4,Sedan
+67,Hyundai,Elantra,2009,1600,121,Automatic,Petrol,1250,53,7.3,Sedan
+68,Hyundai,Elantra,2010,1600,121,Automatic,Petrol,1260,53,7.3,Sedan
+69,Hyundai,Elantra,2011,1600,132,Automatic,Petrol,1270,50,6.9,Sedan
+70,Hyundai,Elantra,2012,1600,132,Automatic,Petrol,1280,50,6.8,Sedan
+71,Hyundai,Elantra,2013,1600,132,Automatic,Petrol,1290,50,6.8,Sedan
+72,Hyundai,Elantra,2014,1600,132,Automatic,Petrol,1300,50,6.7,Sedan
+73,Hyundai,Elantra,2015,1600,130,Automatic,Petrol,1310,50,6.7,Sedan
+74,Hyundai,Elantra,2016,1600,130,Automatic,Petrol,1320,50,6.6,Sedan
+75,Hyundai,Elantra,2017,1600,128,Automatic,Petrol,1330,50,6.6,Sedan
+76,Hyundai,Elantra,2018,1600,128,Automatic,Petrol,1340,50,6.5,Sedan
+77,Hyundai,Elantra,2019,1600,128,Automatic,Petrol,1350,50,6.5,Sedan
+78,Hyundai,Elantra,2020,1600,128,Automatic,Petrol,1360,50,6.4,Sedan
+79,Hyundai,Elantra,2021,1600,127,CVT,Petrol,1370,47,6.3,Sedan
+80,Hyundai,Elantra,2022,1600,127,CVT,Petrol,1380,47,6.3,Sedan
+81,Hyundai,Elantra,2023,1600,127,CVT,Petrol,1390,47,6.2,Sedan
+82,Hyundai,Elantra,2024,1600,127,CVT,Petrol,1400,47,6.2,Sedan
+83,Hyundai,Elantra,2025,1600,127,CVT,Petrol,1410,47,6.1,Sedan
+84,Hyundai,Elantra,2026,1600,128,CVT,Petrol,1420,47,6.1,Sedan
+85,Hyundai,Accent RB,1999,1300,85,Manual,Petrol,1000,45,7.2,Sedan
+86,Hyundai,Accent RB,2000,1300,85,Manual,Petrol,1005,45,7.1,Sedan
+87,Hyundai,Accent RB,2001,1300,86,Manual,Petrol,1010,45,7.1,Sedan
+88,Hyundai,Accent RB,2002,1300,86,Manual,Petrol,1020,45,7.0,Sedan
+89,Hyundai,Accent RB,2003,1300,87,Manual,Petrol,1030,45,7.0,Sedan
+90,Hyundai,Accent RB,2004,1500,97,Manual,Petrol,1040,45,6.9,Sedan
+91,Hyundai,Accent RB,2005,1500,97,Manual,Petrol,1050,45,6.9,Sedan
+92,Hyundai,Accent RB,2006,1500,97,Manual,Petrol,1060,45,6.8,Sedan
+93,Hyundai,Accent RB,2007,1500,100,Automatic,Petrol,1070,45,7.2,Sedan
+94,Hyundai,Accent RB,2008,1500,100,Automatic,Petrol,1080,45,7.3,Sedan
+95,Hyundai,Accent RB,2009,1500,100,Automatic,Petrol,1090,45,7.3,Sedan
+96,Hyundai,Accent RB,2010,1500,100,Automatic,Petrol,1100,45,7.2,Sedan
+97,Hyundai,Accent RB,2011,1600,110,Manual,Petrol,1110,43,6.8,Sedan
+98,Hyundai,Accent RB,2012,1600,110,Automatic,Petrol,1120,43,7.1,Sedan
+99,Hyundai,Accent RB,2013,1600,110,Automatic,Petrol,1130,43,7.1,Sedan
+100,Hyundai,Accent RB,2014,1600,110,Automatic,Petrol,1140,43,7.0,Sedan
+101,Hyundai,Accent RB,2015,1600,110,Automatic,Petrol,1150,43,7.0,Sedan
+102,Hyundai,Accent RB,2016,1600,110,Automatic,Petrol,1160,43,6.9,Sedan
+103,Hyundai,Accent RB,2017,1600,110,Automatic,Petrol,1170,43,6.9,Sedan
+104,Hyundai,Accent RB,2018,1600,110,Automatic,Petrol,1180,43,6.8,Sedan
+105,Hyundai,Accent RB,2019,1600,110,Automatic,Petrol,1190,43,6.8,Sedan
+106,Hyundai,Accent RB,2020,1600,110,Automatic,Petrol,1200,43,6.7,Sedan
+107,Hyundai,Accent RB,2021,1600,110,Automatic,Petrol,1210,43,6.7,Sedan
+108,Hyundai,Accent RB,2022,1600,110,Automatic,Petrol,1220,43,6.6,Sedan
+109,Hyundai,Accent RB,2023,1600,110,Automatic,Petrol,1230,43,6.6,Sedan
+110,Hyundai,Accent RB,2024,1600,110,Automatic,Petrol,1240,43,6.5,Sedan
+111,Hyundai,Accent RB,2025,1600,110,Automatic,Petrol,1250,43,6.5,Sedan
+112,Hyundai,Accent RB,2026,1600,112,CVT,Petrol,1260,43,6.4,Sedan
+114,Hyundai,Verna,2000,1300,85,Manual,Petrol,985,45,7.2,Sedan
+115,Hyundai,Verna,2001,1300,86,Manual,Petrol,990,45,7.2,Sedan
+116,Hyundai,Verna,2002,1300,86,Manual,Petrol,1000,45,7.1,Sedan
+117,Hyundai,Verna,2003,1500,94,Manual,Petrol,1010,45,7.0,Sedan
+118,Hyundai,Verna,2004,1500,94,Manual,Petrol,1020,45,7.0,Sedan
+119,Hyundai,Verna,2005,1500,94,Manual,Petrol,1030,45,6.9,Sedan
+120,Hyundai,Verna,2006,1500,97,Manual,Petrol,1040,45,6.9,Sedan
+121,Hyundai,Verna,2007,1500,97,Manual,Petrol,1050,45,6.8,Sedan
+122,Hyundai,Verna,2008,1500,97,Manual,Petrol,1060,45,6.8,Sedan
+123,Hyundai,Verna,2009,1500,97,Manual,Petrol,1070,45,6.8,Sedan
+124,Hyundai,Verna,2010,1500,97,Manual,Petrol,1080,45,6.7,Sedan
+125,Hyundai,Verna,2011,1500,97,Manual,Petrol,1090,45,6.7,Sedan
+126,Hyundai,Verna,2012,1500,97,Manual,Petrol,1100,45,6.6,Sedan
+127,Hyundai,Verna,2013,1500,97,Manual,Petrol,1110,45,6.6,Sedan
+128,Hyundai,Verna,2014,1500,97,Manual,Petrol,1120,45,6.6,Sedan
+129,Hyundai,Verna,2015,1500,97,Manual,Petrol,1130,45,6.5,Sedan
+130,Hyundai,Verna,2016,1500,97,Manual,Petrol,1140,45,6.5,Sedan
+131,Hyundai,Verna,2017,1500,97,Manual,Petrol,1150,45,6.5,Sedan
+132,Hyundai,Verna,2018,1500,97,Manual,Petrol,1160,45,6.4,Sedan
+133,Hyundai,Verna,2019,1500,97,Manual,Petrol,1170,45,6.4,Sedan
+134,Hyundai,Verna,2020,1500,97,Manual,Petrol,1180,45,6.4,Sedan
+135,Hyundai,Verna,2021,1500,97,Manual,Petrol,1190,45,6.3,Sedan
+136,Hyundai,Verna,2022,1500,97,Manual,Petrol,1200,45,6.3,Sedan
+137,Hyundai,Verna,2023,1500,97,Manual,Petrol,1210,45,6.3,Sedan
+138,Hyundai,Verna,2024,1500,97,Manual,Petrol,1220,45,6.2,Sedan
+139,Hyundai,Verna,2025,1500,97,Manual,Petrol,1230,45,6.2,Sedan
+140,Hyundai,Verna,2026,1500,100,Manual,Petrol,1240,45,6.1,Sedan
+141,Kia,Cerato,1999,1500,92,Manual,Petrol,1080,50,7.8,Sedan
+142,Kia,Cerato,2000,1500,92,Manual,Petrol,1090,50,7.7,Sedan
+143,Kia,Cerato,2001,1600,101,Manual,Petrol,1100,50,7.6,Sedan
+144,Kia,Cerato,2002,1600,101,Manual,Petrol,1110,50,7.6,Sedan
+145,Kia,Cerato,2003,1600,105,Manual,Petrol,1120,50,7.5,Sedan
+146,Kia,Cerato,2004,1600,105,Automatic,Petrol,1130,50,7.5,Sedan
+147,Kia,Cerato,2005,1600,105,Automatic,Petrol,1140,50,7.4,Sedan
+148,Kia,Cerato,2006,1600,105,Automatic,Petrol,1150,50,7.4,Sedan
+149,Kia,Cerato,2007,1600,115,Automatic,Petrol,1160,50,7.3,Sedan
+150,Kia,Cerato,2008,1600,115,Automatic,Petrol,1170,50,7.3,Sedan
+151,Kia,Cerato,2009,1600,115,Automatic,Petrol,1180,50,7.2,Sedan
+152,Kia,Cerato,2010,1600,126,Automatic,Petrol,1190,50,7.1,Sedan
+153,Kia,Cerato,2011,1600,126,Automatic,Petrol,1200,50,7.0,Sedan
+154,Kia,Cerato,2012,1600,126,Automatic,Petrol,1210,50,7.0,Sedan
+155,Kia,Cerato,2013,1600,130,Automatic,Petrol,1220,50,6.9,Sedan
+156,Kia,Cerato,2014,1600,130,Automatic,Petrol,1230,50,6.9,Sedan
+157,Kia,Cerato,2015,1600,130,Automatic,Petrol,1240,50,6.8,Sedan
+158,Kia,Cerato,2016,1600,130,Automatic,Petrol,1250,50,6.8,Sedan
+159,Kia,Cerato,2017,1600,128,Automatic,Petrol,1260,50,6.7,Sedan
+160,Kia,Cerato,2018,1600,128,Automatic,Petrol,1270,50,6.7,Sedan
+161,Kia,Cerato,2019,1600,128,CVT,Petrol,1280,50,6.6,Sedan
+162,Kia,Cerato,2020,1600,128,CVT,Petrol,1290,50,6.6,Sedan
+163,Kia,Cerato,2021,1600,128,CVT,Petrol,1300,50,6.5,Sedan
+164,Kia,Cerato,2022,1600,128,CVT,Petrol,1310,50,6.5,Sedan
+165,Kia,Cerato,2023,1600,128,CVT,Petrol,1320,50,6.4,Sedan
+166,Kia,Cerato,2024,1600,128,CVT,Petrol,1330,50,6.4,Sedan
+167,Kia,Cerato,2025,1600,128,CVT,Petrol,1340,50,6.3,Sedan
+168,Kia,Cerato,2026,1600,130,CVT,Petrol,1350,50,6.3,Sedan
+169,Chevrolet,Optra,1999,1600,105,Manual,Petrol,1150,60,8.2,Sedan
+170,Chevrolet,Optra,2000,1600,105,Manual,Petrol,1160,60,8.1,Sedan
+171,Chevrolet,Optra,2001,1600,105,Manual,Petrol,1170,60,8.1,Sedan
+172,Chevrolet,Optra,2002,1600,107,Manual,Petrol,1180,60,8.0,Sedan
+173,Chevrolet,Optra,2003,1600,107,Manual,Petrol,1190,60,8.0,Sedan
+174,Chevrolet,Optra,2004,1600,107,Automatic,Petrol,1200,60,8.0,Sedan
+175,Chevrolet,Optra,2005,1600,107,Automatic,Petrol,1210,60,7.9,Sedan
+176,Chevrolet,Optra,2006,1600,107,Automatic,Petrol,1220,60,7.9,Sedan
+177,Chevrolet,Optra,2007,1600,109,Automatic,Petrol,1230,60,7.8,Sedan
+178,Chevrolet,Optra,2008,1600,109,Automatic,Petrol,1240,60,7.8,Sedan
+179,Chevrolet,Optra,2009,1600,109,Automatic,Petrol,1250,60,7.7,Sedan
+180,Chevrolet,Optra,2010,1600,109,Automatic,Petrol,1260,60,7.7,Sedan
+181,Chevrolet,Optra,2011,1600,109,Automatic,Petrol,1270,60,7.6,Sedan
+182,Chevrolet,Optra,2012,1600,109,Automatic,Petrol,1280,60,7.6,Sedan
+183,Chevrolet,Optra,2013,1600,109,Automatic,Petrol,1290,60,7.5,Sedan
+184,Chevrolet,Optra,2014,1600,109,Automatic,Petrol,1300,60,7.5,Sedan
+185,Chevrolet,Optra,2015,1600,109,Automatic,Petrol,1310,60,7.5,Sedan
+186,Chevrolet,Optra,2016,1600,109,Automatic,Petrol,1320,60,7.4,Sedan
+187,Chevrolet,Optra,2017,1600,109,Automatic,Petrol,1330,60,7.4,Sedan
+188,Chevrolet,Optra,2018,1600,109,Automatic,Petrol,1340,60,7.3,Sedan
+189,Chevrolet,Optra,2019,1600,109,Automatic,Petrol,1350,60,7.3,Sedan
+190,Chevrolet,Optra,2020,1600,109,Automatic,Petrol,1360,60,7.2,Sedan
+191,Chevrolet,Optra,2021,1600,109,Automatic,Petrol,1370,60,7.2,Sedan
+192,Chevrolet,Optra,2022,1600,109,Automatic,Petrol,1380,60,7.1,Sedan
+193,Chevrolet,Optra,2023,1600,109,Automatic,Petrol,1390,60,7.1,Sedan
+194,Chevrolet,Optra,2024,1600,109,Automatic,Petrol,1400,60,7.0,Sedan
+195,Chevrolet,Optra,2025,1600,109,Automatic,Petrol,1410,60,7.0,Sedan
+196,Chevrolet,Optra,2026,1600,110,Automatic,Petrol,1420,60,7.0,Sedan
+197,Chevrolet,Aveo,1999,1400,75,Manual,Petrol,980,45,7.5,Sedan
+198,Chevrolet,Aveo,2000,1400,75,Manual,Petrol,985,45,7.4,Sedan
+199,Chevrolet,Aveo,2001,1400,75,Manual,Petrol,990,45,7.4,Sedan
+200,Chevrolet,Aveo,2002,1400,80,Manual,Petrol,1000,45,7.3,Sedan
+201,Chevrolet,Aveo,2003,1400,80,Manual,Petrol,1010,45,7.3,Sedan
+202,Chevrolet,Aveo,2004,1400,80,Manual,Petrol,1020,45,7.2,Sedan
+203,Chevrolet,Aveo,2005,1400,83,Manual,Petrol,1030,45,7.2,Sedan
+204,Chevrolet,Aveo,2006,1500,86,Manual,Petrol,1040,45,7.1,Sedan
+205,Chevrolet,Aveo,2007,1500,86,Manual,Petrol,1050,45,7.1,Sedan
+206,Chevrolet,Aveo,2008,1500,86,Automatic,Petrol,1060,45,7.3,Sedan
+207,Chevrolet,Aveo,2009,1500,86,Automatic,Petrol,1070,45,7.3,Sedan
+208,Chevrolet,Aveo,2010,1500,86,Automatic,Petrol,1080,45,7.2,Sedan
+209,Chevrolet,Aveo,2011,1500,100,Automatic,Petrol,1090,45,7.0,Sedan
+210,Chevrolet,Aveo,2012,1500,100,Automatic,Petrol,1100,45,7.0,Sedan
+211,Chevrolet,Aveo,2013,1500,100,Automatic,Petrol,1110,45,6.9,Sedan
+212,Chevrolet,Aveo,2014,1500,100,Automatic,Petrol,1120,45,6.9,Sedan
+213,Chevrolet,Aveo,2015,1500,100,Automatic,Petrol,1130,45,6.8,Sedan
+214,Chevrolet,Aveo,2016,1500,100,Automatic,Petrol,1140,45,6.8,Sedan
+215,Chevrolet,Aveo,2017,1500,100,Automatic,Petrol,1150,45,6.7,Sedan
+216,Chevrolet,Aveo,2018,1500,100,Automatic,Petrol,1160,45,6.7,Sedan
+217,Chevrolet,Aveo,2019,1500,100,Automatic,Petrol,1170,45,6.6,Sedan
+218,Chevrolet,Aveo,2020,1500,100,Automatic,Petrol,1180,45,6.6,Sedan
+219,Chevrolet,Aveo,2021,1500,100,Automatic,Petrol,1190,45,6.5,Sedan
+220,Chevrolet,Aveo,2022,1500,100,Automatic,Petrol,1200,45,6.5,Sedan
+221,Chevrolet,Aveo,2023,1500,100,Automatic,Petrol,1210,45,6.4,Sedan
+222,Chevrolet,Aveo,2024,1500,100,Automatic,Petrol,1220,45,6.4,Sedan
+223,Chevrolet,Aveo,2025,1500,100,CVT,Petrol,1230,45,6.3,Sedan
+224,Chevrolet,Aveo,2026,1500,102,CVT,Petrol,1240,45,6.3,Sedan
+225,Daewoo,Lanos,1999,1500,86,Manual,Petrol,980,48,7.8,Sedan
+226,Daewoo,Lanos,2000,1500,86,Manual,Petrol,985,48,7.7,Sedan
+227,Daewoo,Lanos,2001,1500,86,Manual,Petrol,990,48,7.7,Sedan
+228,Daewoo,Lanos,2002,1500,86,Manual,Petrol,1000,48,7.6,Sedan
+229,Daewoo,Lanos,2003,1500,86,Manual,Petrol,1010,48,7.6,Sedan
+230,Daewoo,Lanos,2004,1500,86,Manual,Petrol,1020,48,7.5,Sedan
+231,Daewoo,Lanos,2005,1500,86,Manual,Petrol,1030,48,7.5,Sedan
+232,Daewoo,Lanos,2006,1500,86,Manual,Petrol,1040,48,7.4,Sedan
+233,Daewoo,Lanos,2007,1500,86,Manual,Petrol,1050,48,7.4,Sedan
+234,Daewoo,Lanos,2008,1500,86,Manual,Petrol,1060,48,7.3,Sedan
+235,Daewoo,Lanos,2009,1500,86,Manual,Petrol,1070,48,7.3,Sedan
+236,Daewoo,Lanos,2010,1500,86,Manual,Petrol,1080,48,7.2,Sedan
+237,Daewoo,Lanos,2011,1500,86,Manual,Petrol,1090,48,7.2,Sedan
+238,Daewoo,Lanos,2012,1500,86,Manual,Petrol,1100,48,7.1,Sedan
+239,Daewoo,Lanos,2013,1500,86,Manual,Petrol,1110,48,7.1,Sedan
+240,Daewoo,Lanos,2014,1500,86,Manual,Petrol,1120,48,7.0,Sedan
+241,Daewoo,Lanos,2015,1500,86,Manual,Petrol,1130,48,7.0,Sedan
+242,Daewoo,Lanos,2016,1500,86,Manual,Petrol,1140,48,6.9,Sedan
+243,Daewoo,Lanos,2017,1500,86,Manual,Petrol,1150,48,6.9,Sedan
+244,Daewoo,Lanos,2018,1500,86,Manual,Petrol,1160,48,6.8,Sedan
+245,Daewoo,Lanos,2019,1500,86,Manual,Petrol,1170,48,6.8,Sedan
+246,Daewoo,Lanos,2020,1500,86,Manual,Petrol,1180,48,6.7,Sedan
+247,Daewoo,Lanos,2021,1500,86,Manual,Petrol,1190,48,6.7,Sedan
+248,Daewoo,Lanos,2022,1500,86,Manual,Petrol,1200,48,6.6,Sedan
+249,Daewoo,Lanos,2023,1500,86,Manual,Petrol,1210,48,6.6,Sedan
+250,Daewoo,Lanos,2024,1500,86,Manual,Petrol,1220,48,6.5,Sedan
+251,Daewoo,Lanos,2025,1500,86,Manual,Petrol,1230,48,6.5,Sedan
+252,Daewoo,Lanos,2026,1500,88,Manual,Petrol,1240,48,6.4,Sedan
+253,Mitsubishi,Lancer,1999,1300,75,Manual,Petrol,980,50,7.6,Sedan
+254,Mitsubishi,Lancer,2000,1300,75,Manual,Petrol,985,50,7.5,Sedan
+255,Mitsubishi,Lancer,2001,1300,75,Manual,Petrol,990,50,7.5,Sedan
+256,Mitsubishi,Lancer,2002,1500,90,Manual,Petrol,1000,50,7.4,Sedan
+257,Mitsubishi,Lancer,2003,1500,90,Manual,Petrol,1010,50,7.4,Sedan
+258,Mitsubishi,Lancer,2004,1500,90,Manual,Petrol,1020,50,7.3,Sedan
+259,Mitsubishi,Lancer,2005,1600,100,Manual,Petrol,1030,50,7.2,Sedan
+260,Mitsubishi,Lancer,2006,1600,100,Automatic,Petrol,1040,50,7.3,Sedan
+261,Mitsubishi,Lancer,2007,1600,100,Automatic,Petrol,1050,50,7.3,Sedan
+262,Mitsubishi,Lancer,2008,1600,110,Automatic,Petrol,1060,50,7.2,Sedan
+263,Mitsubishi,Lancer,2009,1600,110,Automatic,Petrol,1070,50,7.2,Sedan
+264,Mitsubishi,Lancer,2010,1600,110,Automatic,Petrol,1080,50,7.1,Sedan
+265,Mitsubishi,Lancer,2011,1600,110,Automatic,Petrol,1090,50,7.1,Sedan
+266,Mitsubishi,Lancer,2012,1600,110,Automatic,Petrol,1100,50,7.0,Sedan
+267,Mitsubishi,Lancer,2013,1600,110,Automatic,Petrol,1110,50,7.0,Sedan
+268,Mitsubishi,Lancer,2014,1600,110,Automatic,Petrol,1120,50,6.9,Sedan
+269,Mitsubishi,Lancer,2015,1600,110,Automatic,Petrol,1130,50,6.9,Sedan
+270,Mitsubishi,Lancer,2016,1600,110,Automatic,Petrol,1140,50,6.8,Sedan
+271,Mitsubishi,Lancer,2017,1600,110,Automatic,Petrol,1150,50,6.8,Sedan
+272,Mitsubishi,Lancer,2018,1600,110,Automatic,Petrol,1160,50,6.7,Sedan
+273,Mitsubishi,Lancer,2019,1600,110,Automatic,Petrol,1170,50,6.7,Sedan
+274,Mitsubishi,Lancer,2020,1600,110,Automatic,Petrol,1180,50,6.6,Sedan
+275,Mitsubishi,Lancer,2021,1600,110,CVT,Petrol,1190,50,6.6,Sedan
+276,Mitsubishi,Lancer,2022,1600,110,CVT,Petrol,1200,50,6.5,Sedan
+277,Mitsubishi,Lancer,2023,1600,110,CVT,Petrol,1210,50,6.5,Sedan
+278,Mitsubishi,Lancer,2024,1600,110,CVT,Petrol,1220,50,6.4,Sedan
+279,Mitsubishi,Lancer,2025,1600,110,CVT,Petrol,1230,50,6.4,Sedan
+280,Mitsubishi,Lancer,2026,1600,112,CVT,Petrol,1240,50,6.3,Sedan
+281,Renault,Logan,1999,1400,75,Manual,Petrol,950,50,7.6,Sedan
+282,Renault,Logan,2000,1400,75,Manual,Petrol,955,50,7.5,Sedan
+283,Renault,Logan,2001,1400,75,Manual,Petrol,960,50,7.5,Sedan
+284,Renault,Logan,2002,1400,80,Manual,Petrol,970,50,7.4,Sedan
+285,Renault,Logan,2003,1400,80,Manual,Petrol,980,50,7.4,Sedan
+286,Renault,Logan,2004,1400,80,Manual,Petrol,990,50,7.3,Sedan
+287,Renault,Logan,2005,1400,85,Manual,Petrol,1000,50,7.2,Sedan
+288,Renault,Logan,2006,1400,85,Manual,Petrol,1010,50,7.2,Sedan
+289,Renault,Logan,2007,1400,85,Manual,Petrol,1020,50,7.1,Sedan
+290,Renault,Logan,2008,1600,90,Manual,Petrol,1030,50,7.0,Sedan
+291,Renault,Logan,2009,1600,90,Manual,Petrol,1040,50,7.0,Sedan
+292,Renault,Logan,2010,1600,90,Manual,Petrol,1050,50,6.9,Sedan
+293,Renault,Logan,2011,1600,90,Manual,Petrol,1060,50,6.9,Sedan
+294,Renault,Logan,2012,1600,90,Manual,Petrol,1070,50,6.8,Sedan
+295,Renault,Logan,2013,1600,90,Manual,Petrol,1080,50,6.8,Sedan
+296,Renault,Logan,2014,1600,90,Automatic,Petrol,1090,50,6.7,Sedan
+297,Renault,Logan,2015,1600,90,Automatic,Petrol,1100,50,6.7,Sedan
+298,Renault,Logan,2016,1600,90,Automatic,Petrol,1110,50,6.6,Sedan
+299,Renault,Logan,2017,1600,90,Automatic,Petrol,1120,50,6.6,Sedan
+300,Renault,Logan,2018,1600,90,Automatic,Petrol,1130,50,6.5,Sedan
+301,Renault,Logan,2019,1600,90,Automatic,Petrol,1140,50,6.5,Sedan
+302,Renault,Logan,2020,1600,90,Automatic,Petrol,1150,50,6.4,Sedan
+303,Renault,Logan,2021,1600,90,CVT,Petrol,1160,50,6.4,Sedan
+304,Renault,Logan,2022,1600,90,CVT,Petrol,1170,50,6.3,Sedan
+305,Renault,Logan,2023,1600,90,CVT,Petrol,1180,50,6.3,Sedan
+306,Renault,Logan,2024,1600,90,CVT,Petrol,1190,50,6.2,Sedan
+307,Renault,Logan,2025,1600,90,CVT,Petrol,1200,50,6.2,Sedan
+308,Renault,Logan,2026,1600,92,CVT,Petrol,1210,50,6.1,Sedan
+309,Fiat,Tipo,1999,1400,75,Manual,Petrol,980,50,7.6,Sedan
+310,Fiat,Tipo,2000,1400,75,Manual,Petrol,985,50,7.5,Sedan
+311,Fiat,Tipo,2001,1400,75,Manual,Petrol,990,50,7.5,Sedan
+312,Fiat,Tipo,2002,1400,80,Manual,Petrol,1000,50,7.4,Sedan
+313,Fiat,Tipo,2003,1400,80,Manual,Petrol,1010,50,7.4,Sedan
+314,Fiat,Tipo,2004,1400,80,Manual,Petrol,1020,50,7.3,Sedan
+315,Fiat,Tipo,2005,1600,90,Manual,Petrol,1030,50,7.2,Sedan
+316,Fiat,Tipo,2006,1600,90,Manual,Petrol,1040,50,7.2,Sedan
+317,Fiat,Tipo,2007,1600,90,Manual,Petrol,1050,50,7.1,Sedan
+318,Fiat,Tipo,2008,1600,95,Manual,Petrol,1060,50,7.1,Sedan
+319,Fiat,Tipo,2009,1600,95,Manual,Petrol,1070,50,7.0,Sedan
+320,Fiat,Tipo,2010,1600,95,Manual,Petrol,1080,50,7.0,Sedan
+321,Fiat,Tipo,2011,1600,95,Manual,Petrol,1090,50,6.9,Sedan
+322,Fiat,Tipo,2012,1600,95,Manual,Petrol,1100,50,6.9,Sedan
+323,Fiat,Tipo,2013,1600,95,Manual,Petrol,1110,50,6.8,Sedan
+324,Fiat,Tipo,2014,1600,95,Manual,Petrol,1120,50,6.8,Sedan
+325,Fiat,Tipo,2015,1600,95,Manual,Petrol,1130,50,6.7,Sedan
+326,Fiat,Tipo,2016,1600,110,Manual,Petrol,1140,50,6.6,Sedan
+327,Fiat,Tipo,2017,1600,110,Manual,Petrol,1150,50,6.5,Sedan
+328,Fiat,Tipo,2018,1600,110,Automatic,Petrol,1160,50,6.5,Sedan
+329,Fiat,Tipo,2019,1600,110,Automatic,Petrol,1170,50,6.4,Sedan
+330,Fiat,Tipo,2020,1600,110,Automatic,Petrol,1180,50,6.4,Sedan
+331,Fiat,Tipo,2021,1600,110,Automatic,Petrol,1190,50,6.3,Sedan
+332,Fiat,Tipo,2022,1600,110,Automatic,Petrol,1200,50,6.3,Sedan
+333,Fiat,Tipo,2023,1600,110,CVT,Petrol,1210,50,6.2,Sedan
+334,Fiat,Tipo,2024,1600,110,CVT,Petrol,1220,50,6.2,Sedan
+335,Fiat,Tipo,2025,1600,110,CVT,Petrol,1230,50,6.1,Sedan
+336,Fiat,Tipo,2026,1600,112,CVT,Petrol,1240,50,6.1,Sedan
+337,Skoda,Octavia,1999,1600,100,Manual,Petrol,1150,55,7.8,Sedan
+338,Skoda,Octavia,2000,1600,100,Manual,Petrol,1160,55,7.7,Sedan
+339,Skoda,Octavia,2001,1600,100,Manual,Petrol,1170,55,7.7,Sedan
+340,Skoda,Octavia,2002,1600,102,Manual,Petrol,1180,55,7.6,Sedan
+341,Skoda,Octavia,2003,1600,102,Manual,Petrol,1190,55,7.6,Sedan
+342,Skoda,Octavia,2004,1600,102,Manual,Petrol,1200,55,7.5,Sedan
+343,Skoda,Octavia,2005,1600,105,Manual,Petrol,1210,55,7.4,Sedan
+344,Skoda,Octavia,2006,1600,105,Manual,Petrol,1220,55,7.4,Sedan
+345,Skoda,Octavia,2007,1600,105,Automatic,Petrol,1230,55,7.3,Sedan
+346,Skoda,Octavia,2008,1600,105,Automatic,Petrol,1240,55,7.3,Sedan
+347,Skoda,Octavia,2009,1600,105,Automatic,Petrol,1250,55,7.2,Sedan
+348,Skoda,Octavia,2010,1600,105,Automatic,Petrol,1260,55,7.2,Sedan
+349,Skoda,Octavia,2011,1600,105,Automatic,Petrol,1270,55,7.1,Sedan
+350,Skoda,Octavia,2012,1600,105,Automatic,Petrol,1280,55,7.1,Sedan
+351,Skoda,Octavia,2013,1600,110,Automatic,Petrol,1290,55,7.0,Sedan
+352,Skoda,Octavia,2014,1400,140,Automatic,Petrol,1300,50,6.5,Sedan
+353,Skoda,Octavia,2015,1400,140,Automatic,Petrol,1310,50,6.4,Sedan
+354,Skoda,Octavia,2016,1400,150,Automatic,Petrol,1320,50,6.3,Sedan
+355,Skoda,Octavia,2017,1400,150,Automatic,Petrol,1330,50,6.2,Sedan
+356,Skoda,Octavia,2018,1400,150,Automatic,Petrol,1340,50,6.2,Sedan
+357,Skoda,Octavia,2019,1400,150,Automatic,Petrol,1350,50,6.1,Sedan
+358,Skoda,Octavia,2020,1400,150,Automatic,Petrol,1360,50,6.1,Sedan
+359,Skoda,Octavia,2021,1400,150,CVT,Petrol,1370,50,6.0,Sedan
+360,Skoda,Octavia,2022,1400,150,CVT,Petrol,1380,50,6.0,Sedan
+361,Skoda,Octavia,2023,1400,150,CVT,Petrol,1390,50,5.9,Sedan
+362,Skoda,Octavia,2024,1400,150,CVT,Petrol,1400,50,5.9,Sedan
+363,Skoda,Octavia,2025,1400,150,CVT,Petrol,1410,50,5.8,Sedan
+364,Skoda,Octavia,2026,1400,150,CVT,Petrol,1420,50,5.8,Sedan
+365,Honda,Civic,1999,1500,105,Manual,Petrol,1050,50,7.5,Sedan
+366,Honda,Civic,2000,1500,105,Manual,Petrol,1060,50,7.4,Sedan
+367,Honda,Civic,2001,1500,105,Manual,Petrol,1070,50,7.4,Sedan
+368,Honda,Civic,2002,1500,105,Manual,Petrol,1080,50,7.3,Sedan
+369,Honda,Civic,2003,1600,110,Manual,Petrol,1090,50,7.2,Sedan
+370,Honda,Civic,2004,1600,110,Manual,Petrol,1100,50,7.2,Sedan
+371,Honda,Civic,2005,1600,110,Automatic,Petrol,1110,50,7.1,Sedan
+372,Honda,Civic,2006,1600,110,Automatic,Petrol,1120,50,7.1,Sedan
+373,Honda,Civic,2007,1600,115,Automatic,Petrol,1130,50,7.0,Sedan
+374,Honda,Civic,2008,1800,140,Automatic,Petrol,1140,50,6.8,Sedan
+375,Honda,Civic,2009,1800,140,Automatic,Petrol,1150,50,6.8,Sedan
+376,Honda,Civic,2010,1800,140,Automatic,Petrol,1160,50,6.7,Sedan
+377,Honda,Civic,2011,1800,140,Automatic,Petrol,1170,50,6.7,Sedan
+378,Honda,Civic,2012,1800,140,Automatic,Petrol,1180,50,6.6,Sedan
+379,Honda,Civic,2013,1800,140,Automatic,Petrol,1190,50,6.6,Sedan
+380,Honda,Civic,2014,1800,142,Automatic,Petrol,1200,47,6.5,Sedan
+381,Honda,Civic,2015,1800,142,Automatic,Petrol,1210,47,6.5,Sedan
+382,Honda,Civic,2016,1800,142,Automatic,Petrol,1220,47,6.4,Sedan
+383,Honda,Civic,2017,1500,174,CVT,Petrol,1230,47,6.3,Sedan
+384,Honda,Civic,2018,1500,174,CVT,Petrol,1240,47,6.2,Sedan
+385,Honda,Civic,2019,1500,174,CVT,Petrol,1250,47,6.2,Sedan
+386,Honda,Civic,2020,1500,174,CVT,Petrol,1260,47,6.1,Sedan
+387,Honda,Civic,2021,1500,174,CVT,Petrol,1270,47,6.1,Sedan
+388,Honda,Civic,2022,1500,174,CVT,Petrol,1280,47,6.0,Sedan
+389,Honda,Civic,2023,1500,174,CVT,Petrol,1290,47,6.0,Sedan
+390,Honda,Civic,2024,1500,174,CVT,Petrol,1300,47,5.9,Sedan
+391,Honda,Civic,2025,1500,174,CVT,Petrol,1310,47,5.9,Sedan
+392,Honda,Civic,2026,1500,175,CVT,Petrol,1320,47,5.8,Sedan
+393,BYD,F3,1999,1500,95,Manual,Petrol,1050,50,7.8,Sedan
+394,BYD,F3,2000,1500,95,Manual,Petrol,1060,50,7.7,Sedan
+395,BYD,F3,2001,1500,95,Manual,Petrol,1070,50,7.7,Sedan
+396,BYD,F3,2002,1500,95,Manual,Petrol,1080,50,7.6,Sedan
+397,BYD,F3,2003,1500,95,Manual,Petrol,1090,50,7.6,Sedan
+398,BYD,F3,2004,1500,95,Manual,Petrol,1100,50,7.5,Sedan
+399,BYD,F3,2005,1500,95,Manual,Petrol,1110,50,7.5,Sedan
+400,BYD,F3,2006,1500,95,Manual,Petrol,1120,50,7.4,Sedan
+401,BYD,F3,2007,1500,95,Manual,Petrol,1130,50,7.4,Sedan
+402,BYD,F3,2008,1500,95,Manual,Petrol,1140,50,7.3,Sedan
+403,BYD,F3,2009,1500,95,Manual,Petrol,1150,50,7.3,Sedan
+404,BYD,F3,2010,1500,95,Manual,Petrol,1160,50,7.2,Sedan
+405,BYD,F3,2011,1500,95,Manual,Petrol,1170,50,7.2,Sedan
+406,BYD,F3,2012,1500,95,Manual,Petrol,1180,50,7.1,Sedan
+407,BYD,F3,2013,1500,95,Manual,Petrol,1190,50,7.1,Sedan
+408,BYD,F3,2014,1500,95,Manual,Petrol,1200,50,7.0,Sedan
+409,BYD,F3,2015,1500,95,Manual,Petrol,1210,50,7.0,Sedan
+410,BYD,F3,2016,1500,95,Manual,Petrol,1220,50,6.9,Sedan
+411,BYD,F3,2017,1500,95,Manual,Petrol,1230,50,6.9,Sedan
+412,BYD,F3,2018,1500,108,Manual,Petrol,1240,50,6.8,Sedan
+413,BYD,F3,2019,1500,108,Manual,Petrol,1250,50,6.8,Sedan
+414,BYD,F3,2020,1500,108,Manual,Petrol,1260,50,6.7,Sedan
+415,BYD,F3,2021,1500,108,Manual,Petrol,1270,50,6.7,Sedan
+416,BYD,F3,2022,1500,108,Manual,Petrol,1280,50,6.6,Sedan
+417,BYD,F3,2023,1500,108,Manual,Petrol,1290,50,6.6,Sedan
+418,BYD,F3,2024,1500,108,Manual,Petrol,1300,50,6.5,Sedan
+419,BYD,F3,2025,1500,108,Manual,Petrol,1310,50,6.5,Sedan
+420,BYD,F3,2026,1500,110,Manual,Petrol,1320,50,6.4,Sedan
+421,Chery,Arrizo 5,1999,1500,105,Manual,Petrol,1050,48,7.8,Sedan
+422,Chery,Arrizo 5,2000,1500,105,Manual,Petrol,1060,48,7.7,Sedan
+423,Chery,Arrizo 5,2001,1500,105,Manual,Petrol,1070,48,7.7,Sedan
+424,Chery,Arrizo 5,2002,1500,105,Manual,Petrol,1080,48,7.6,Sedan
+425,Chery,Arrizo 5,2003,1500,105,Manual,Petrol,1090,48,7.6,Sedan
+426,Chery,Arrizo 5,2004,1500,105,Manual,Petrol,1100,48,7.5,Sedan
+427,Chery,Arrizo 5,2005,1500,105,Manual,Petrol,1110,48,7.5,Sedan
+428,Chery,Arrizo 5,2006,1500,105,Manual,Petrol,1120,48,7.4,Sedan
+429,Chery,Arrizo 5,2007,1500,105,Manual,Petrol,1130,48,7.4,Sedan
+430,Chery,Arrizo 5,2008,1500,105,Manual,Petrol,1140,48,7.3,Sedan
+431,Chery,Arrizo 5,2009,1500,105,Manual,Petrol,1150,48,7.3,Sedan
+432,Chery,Arrizo 5,2010,1500,105,Manual,Petrol,1160,48,7.2,Sedan
+433,Chery,Arrizo 5,2011,1500,105,Manual,Petrol,1170,48,7.2,Sedan
+434,Chery,Arrizo 5,2012,1500,105,Manual,Petrol,1180,48,7.1,Sedan
+435,Chery,Arrizo 5,2013,1500,105,Manual,Petrol,1190,48,7.1,Sedan
+436,Chery,Arrizo 5,2014,1500,105,Manual,Petrol,1200,48,7.0,Sedan
+437,Chery,Arrizo 5,2015,1500,105,Manual,Petrol,1210,48,7.0,Sedan
+438,Chery,Arrizo 5,2016,1500,105,Manual,Petrol,1220,48,6.9,Sedan
+439,Chery,Arrizo 5,2017,1500,105,Manual,Petrol,1230,48,6.9,Sedan
+440,Chery,Arrizo 5,2018,1500,116,CVT,Petrol,1240,48,6.8,Sedan
+441,Chery,Arrizo 5,2019,1500,116,CVT,Petrol,1250,48,6.8,Sedan
+442,Chery,Arrizo 5,2020,1500,116,CVT,Petrol,1260,48,6.7,Sedan
+443,Chery,Arrizo 5,2021,1500,116,CVT,Petrol,1270,48,6.7,Sedan
+444,Chery,Arrizo 5,2022,1500,116,CVT,Petrol,1280,48,6.6,Sedan
+445,Chery,Arrizo 5,2023,1500,116,CVT,Petrol,1290,48,6.6,Sedan
+446,Chery,Arrizo 5,2024,1500,116,CVT,Petrol,1300,48,6.5,Sedan
+447,Chery,Arrizo 5,2025,1500,116,CVT,Petrol,1310,48,6.5,Sedan
+448,Chery,Arrizo 5,2026,1500,118,CVT,Petrol,1320,48,6.4,Sedan
+449,MG,MG 5,1999,1500,105,Manual,Petrol,1050,45,7.8,Sedan
+450,MG,MG 5,2000,1500,105,Manual,Petrol,1060,45,7.7,Sedan
+451,MG,MG 5,2001,1500,105,Manual,Petrol,1070,45,7.7,Sedan
+452,MG,MG 5,2002,1500,105,Manual,Petrol,1080,45,7.6,Sedan
+453,MG,MG 5,2003,1500,105,Manual,Petrol,1090,45,7.6,Sedan
+454,MG,MG 5,2004,1500,105,Manual,Petrol,1100,45,7.5,Sedan
+455,MG,MG 5,2005,1500,105,Manual,Petrol,1110,45,7.5,Sedan
+456,MG,MG 5,2006,1500,105,Manual,Petrol,1120,45,7.4,Sedan
+457,MG,MG 5,2007,1500,105,Manual,Petrol,1130,45,7.4,Sedan
+458,MG,MG 5,2008,1500,105,Manual,Petrol,1140,45,7.3,Sedan
+459,MG,MG 5,2009,1500,105,Manual,Petrol,1150,45,7.3,Sedan
+460,MG,MG 5,2010,1500,105,Manual,Petrol,1160,45,7.2,Sedan
+461,MG,MG 5,2011,1500,105,Manual,Petrol,1170,45,7.2,Sedan
+462,MG,MG 5,2012,1500,105,Manual,Petrol,1180,45,7.1,Sedan
+463,MG,MG 5,2013,1500,105,Manual,Petrol,1190,45,7.1,Sedan
+464,MG,MG 5,2014,1500,105,Manual,Petrol,1200,45,7.0,Sedan
+465,MG,MG 5,2015,1500,105,Manual,Petrol,1210,45,7.0,Sedan
+466,MG,MG 5,2016,1500,105,Manual,Petrol,1220,45,6.9,Sedan
+467,MG,MG 5,2017,1500,105,Manual,Petrol,1230,45,6.9,Sedan
+468,MG,MG 5,2018,1500,110,CVT,Petrol,1240,45,6.8,Sedan
+469,MG,MG 5,2019,1500,110,CVT,Petrol,1250,45,6.8,Sedan
+470,MG,MG 5,2020,1500,110,CVT,Petrol,1260,45,6.7,Sedan
+471,MG,MG 5,2021,1500,110,CVT,Petrol,1270,45,6.7,Sedan
+472,MG,MG 5,2022,1500,110,CVT,Petrol,1280,45,6.6,Sedan
+473,MG,MG 5,2023,1500,110,CVT,Petrol,1290,45,6.6,Sedan
+474,MG,MG 5,2024,1500,110,CVT,Petrol,1300,45,6.5,Sedan
+475,MG,MG 5,2025,1500,110,CVT,Petrol,1310,45,6.5,Sedan
+476,MG,MG 5,2026,1500,112,CVT,Petrol,1320,45,6.4,Sedan
+477,Toyota,Yaris Sedan,1999,1300,85,Manual,Petrol,950,42,7.2,Sedan
+478,Toyota,Yaris Sedan,2000,1300,85,Manual,Petrol,955,42,7.1,Sedan
+479,Toyota,Yaris Sedan,2001,1300,85,Manual,Petrol,960,42,7.1,Sedan
+480,Toyota,Yaris Sedan,2002,1300,85,Manual,Petrol,970,42,7.0,Sedan
+481,Toyota,Yaris Sedan,2003,1300,87,Manual,Petrol,980,42,7.0,Sedan
+482,Toyota,Yaris Sedan,2004,1300,87,Manual,Petrol,990,42,6.9,Sedan
+483,Toyota,Yaris Sedan,2005,1300,87,Manual,Petrol,1000,42,6.9,Sedan
+484,Toyota,Yaris Sedan,2006,1300,87,Manual,Petrol,1010,42,6.8,Sedan
+485,Toyota,Yaris Sedan,2007,1300,87,Automatic,Petrol,1020,42,6.8,Sedan
+486,Toyota,Yaris Sedan,2008,1300,87,Automatic,Petrol,1030,42,6.7,Sedan
+487,Toyota,Yaris Sedan,2009,1300,87,Automatic,Petrol,1040,42,6.7,Sedan
+488,Toyota,Yaris Sedan,2010,1300,87,Automatic,Petrol,1050,42,6.6,Sedan
+489,Toyota,Yaris Sedan,2011,1300,87,Automatic,Petrol,1060,42,6.6,Sedan
+490,Toyota,Yaris Sedan,2012,1300,87,Automatic,Petrol,1070,42,6.5,Sedan
+491,Toyota,Yaris Sedan,2013,1300,87,Automatic,Petrol,1080,42,6.5,Sedan
+492,Toyota,Yaris Sedan,2014,1500,106,Automatic,Petrol,1090,42,6.4,Sedan
+493,Toyota,Yaris Sedan,2015,1500,106,Automatic,Petrol,1100,42,6.4,Sedan
+494,Toyota,Yaris Sedan,2016,1500,106,Automatic,Petrol,1110,42,6.3,Sedan
+495,Toyota,Yaris Sedan,2017,1500,106,Automatic,Petrol,1120,42,6.3,Sedan
+496,Toyota,Yaris Sedan,2018,1500,106,CVT,Petrol,1130,42,6.2,Sedan
+497,Toyota,Yaris Sedan,2019,1500,106,CVT,Petrol,1140,42,6.2,Sedan
+498,Toyota,Yaris Sedan,2020,1500,106,CVT,Petrol,1150,42,6.1,Sedan
+499,Toyota,Yaris Sedan,2021,1500,106,CVT,Petrol,1160,42,6.1,Sedan
+500,Toyota,Yaris Sedan,2022,1500,106,CVT,Petrol,1170,42,6.0,Sedan
+501,Toyota,Yaris Sedan,2023,1500,106,CVT,Petrol,1180,42,6.0,Sedan
+502,Toyota,Yaris Sedan,2024,1500,106,CVT,Petrol,1190,42,5.9,Sedan
+503,Toyota,Yaris Sedan,2025,1500,106,CVT,Petrol,1200,42,5.9,Sedan
+504,Toyota,Yaris Sedan,2026,1500,108,CVT,Petrol,1210,42,5.8,Sedan
+505,Nissan,Tiida,1999,1500,95,Manual,Petrol,1050,52,7.6,Sedan
+506,Nissan,Tiida,2000,1500,95,Manual,Petrol,1060,52,7.5,Sedan
+507,Nissan,Tiida,2001,1500,95,Manual,Petrol,1070,52,7.5,Sedan
+508,Nissan,Tiida,2002,1500,95,Manual,Petrol,1080,52,7.4,Sedan
+509,Nissan,Tiida,2003,1500,95,Manual,Petrol,1090,52,7.4,Sedan
+510,Nissan,Tiida,2004,1500,95,Manual,Petrol,1100,52,7.3,Sedan
+511,Nissan,Tiida,2005,1500,100,Manual,Petrol,1110,52,7.3,Sedan
+512,Nissan,Tiida,2006,1600,110,Manual,Petrol,1120,52,7.2,Sedan
+513,Nissan,Tiida,2007,1600,110,Manual,Petrol,1130,52,7.2,Sedan
+514,Nissan,Tiida,2008,1600,110,Automatic,Petrol,1140,52,7.3,Sedan
+515,Nissan,Tiida,2009,1600,110,Automatic,Petrol,1150,52,7.3,Sedan
+516,Nissan,Tiida,2010,1600,110,Automatic,Petrol,1160,52,7.2,Sedan
+517,Nissan,Tiida,2011,1600,110,Automatic,Petrol,1170,52,7.2,Sedan
+518,Nissan,Tiida,2012,1600,110,Automatic,Petrol,1180,52,7.1,Sedan
+519,Nissan,Tiida,2013,1600,110,Automatic,Petrol,1190,52,7.1,Sedan
+520,Nissan,Tiida,2014,1600,110,Automatic,Petrol,1200,52,7.0,Sedan
+521,Nissan,Tiida,2015,1600,110,Automatic,Petrol,1210,52,7.0,Sedan
+522,Nissan,Tiida,2016,1600,110,Automatic,Petrol,1220,52,6.9,Sedan
+523,Nissan,Tiida,2017,1600,110,Automatic,Petrol,1230,52,6.9,Sedan
+524,Nissan,Tiida,2018,1600,110,CVT,Petrol,1240,52,6.8,Sedan
+525,Nissan,Tiida,2019,1600,110,CVT,Petrol,1250,52,6.8,Sedan
+526,Nissan,Tiida,2020,1600,110,CVT,Petrol,1260,52,6.7,Sedan
+527,Nissan,Tiida,2021,1600,110,CVT,Petrol,1270,52,6.7,Sedan
+528,Nissan,Tiida,2022,1600,110,CVT,Petrol,1280,52,6.6,Sedan
+529,Nissan,Tiida,2023,1600,110,CVT,Petrol,1290,52,6.6,Sedan
+530,Nissan,Tiida,2024,1600,110,CVT,Petrol,1300,52,6.5,Sedan
+531,Nissan,Tiida,2025,1600,110,CVT,Petrol,1310,52,6.5,Sedan
+532,Nissan,Tiida,2026,1600,112,CVT,Petrol,1320,52,6.4,Sedan
+533,Peugeot,301,1999,1400,75,Manual,Petrol,980,50,7.8,Sedan
+534,Peugeot,301,2000,1400,75,Manual,Petrol,990,50,7.7,Sedan
+535,Peugeot,301,2001,1400,75,Manual,Petrol,1000,50,7.7,Sedan
+536,Peugeot,301,2002,1400,75,Manual,Petrol,1010,50,7.6,Sedan
+537,Peugeot,301,2003,1400,80,Manual,Petrol,1020,50,7.6,Sedan
+538,Peugeot,301,2004,1400,80,Manual,Petrol,1030,50,7.5,Sedan
+539,Peugeot,301,2005,1400,80,Manual,Petrol,1040,50,7.5,Sedan
+540,Peugeot,301,2006,1400,80,Manual,Petrol,1050,50,7.4,Sedan
+541,Peugeot,301,2007,1400,80,Manual,Petrol,1060,50,7.4,Sedan
+542,Peugeot,301,2008,1400,85,Manual,Petrol,1070,50,7.3,Sedan
+543,Peugeot,301,2009,1400,85,Manual,Petrol,1080,50,7.3,Sedan
+544,Peugeot,301,2010,1400,85,Manual,Petrol,1090,50,7.2,Sedan
+545,Peugeot,301,2011,1600,115,Manual,Petrol,1100,50,7.1,Sedan
+546,Peugeot,301,2012,1600,115,Manual,Petrol,1110,50,7.1,Sedan
+547,Peugeot,301,2013,1600,115,Manual,Petrol,1120,50,7.0,Sedan
+548,Peugeot,301,2014,1600,115,Manual,Petrol,1130,50,6.9,Sedan
+549,Peugeot,301,2015,1600,115,Manual,Petrol,1140,50,6.9,Sedan
+550,Peugeot,301,2016,1600,115,Automatic,Petrol,1150,50,6.8,Sedan
+551,Peugeot,301,2017,1600,115,Automatic,Petrol,1160,50,6.8,Sedan
+552,Peugeot,301,2018,1600,115,Automatic,Petrol,1170,50,6.7,Sedan
+553,Peugeot,301,2019,1600,115,Automatic,Petrol,1180,50,6.7,Sedan
+554,Peugeot,301,2020,1600,115,Automatic,Petrol,1190,50,6.6,Sedan
+555,Peugeot,301,2021,1600,115,Automatic,Petrol,1200,50,6.6,Sedan
+556,Peugeot,301,2022,1600,115,Automatic,Petrol,1210,50,6.5,Sedan
+557,Peugeot,301,2023,1600,115,Automatic,Petrol,1220,50,6.5,Sedan
+558,Peugeot,301,2024,1600,115,Automatic,Petrol,1230,50,6.4,Sedan
+559,Peugeot,301,2025,1600,115,Automatic,Petrol,1240,50,6.4,Sedan
+560,Peugeot,301,2026,1600,117,Automatic,Petrol,1250,50,6.3,Sedan
+561,Kia,Sportage,1999,2000,128,Manual,Petrol,1350,58,9.5,SUV
+562,Kia,Sportage,2000,2000,128,Manual,Petrol,1360,58,9.4,SUV
+563,Kia,Sportage,2001,2000,128,Manual,Petrol,1370,58,9.4,SUV
+564,Kia,Sportage,2002,2000,130,Manual,Petrol,1380,58,9.3,SUV
+565,Kia,Sportage,2003,2000,130,Manual,Petrol,1390,58,9.3,SUV
+566,Kia,Sportage,2004,2000,130,Manual,Petrol,1400,58,9.2,SUV
+567,Kia,Sportage,2005,2000,130,Automatic,Petrol,1410,58,9.2,SUV
+568,Kia,Sportage,2006,2000,130,Automatic,Petrol,1420,58,9.1,SUV
+569,Kia,Sportage,2007,2000,130,Automatic,Petrol,1430,58,9.1,SUV
+570,Kia,Sportage,2008,2000,140,Automatic,Petrol,1440,58,9.0,SUV
+571,Kia,Sportage,2009,2000,140,Automatic,Petrol,1450,58,9.0,SUV
+572,Kia,Sportage,2010,2000,140,Automatic,Petrol,1460,58,8.9,SUV
+573,Kia,Sportage,2011,2000,140,Automatic,Petrol,1470,58,8.9,SUV
+574,Kia,Sportage,2012,2000,150,Automatic,Petrol,1480,58,8.8,SUV
+575,Kia,Sportage,2013,2000,150,Automatic,Petrol,1490,58,8.8,SUV
+576,Kia,Sportage,2014,2000,150,Automatic,Petrol,1500,58,8.7,SUV
+577,Kia,Sportage,2015,2000,150,Automatic,Petrol,1510,58,8.7,SUV
+578,Kia,Sportage,2016,2000,155,Automatic,Petrol,1520,58,8.6,SUV
+579,Kia,Sportage,2017,1600,130,Automatic,Petrol,1530,62,7.8,SUV
+580,Kia,Sportage,2018,1600,177,Automatic,Petrol,1540,62,7.6,SUV
+581,Kia,Sportage,2019,1600,177,Automatic,Petrol,1550,62,7.6,SUV
+582,Kia,Sportage,2020,1600,177,Automatic,Petrol,1560,62,7.5,SUV
+583,Kia,Sportage,2021,1600,177,Automatic,Petrol,1570,62,7.5,SUV
+584,Kia,Sportage,2022,1600,177,Automatic,Petrol,1580,62,7.4,SUV
+585,Kia,Sportage,2023,1600,177,Automatic,Petrol,1590,62,7.4,SUV
+586,Kia,Sportage,2024,1600,180,Automatic,Petrol,1600,62,7.3,SUV
+587,Kia,Sportage,2025,1600,180,Automatic,Petrol,1610,62,7.3,SUV
+588,Kia,Sportage,2026,1600,182,Automatic,Petrol,1620,62,7.2,SUV
+589,Hyundai,Tucson,1999,2000,130,Manual,Petrol,1400,58,10.0,SUV
+590,Hyundai,Tucson,2000,2000,130,Manual,Petrol,1410,58,9.9,SUV
+591,Hyundai,Tucson,2001,2000,130,Manual,Petrol,1420,58,9.9,SUV
+592,Hyundai,Tucson,2002,2000,132,Manual,Petrol,1430,58,9.8,SUV
+593,Hyundai,Tucson,2003,2000,132,Manual,Petrol,1440,58,9.8,SUV
+594,Hyundai,Tucson,2004,2000,140,Manual,Petrol,1450,58,9.7,SUV
+595,Hyundai,Tucson,2005,2000,140,Automatic,Petrol,1460,58,9.7,SUV
+596,Hyundai,Tucson,2006,2000,140,Automatic,Petrol,1470,58,9.6,SUV
+597,Hyundai,Tucson,2007,2000,140,Automatic,Petrol,1480,58,9.6,SUV
+598,Hyundai,Tucson,2008,2000,150,Automatic,Petrol,1490,58,9.5,SUV
+599,Hyundai,Tucson,2009,2000,150,Automatic,Petrol,1500,58,9.5,SUV
+600,Hyundai,Tucson,2010,2000,150,Automatic,Petrol,1510,58,9.4,SUV
+601,Hyundai,Tucson,2011,2000,150,Automatic,Petrol,1520,58,9.4,SUV
+602,Hyundai,Tucson,2012,2000,155,Automatic,Petrol,1530,58,9.3,SUV
+603,Hyundai,Tucson,2013,2000,155,Automatic,Petrol,1540,58,9.3,SUV
+604,Hyundai,Tucson,2014,2000,155,Automatic,Petrol,1550,58,9.2,SUV
+605,Hyundai,Tucson,2015,2000,155,Automatic,Petrol,1560,58,9.2,SUV
+606,Hyundai,Tucson,2016,1600,177,Automatic,Petrol,1570,62,8.5,SUV
+607,Hyundai,Tucson,2017,1600,177,Automatic,Petrol,1580,62,8.4,SUV
+608,Hyundai,Tucson,2018,1600,177,Automatic,Petrol,1590,62,8.3,SUV
+609,Hyundai,Tucson,2019,1600,177,Automatic,Petrol,1600,62,8.3,SUV
+610,Hyundai,Tucson,2020,1600,180,Automatic,Petrol,1610,62,8.2,SUV
+611,Hyundai,Tucson,2021,1600,180,Automatic,Petrol,1620,62,8.1,SUV
+612,Hyundai,Tucson,2022,1600,180,Automatic,Petrol,1630,62,8.0,SUV
+613,Hyundai,Tucson,2023,1600,180,Automatic,Petrol,1640,62,7.9,SUV
+614,Hyundai,Tucson,2024,1600,180,Automatic,Petrol,1650,62,7.9,SUV
+615,Hyundai,Tucson,2025,1600,180,Automatic,Petrol,1660,62,7.8,SUV
+616,Hyundai,Tucson,2026,1600,185,Automatic,Petrol,1670,62,7.7,SUV
+616,Chery,Tiggo 7,2019,1498,147,DCT 6-speed,Petrol,1440,57,7.5,SUV
+617,Chery,Tiggo 7,2020,1498,147,DCT 6-speed,Petrol,1450,57,7.4,SUV
+618,Chery,Tiggo 7,2021,1498,156,CVT,Petrol,1460,57,7.7,SUV
+619,Chery,Tiggo 7,2022,1498,156,CVT,Petrol,1470,57,7.6,SUV
+620,Chery,Tiggo 7,2023,1598,197,DCT 7-speed,Petrol,1550,57,7.2,SUV
+621,Chery,Tiggo 7,2024,1598,197,DCT 7-speed,Petrol,1560,57,7.1,SUV
+622,Chery,Tiggo 7,2025,1598,197,DCT 7-speed,Petrol,1570,57,7.0,SUV
+623,Chery,Tiggo 7,2026,1598,197,DCT 7-speed,Petrol,1580,57,6.9,SUV
+624,Chery,Tiggo 4 Pro,2021,1498,147,CVT,Petrol,1350,51,7.5,SUV
+625,Chery,Tiggo 4 Pro,2022,1498,147,CVT,Petrol,1360,51,7.4,SUV
+626,Chery,Tiggo 4 Pro,2023,1498,147,CVT,Petrol,1375,51,7.3,SUV
+627,Chery,Tiggo 4 Pro,2024,1498,147,CVT,Petrol,1388,51,7.3,SUV
+628,Chery,Tiggo 4 Pro,2025,1498,147,CVT,Petrol,1395,51,7.2,SUV
+629,Chery,Tiggo 4 Pro,2026,1498,147,CVT,Petrol,1400,51,7.1,SUV
+630,MG,ZS,2017,1500,106,4AT,Petrol,1210,48,7.6,SUV
+631,MG,ZS,2018,1500,106,4AT,Petrol,1220,48,7.5,SUV
+632,MG,ZS,2019,1500,112,4AT,Petrol,1230,48,7.3,SUV
+633,MG,ZS,2020,1500,112,CVT,Petrol,1240,48,7.1,SUV
+634,MG,ZS,2021,1500,112,CVT,Petrol,1250,48,7.0,SUV
+635,MG,ZS,2022,1500,112,CVT,Petrol,1260,48,6.9,SUV
+636,MG,ZS,2023,1500,112,CVT,Petrol,1270,48,6.8,SUV
+637,MG,ZS,2024,1500,112,CVT,Petrol,1280,48,6.7,SUV
+638,MG,ZS,2025,1500,112,CVT,Petrol,1290,48,6.6,SUV
+639,MG,ZS,2026,1500,112,CVT,Petrol,1300,48,6.6,SUV
+640,MG,RX5,2018,1490,169,6AT,Petrol,1510,55,8.8,SUV
+641,MG,RX5,2019,1490,169,6AT,Petrol,1520,55,8.7,SUV
+642,MG,RX5,2020,1490,169,6AT,Petrol,1530,55,8.6,SUV
+643,MG,RX5,2021,1490,169,7DCT,Petrol,1540,55,8.5,SUV
+644,MG,RX5,2022,1490,169,7DCT,Petrol,1550,55,8.4,SUV
+645,MG,RX5,2023,1490,170,7DCT,Petrol,1539,55,8.2,SUV
+646,MG,RX5,2024,1490,170,7DCT,Petrol,1550,55,8.1,SUV
+647,MG,RX5,2025,1490,170,7DCT,Petrol,1560,55,8.0,SUV
+648,MG,RX5,2026,1490,170,7DCT,Petrol,1570,55,7.9,SUV
+649,Geely,GX3 Pro,2017,1500,103,5MT,Petrol,1180,45,7.6,SUV
+650,Geely,GX3 Pro,2018,1500,103,5MT,Petrol,1185,45,7.5,SUV
+651,Geely,GX3 Pro,2019,1500,103,CVT,Petrol,1190,45,7.4,SUV
+652,Geely,GX3 Pro,2020,1500,103,CVT,Petrol,1200,45,7.3,SUV
+653,Geely,GX3 Pro,2021,1500,103,CVT,Petrol,1210,45,7.2,SUV
+654,Geely,GX3 Pro,2022,1500,102,CVT,Petrol,1215,45,7.1,SUV
+655,Geely,GX3 Pro,2023,1500,102,CVT,Petrol,1220,45,7.0,SUV
+656,Geely,GX3 Pro,2024,1500,102,CVT,Petrol,1230,45,6.9,SUV
+657,Geely,GX3 Pro,2025,1500,102,CVT,Petrol,1240,45,6.9,SUV
+658,Geely,GX3 Pro,2026,1500,102,CVT,Petrol,1250,45,6.9,SUV
+659,Geely,Coolray,2018,1500,177,7DCT,Petrol,1330,45,6.8,SUV
+660,Geely,Coolray,2019,1500,177,7DCT,Petrol,1340,45,6.6,SUV
+661,Geely,Coolray,2020,1500,177,7DCT,Petrol,1350,45,6.5,SUV
+662,Geely,Coolray,2021,1500,177,7DCT,Petrol,1360,45,6.4,SUV
+663,Geely,Coolray,2022,1500,177,7DCT,Petrol,1370,45,6.3,SUV
+664,Geely,Coolray,2023,1500,177,7DCT,Petrol,1380,45,6.2,SUV
+665,Geely,Coolray,2024,1500,177,7DCT,Petrol,1390,45,6.2,SUV
+666,Geely,Coolray,2025,1500,177,7DCT,Petrol,1400,45,6.1,SUV
+667,Geely,Coolray,2026,1500,177,7DCT,Petrol,1410,45,6.1,SUV
+668,BYD,Song,2015,1500,154,6MT,Petrol,1620,60,7.8,SUV
+669,BYD,Song,2016,1500,160,6AT,Petrol,1630,60,7.6,SUV
+670,BYD,Song,2017,1500,160,6AT,Petrol,1640,60,7.5,SUV
+671,BYD,Song,2018,1500,160,6DCT,Petrol,1650,60,7.4,SUV
+672,BYD,Song,2019,1500,160,6DCT,Petrol,1660,60,7.3,SUV
+673,BYD,Song,2020,1500,160,6DCT,Hybrid,1760,60,5.5,SUV
+674,BYD,Song,2021,1500,180,6DCT,Hybrid,1780,60,5.3,SUV
+675,BYD,Song,2022,1500,180,6DCT,Hybrid,1790,60,5.2,SUV
+676,BYD,Song,2023,1500,197,6DCT,Hybrid,1800,60,5.1,SUV
+677,BYD,Song,2024,1500,197,6DCT,Hybrid,1810,60,5.0,SUV
+678,BYD,Song,2025,1500,197,6DCT,Hybrid,1820,60,4.9,SUV
+679,BYD,Song,2026,1500,197,6DCT,Hybrid,1830,60,4.8,SUV
+680,Jetour,X70,2018,1500,156,6MT,Petrol,1520,57,8.9,SUV
+681,Jetour,X70,2019,1500,156,6DCT,Petrol,1530,57,8.7,SUV
+682,Jetour,X70,2020,1500,156,6DCT,Petrol,1540,57,8.6,SUV
+683,Jetour,X70,2021,1500,156,6DCT,Petrol,1550,57,8.5,SUV
+684,Jetour,X70,2022,1500,156,6DCT,Petrol,1560,57,8.4,SUV
+685,Jetour,X70,2023,1500,156,6DCT,Petrol,1570,57,8.3,SUV
+686,Jetour,X70,2024,1500,156,7DCT,Petrol,1580,57,8.1,SUV
+687,Jetour,X70,2025,1500,156,7DCT,Petrol,1590,57,8.0,SUV
+688,Jetour,X70,2026,1500,156,7DCT,Petrol,1600,57,7.9,SUV
+689,Jetour,X90,2019,1500,156,6MT,Petrol,1680,57,9.0,SUV
+690,Jetour,X90,2020,1500,156,6DCT,Petrol,1690,57,8.8,SUV
+691,Jetour,X90,2021,1600,197,6DCT,Petrol,1720,57,8.7,SUV
+692,Jetour,X90,2022,1600,197,6DCT,Petrol,1730,57,8.6,SUV
+693,Jetour,X90,2023,1600,197,7DCT,Petrol,1740,57,8.5,SUV
+694,Jetour,X90,2024,1600,197,7DCT,Petrol,1750,57,8.4,SUV
+695,Jetour,X90,2025,1600,197,7DCT,Petrol,1760,57,8.3,SUV
+696,Jetour,X90,2026,1600,197,7DCT,Petrol,1770,57,8.2,SUV
+697,Skoda,Kodiaq,2017,1400,150,DSG,Petrol,1650,58,7.9,SUV
+698,Skoda,Kodiaq,2018,1400,150,DSG,Petrol,1660,58,7.8,SUV
+699,Skoda,Kodiaq,2019,2000,180,DSG,Petrol,1670,58,7.7,SUV
+700,Skoda,Kodiaq,2020,2000,180,DSG,Petrol,1680,58,7.6,SUV
+701,Skoda,Kodiaq,2021,2000,190,DSG,Petrol,1690,58,7.5,SUV
+702,Skoda,Kodiaq,2022,2000,190,DSG,Petrol,1700,58,7.4,SUV
+703,Skoda,Kodiaq,2023,2000,190,DSG,Petrol,1710,58,7.3,SUV
+704,Skoda,Kodiaq,2024,2000,190,DSG,Petrol,1720,58,7.2,SUV
+705,Skoda,Kodiaq,2025,2000,200,DSG,Petrol,1730,58,7.2,SUV
+706,Skoda,Kodiaq,2026,2000,200,DSG,Petrol,1740,58,7.1,SUV
+707,Volkswagen,Tiguan,2016,1400,150,DSG,Petrol,1530,58,7.7,SUV
+708,Volkswagen,Tiguan,2017,1400,150,DSG,Petrol,1540,58,7.6,SUV
+709,Volkswagen,Tiguan,2018,1400,150,DSG,Petrol,1550,58,7.5,SUV
+710,Volkswagen,Tiguan,2019,1500,150,DSG,Petrol,1560,58,7.4,SUV
+711,Volkswagen,Tiguan,2020,1500,150,DSG,Petrol,1570,58,7.3,SUV
+712,Volkswagen,Tiguan,2021,1500,150,DSG,Petrol,1580,58,7.2,SUV
+713,Volkswagen,Tiguan,2022,1500,150,DSG,Petrol,1590,58,7.1,SUV
+714,Volkswagen,Tiguan,2023,1500,160,DSG,Petrol,1600,58,7.0,SUV
+715,Volkswagen,Tiguan,2024,1500,160,DSG,Petrol,1610,58,6.9,SUV
+716,Volkswagen,Tiguan,2025,1500,160,DSG,Petrol,1620,58,6.9,SUV
+717,Volkswagen,Tiguan,2026,1500,160,DSG,Petrol,1630,58,6.8,SUV
+718,Mitsubishi,Eclipse Cross,2018,1500,150,CVT,Petrol,1490,63,7.8,SUV
+719,Mitsubishi,Eclipse Cross,2019,1500,163,CVT,Petrol,1500,63,7.6,SUV
+720,Mitsubishi,Eclipse Cross,2020,1500,163,CVT,Petrol,1510,63,7.5,SUV
+721,Mitsubishi,Eclipse Cross,2021,1500,163,CVT,Petrol,1520,63,7.4,SUV
+722,Mitsubishi,Eclipse Cross,2022,1500,163,CVT,Petrol,1530,63,7.3,SUV
+723,Mitsubishi,Eclipse Cross,2023,1500,163,CVT,Petrol,1540,63,7.2,SUV
+724,Mitsubishi,Eclipse Cross,2024,1500,163,CVT,Petrol,1550,63,7.1,SUV
+725,Mitsubishi,Eclipse Cross,2025,1500,163,CVT,Petrol,1560,63,7.0,SUV
+726,Mitsubishi,Eclipse Cross,2026,1500,163,CVT,Petrol,1570,63,7.0,SUV
+727,Nissan,Qashqai,2014,1600,117,CVT,Petrol,1380,55,7.2,SUV
+728,Nissan,Qashqai,2015,1600,117,CVT,Petrol,1390,55,7.1,SUV
+729,Nissan,Qashqai,2016,1600,117,CVT,Petrol,1400,55,7.0,SUV
+730,Nissan,Qashqai,2017,1600,117,CVT,Petrol,1410,55,6.9,SUV
+731,Nissan,Qashqai,2018,1600,117,CVT,Petrol,1420,55,6.8,SUV
+732,Nissan,Qashqai,2019,1600,117,CVT,Petrol,1430,55,6.7,SUV
+733,Nissan,Qashqai,2020,1600,117,CVT,Petrol,1440,55,6.6,SUV
+734,Nissan,Qashqai,2021,1300,158,CVT,Petrol,1450,55,6.5,SUV
+735,Nissan,Qashqai,2022,1300,158,CVT,Petrol,1460,55,6.4,SUV
+736,Nissan,Qashqai,2023,1300,158,CVT,Petrol,1470,55,6.3,SUV
+737,Nissan,Qashqai,2024,1300,158,CVT,Petrol,1480,55,6.3,SUV
+738,Nissan,Qashqai,2025,1300,158,CVT,Petrol,1490,55,6.2,SUV
+739,Nissan,Qashqai,2026,1300,158,CVT,Petrol,1500,55,6.2,SUV
+740,Suzuki,Alto,2014,1000,68,5MT,Petrol,780,35,5.0,Hatchback
+741,Suzuki,Alto,2015,1000,68,5MT,Petrol,790,35,4.9,Hatchback
+742,Suzuki,Alto,2016,1000,68,5MT,Petrol,800,35,4.8,Hatchback
+743,Suzuki,Alto,2017,1000,68,5MT,Petrol,810,35,4.8,Hatchback
+744,Suzuki,Alto,2018,1000,68,5MT,Petrol,820,35,4.7,Hatchback
+745,Suzuki,Alto,2019,1000,68,5MT,Petrol,830,35,4.7,Hatchback
+746,Suzuki,Alto,2020,1000,68,5MT,Petrol,840,35,4.6,Hatchback
+747,Suzuki,Alto,2021,1000,68,5MT,Petrol,850,35,4.6,Hatchback
+748,Suzuki,Alto,2022,1000,68,5MT,Petrol,860,35,4.5,Hatchback
+749,Suzuki,Alto,2023,1000,68,5MT,Petrol,870,35,4.5,Hatchback
+750,Suzuki,Alto,2024,1000,68,5MT,Petrol,880,35,4.4,Hatchback
+751,Suzuki,Alto,2025,1000,68,5MT,Petrol,890,35,4.4,Hatchback
+752,Suzuki,Alto,2026,1000,68,5MT,Petrol,900,35,4.4,Hatchback
+753,Suzuki,Swift,2013,1200,94,4AT,Petrol,960,37,5.8,Hatchback
+754,Suzuki,Swift,2014,1200,94,4AT,Petrol,970,37,5.7,Hatchback
+755,Suzuki,Swift,2015,1200,94,4AT,Petrol,980,37,5.6,Hatchback
+756,Suzuki,Swift,2016,1200,94,4AT,Petrol,990,37,5.5,Hatchback
+757,Suzuki,Swift,2017,1200,94,5MT,Petrol,1000,37,5.4,Hatchback
+758,Suzuki,Swift,2018,1200,94,5MT,Petrol,1010,37,5.3,Hatchback
+759,Suzuki,Swift,2019,1200,94,5MT,Petrol,1020,37,5.2,Hatchback
+760,Suzuki,Swift,2020,1200,94,5MT,Petrol,1030,37,5.2,Hatchback
+761,Suzuki,Swift,2021,1200,83,5MT,Petrol,1040,37,5.1,Hatchback
+762,Suzuki,Swift,2022,1200,83,5MT,Petrol,1050,37,5.0,Hatchback
+763,Suzuki,Swift,2023,1200,83,5MT,Petrol,1060,37,4.9,Hatchback
+764,Suzuki,Swift,2024,1200,83,5MT,Petrol,1070,37,4.9,Hatchback
+765,Suzuki,Swift,2025,1200,83,5MT,Petrol,1080,37,4.8,Hatchback
+766,Suzuki,Swift,2026,1200,83,5MT,Petrol,1090,37,4.8,Hatchback
+767,Hyundai,i10,2014,1000,67,5MT,Petrol,900,40,5.5,Hatchback
+768,Hyundai,i10,2015,1000,67,5MT,Petrol,910,40,5.4,Hatchback
+769,Hyundai,i10,2016,1000,67,5MT,Petrol,920,40,5.3,Hatchback
+770,Hyundai,i10,2017,1000,67,5MT,Petrol,930,40,5.2,Hatchback
+771,Hyundai,i10,2018,1000,67,5MT,Petrol,940,40,5.1,Hatchback
+772,Hyundai,i10,2019,1000,67,5MT,Petrol,950,40,5.0,Hatchback
+773,Hyundai,i10,2020,1000,67,5MT,Petrol,960,40,5.0,Hatchback
+774,Hyundai,i10,2021,1000,67,5MT,Petrol,970,40,4.9,Hatchback
+775,Hyundai,i10,2022,1000,67,5MT,Petrol,980,40,4.8,Hatchback
+776,Hyundai,i10,2023,1000,67,5MT,Petrol,990,40,4.8,Hatchback
+777,Hyundai,i10,2024,1000,67,5MT,Petrol,1000,40,4.7,Hatchback
+778,Hyundai,i10,2025,1000,67,5MT,Petrol,1010,40,4.7,Hatchback
+779,Hyundai,i10,2026,1000,67,5MT,Petrol,1020,40,4.7,Hatchback
+780,Kia,Picanto,2014,1000,67,5MT,Petrol,850,35,5.4,Hatchback
+781,Kia,Picanto,2015,1000,67,5MT,Petrol,860,35,5.3,Hatchback
+782,Kia,Picanto,2016,1000,67,5MT,Petrol,870,35,5.2,Hatchback
+783,Kia,Picanto,2017,1000,67,5MT,Petrol,880,35,5.1,Hatchback
+784,Kia,Picanto,2018,1000,67,5MT,Petrol,890,35,5.0,Hatchback
+785,Kia,Picanto,2019,1000,67,5MT,Petrol,900,35,4.9,Hatchback
+786,Kia,Picanto,2020,1000,67,5MT,Petrol,910,35,4.9,Hatchback
+787,Kia,Picanto,2021,1000,67,5MT,Petrol,920,35,4.8,Hatchback
+788,Kia,Picanto,2022,1000,67,5MT,Petrol,930,35,4.7,Hatchback
+789,Kia,Picanto,2023,1000,67,5MT,Petrol,940,35,4.7,Hatchback
+790,Kia,Picanto,2024,1000,67,5MT,Petrol,950,35,4.6,Hatchback
+791,Kia,Picanto,2025,1000,67,5MT,Petrol,960,35,4.6,Hatchback
+792,Kia,Picanto,2026,1000,67,5MT,Petrol,970,35,4.6,Hatchback
+793,Chevrolet,Spark,2014,1000,67,5MT,Petrol,820,35,5.6,Hatchback
+794,Chevrolet,Spark,2015,1000,67,5MT,Petrol,830,35,5.5,Hatchback
+795,Chevrolet,Spark,2016,1000,67,5MT,Petrol,840,35,5.4,Hatchback
+796,Chevrolet,Spark,2017,1000,67,5MT,Petrol,850,35,5.3,Hatchback
+797,Chevrolet,Spark,2018,1000,67,5MT,Petrol,860,35,5.2,Hatchback
+798,Chevrolet,Spark,2019,1000,67,5MT,Petrol,870,35,5.1,Hatchback
+799,Chevrolet,Spark,2020,1000,67,5MT,Petrol,880,35,5.1,Hatchback
+800,Chevrolet,Spark,2021,1000,67,5MT,Petrol,890,35,5.0,Hatchback
+801,Chevrolet,Spark,2022,1000,67,5MT,Petrol,900,35,5.0,Hatchback
+802,Chevrolet,Spark,2023,1000,67,5MT,Petrol,910,35,4.9,Hatchback
+803,Chevrolet,Spark,2024,1000,67,5MT,Petrol,920,35,4.9,Hatchback
+804,Chevrolet,Spark,2025,1000,67,5MT,Petrol,930,35,4.9,Hatchback
+805,Chevrolet,Spark,2026,1000,67,5MT,Petrol,940,35,4.8,Hatchback
+806,Chery,Tiggo 8,2018,1500,147,6DCT,Petrol,1650,57,8.8,SUV
+807,Chery,Tiggo 8,2019,1500,147,6DCT,Petrol,1660,57,8.7,SUV
+808,Chery,Tiggo 8,2020,1500,156,6DCT,Petrol,1670,57,8.6,SUV
+809,Chery,Tiggo 8,2021,1500,156,7DCT,Petrol,1680,57,8.5,SUV
+810,Chery,Tiggo 8,2022,1600,197,7DCT,Petrol,1750,57,8.3,SUV
+811,Chery,Tiggo 8,2023,1600,197,7DCT,Petrol,1760,57,8.2,SUV
+812,Chery,Tiggo 8,2024,1600,197,7DCT,Petrol,1770,57,8.1,SUV
+813,Chery,Tiggo 8,2025,1600,197,7DCT,Petrol,1780,57,8.0,SUV
+814,Chery,Tiggo 8,2026,1600,197,7DCT,Petrol,1790,57,7.9,SUV
+815,BAIC,X35,2016,1500,116,5MT,Petrol,1300,46,7.6,SUV
+816,BAIC,X35,2017,1500,116,5MT,Petrol,1310,46,7.5,SUV
+817,BAIC,X35,2018,1500,116,5MT,Petrol,1320,46,7.4,SUV
+818,BAIC,X35,2019,1500,116,4AT,Petrol,1330,46,7.3,SUV
+819,BAIC,X35,2020,1500,116,4AT,Petrol,1340,46,7.2,SUV
+820,BAIC,X35,2021,1500,116,4AT,Petrol,1350,46,7.1,SUV
+821,BAIC,X35,2022,1500,116,4AT,Petrol,1360,46,7.0,SUV
+822,BAIC,X35,2023,1500,116,4AT,Petrol,1370,46,7.0,SUV
+823,BAIC,X35,2024,1500,116,4AT,Petrol,1380,46,6.9,SUV
+824,BAIC,X35,2025,1500,116,4AT,Petrol,1390,46,6.9,SUV
+825,BAIC,X35,2026,1500,116,4AT,Petrol,1400,46,6.9,SUV
+826,Changan,CS35,2014,1600,113,5MT,Petrol,1280,52,7.8,SUV
+827,Changan,CS35,2015,1600,113,5MT,Petrol,1290,52,7.7,SUV
+828,Changan,CS35,2016,1600,113,5MT,Petrol,1300,52,7.6,SUV
+829,Changan,CS35,2017,1600,113,5MT,Petrol,1310,52,7.5,SUV
+830,Changan,CS35,2018,1600,113,5MT,Petrol,1320,52,7.4,SUV
+831,Changan,CS35,2019,1600,113,5MT,Petrol,1330,52,7.3,SUV
+832,Changan,CS35,2020,1600,113,5MT,Petrol,1340,52,7.2,SUV
+833,Changan,CS35,2021,1400,156,7DCT,Petrol,1350,52,7.0,SUV
+834,Changan,CS35,2022,1400,156,7DCT,Petrol,1360,52,6.9,SUV
+835,Changan,CS35,2023,1400,156,7DCT,Petrol,1370,52,6.8,SUV
+836,Changan,CS35,2024,1400,156,7DCT,Petrol,1380,52,6.8,SUV
+837,Changan,CS35,2025,1400,156,7DCT,Petrol,1390,52,6.7,SUV
+838,Changan,CS35,2026,1400,156,7DCT,Petrol,1400,52,6.7,SUV
+839,Soueast,DX3,2016,1500,120,5MT,Petrol,1250,42,7.7,SUV
+840,Soueast,DX3,2017,1500,120,5MT,Petrol,1260,42,7.6,SUV
+841,Soueast,DX3,2018,1500,120,CVT,Petrol,1270,42,7.5,SUV
+842,Soueast,DX3,2019,1500,120,CVT,Petrol,1280,42,7.4,SUV
+843,Soueast,DX3,2020,1500,120,CVT,Petrol,1290,42,7.3,SUV
+844,Soueast,DX3,2021,1500,120,CVT,Petrol,1300,42,7.2,SUV
+845,Soueast,DX3,2022,1500,120,CVT,Petrol,1310,42,7.1,SUV
+846,Soueast,DX3,2023,1500,120,CVT,Petrol,1320,42,7.0,SUV
+847,Soueast,DX3,2024,1500,120,CVT,Petrol,1330,42,6.9,SUV
+848,Soueast,DX3,2025,1500,120,CVT,Petrol,1340,42,6.9,SUV
+849,Soueast,DX3,2026,1500,120,CVT,Petrol,1350,42,6.8,SUV
+850,Kaiyi,X3 Pro,2022,1500,116,CVT,Petrol,1320,51,7.3,SUV
+851,Kaiyi,X3 Pro,2023,1500,116,CVT,Petrol,1330,51,7.2,SUV
+852,Kaiyi,X3 Pro,2024,1500,116,CVT,Petrol,1340,51,7.1,SUV
+853,Kaiyi,X3 Pro,2025,1500,116,CVT,Petrol,1350,51,7.0,SUV
+854,Kaiyi,X3 Pro,2026,1500,116,CVT,Petrol,1360,51,7.0,SUV

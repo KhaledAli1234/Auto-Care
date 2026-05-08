@@ -1,0 +1,67 @@
+services:
+
+  # ─── MongoDB ─────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: smart_driving_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # ─── Model 1: Driver Behavior (port 5000) ────────────────────
+  driver_behavior:
+    build: ./Driver_Behavior_Model-master
+    container_name: smart_driving_driver
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+
+  # ─── Model 2: Vehicle Health (port 5001) ─────────────────────
+  vehicle_health:
+    build: ./vehicle_health_model
+    container_name: smart_driving_vehicle
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+
+  # ─── Model 3: Fuel Efficiency (port 5002) ────────────────────
+  fuel_efficiency:
+    build: ./fuel_efficiency_model
+    container_name: smart_driving_fuel
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+
+  # ─── Unified API (port 5003) ──────────────────────────────────
+  unified_api:
+    build: ./unified_api
+    container_name: smart_driving_unified
+    restart: unless-stopped
+    ports:
+      - "5003:5003"
+    depends_on:
+      - driver_behavior
+      - vehicle_health
+      - fuel_efficiency
+    environment:
+      - MODEL1_URL=http://driver_behavior:5000/predict
+      - MODEL2_URL=http://vehicle_health:5001/predict-health
+      - MODEL3_URL=http://fuel_efficiency:5002/predict
+
+  # ─── Chatbot API (port 8000) ──────────────────────────────────
+  chatbot:
+    build: ./chatbot
+    container_name: smart_driving_chatbot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017
+      - GROQ_API_KEY=${GROQ_API_KEY}
+
+volumes:
+  mongo_data:
