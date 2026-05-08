@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
+import { NotificationBell } from '@/components/notification-bell';
 
 /* ════════════════════════════════════════
    COLORS
@@ -229,11 +230,11 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
 
   const [dashboard,      setDashboard]      = useState<DashboardData | null>(null);
-  const [notifications,  setNotifications]  = useState<Notification[]>([]);
   const [loading,        setLoading]        = useState(true);
   const [refreshing,     setRefreshing]     = useState(false);
+  const [userId, setUserId] = useState('');
   const [showNotifModal, setShowNotifModal] = useState(false);
-  const [userId,         setUserId]         = useState('');
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   /* ── fetch ── */
   const fetchDashboard = useCallback(async (isRefresh = false) => {
@@ -245,7 +246,6 @@ export default function DashboardScreen() {
       const d: DashboardData = data?.data?.dashboard;
       if (d) {
         setDashboard(d);
-        setNotifications(buildNotifications(d));
       }
     } catch (err) {
       console.log('dashboard error:', err);
@@ -256,8 +256,6 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
-
-  const unreadCount = notifications.length;
 
   /* ── empty / loading states ── */
   if (loading) {
@@ -274,60 +272,28 @@ export default function DashboardScreen() {
      RENDER
   ════════════════════════════════════════ */
   return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-
+    <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* ── HEADER ── */}
         <View style={styles.header}>
           <Text style={styles.title}>Dashboard</Text>
-
           <View style={styles.headerActions}>
-            <Pressable
-              style={styles.headerIcon}
-              onPress={() => setShowNotifModal(true)}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color={COLORS.text}
-              />
-
-              {unreadCount > 0 && (
-                <View style={styles.badgeWrap}>
-                  <Text style={styles.badgeText}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-
-            <Pressable
-              style={styles.headerIcon}
-              onPress={() => router.push('/account')}
-            >
-              <Ionicons
-                name="person-outline"
-                size={22}
-                color={COLORS.text}
-              />
+            <NotificationBell iconSize={20} color={COLORS.text} />
+            <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
+              <Ionicons name="person-outline" size={20} color={COLORS.text} />
             </Pressable>
           </View>
         </View>
+     {/* ← الـ divider ثابت */}
+    <View style={styles.divider} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 110 }]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => fetchDashboard(true)} tintColor={COLORS.primary} />
+        }
+      >
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: insets.bottom + 110 }
-          ]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => fetchDashboard(true)}
-              tintColor={COLORS.primary}
-            />
-          }
-        >
         {/* ── MAINTENANCE ALERT BANNER ── */}
         {d && d.maintenance.upcomingCount > 0 && (
           <View style={styles.alertCard}>
@@ -536,8 +502,8 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container:  { flex: 1, backgroundColor: COLORS.background },
   scroll:     { flex: 1 },
-  content:    { paddingHorizontal: 20,paddingTop: 8, gap: 14 },
-  header:     {  flexDirection: "row", justifyContent: "space-between", alignItems: "center",paddingHorizontal: 22,paddingTop: 14, paddingBottom: 16 },
+  content:    { paddingHorizontal: 20,paddingTop: 14, gap: 14 },
+  header:     {  flexDirection: "row", justifyContent: "space-between", alignItems: "center",paddingHorizontal: 20,paddingTop: 14, paddingBottom: 14 },
   title:         { color: COLORS.text, fontSize: 24, fontWeight: '800' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   headerIcon: { width: 40, height: 40, borderRadius: 20,borderWidth: 1,backgroundColor: COLORS.surfaceLight,borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
@@ -596,4 +562,5 @@ const styles = StyleSheet.create({
   notifItemTime: { color: COLORS.mutedDark, fontSize: 11, marginTop: 4 },
   notifEmpty:    { alignItems: 'center', paddingVertical: 40, gap: 12 },
   notifEmptyText:{ color: COLORS.muted, fontSize: 15 },
+  divider:       { height: 1, backgroundColor: COLORS.divider},
 });

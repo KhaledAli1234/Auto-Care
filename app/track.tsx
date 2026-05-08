@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
+import { NotificationBell } from '@/components/notification-bell';
 
 const COLORS = {
   background: '#09182d',
@@ -29,11 +30,9 @@ export default function TrackScreen() {
         <Text style={styles.title}>Live Tracking</Text>
 
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
-          </Pressable>
+          <NotificationBell iconSize={20} color={COLORS.text} />
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
-            <Ionicons name="person-outline" size={22} color={COLORS.text} />
+            <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
         </View>
       </View>

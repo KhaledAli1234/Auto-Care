@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
+import { NotificationBell } from '@/components/notification-bell';
 
 /* ════════════════════════════════════════
    COLORS
@@ -166,12 +167,10 @@ export default function TripsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Trip History</Text>
-        <View style={styles.headerActions}>
-          <Pressable style={styles.headerIconButton}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
-          </Pressable>
-          <Pressable style={styles.headerIconButton} onPress={() => router.push('/account')}>
-            <Ionicons name="person-outline" size={22} color={COLORS.text} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <NotificationBell iconSize={20} color={COLORS.text} />
+          <Pressable style={styles.profileButton} onPress={() => router.push('/account')}>
+            <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
         </View>
       </View>

@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { BASE_URL } from "@/constants/api";
+import { NotificationBell } from "@/components/notification-bell";
 
 /* ════════════════════════════════════════
    COLORS
@@ -311,11 +312,9 @@ export default function AIAssistantScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>AI Assistant</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon} hitSlop={10}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
-          </Pressable>
+          <NotificationBell iconSize={20} color={COLORS.text} />
           <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => router.push("/account")}>
-            <Ionicons name="person-outline" size={22} color={COLORS.text} />
+            <Ionicons name="person-outline" size={20  } color={COLORS.text} />
           </Pressable>
         </View>
       </View>

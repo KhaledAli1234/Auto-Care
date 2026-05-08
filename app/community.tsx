@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { BASE_URL } from "@/constants/api";
+import { NotificationBell } from "@/components/notification-bell";
 
 /* ════════════════════════════════════════
    COLORS
@@ -159,15 +160,10 @@ function formatCreatedAt(dateStr?: string) {
   return `${diffDays}d ago`;
 }
 
-const resolveAuthorId = (author: any) => {
-  if (!author) return '';
-
-  if (typeof author === 'string') {
-    return author;
-  }
-
-  return author?._id || '';
-};
+function resolveAuthorId(createdBy: ApiPost["createdBy"]): string {
+  if (typeof createdBy === "string") return createdBy;
+  return createdBy._id ?? "";
+}
 
 // FIX #3: When createdBy is a populated object, always use its fields.
 // Only fall back to myName when the ID matches the logged-in user.
@@ -176,56 +172,27 @@ function resolveAuthorName(
   myUserId?: string,
   myName?: string,
 ): string {
-
-  if (!createdBy) {
-    return "User";
-  }
-
   if (typeof createdBy === "string") {
-
-    if (myUserId && myName && createdBy === myUserId) {
-      return myName;
-    }
-
+    // createdBy is just an ID string — only show our own name if it's us
+    if (myUserId && myName && createdBy === myUserId) return myName;
+    // For other users whose data wasn't populated, we can't know their name
     return "User";
   }
-
-  if (createdBy?.username) {
-    return createdBy.username;
-  }
-
-  const fullName =
-    `${createdBy?.firstName ?? ""} ${createdBy?.lastName ?? ""}`.trim();
-
-  if (fullName) {
-    return fullName;
-  }
-
-  if (
-    myUserId &&
-    myName &&
-    createdBy?._id === myUserId
-  ) {
-    return myName;
-  }
-
+  // createdBy is a populated object — use it directly
+  if (createdBy.username) return createdBy.username;
+  const fullName = `${createdBy.firstName ?? ""} ${createdBy.lastName ?? ""}`.trim();
+  if (fullName) return fullName;
+  // Last resort: check if it's the logged-in user
+  if (myUserId && myName && createdBy._id === myUserId) return myName;
   return "User";
 }
 
 // FIX #6: Extract vehicle from populated createdBy (after backend populate fix)
 function resolveAuthorVehicle(createdBy: ApiPost["createdBy"]): string {
-
-  if (!createdBy) return "";
-
   if (typeof createdBy === "string") return "";
-
-  const v = (createdBy as any)?.vehicleId;
-
+  const v = (createdBy as any).vehicleId;
   if (!v) return "";
-
-  return [v.brand, v.model, v.year]
-    .filter(Boolean)
-    .join(" ");
+  return [v.brand, v.model, v.year].filter(Boolean).join(" ");
 }
 
 function normalizeComment(c: ApiComment, myUserId: string, myName: string): CommunityComment {
@@ -328,7 +295,7 @@ async function apiDelete(path: string) {
 ════════════════════════════════════════ */
 export default function CommunityScreen() {
   const insets   = useSafeAreaInsets();
-  const { profile, updateProfile  } = useUserProfile();
+  const { profile } = useUserProfile();
 
   const [myUserId, setMyUserId] = useState("");
 
@@ -445,33 +412,17 @@ export default function CommunityScreen() {
     }
   };
 
-  const handleToggleFollow = async (
-    postId: string,
-    authorId: string,
-    followedAuthor: boolean
-  ) => {
+  // FIX #5: Update the global followedAuthorIds set so ALL cards by this
+  // author update simultaneously. FIX #4: State persists on re-fetch.
+  const handleToggleFollow = async (postId: string, authorId: string, followedAuthor: boolean) => {
     if (posts.find(p => p.id === postId)?.pending) return;
 
-    const stats = {
-      followersCount: profile.stats?.followersCount ?? 0,
-      followingCount: profile.stats?.followingCount ?? 0,
-      postsCount: profile.stats?.postsCount ?? 0,
-    };
+    // Update global follow set — triggers the useEffect above to sync all cards
     setFollowedAuthorIds(prev => {
       const next = new Set(prev);
-
       if (followedAuthor) next.delete(authorId);
       else next.add(authorId);
-
       return next;
-    });
-    updateProfile({
-      stats: {
-        ...stats,
-        followingCount: followedAuthor
-          ? Math.max(0, stats.followingCount - 1)
-          : stats.followingCount + 1,
-      },
     });
 
     try {
@@ -481,24 +432,13 @@ export default function CommunityScreen() {
         await apiPost(`/follow/${authorId}`);
       }
     } catch (err) {
-      // rollback follow state
+      // Revert on failure
       setFollowedAuthorIds(prev => {
         const next = new Set(prev);
-
         if (followedAuthor) next.add(authorId);
         else next.delete(authorId);
-
         return next;
       });
-      updateProfile({
-        stats: {
-          ...stats,
-          followingCount: followedAuthor
-            ? stats.followingCount + 1
-            : Math.max(0, stats.followingCount - 1),
-        },
-      });
-
       console.log("toggleFollow error:", err);
     }
   };
@@ -850,11 +790,9 @@ export default function CommunityScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Community</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon} hitSlop={10}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
-          </Pressable>
+          <NotificationBell iconSize={20} color={COLORS.text} />
           <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => router.push("/account")}>
-            <Ionicons name="person-outline" size={22} color={COLORS.text} />
+            <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
         </View>
       </View>

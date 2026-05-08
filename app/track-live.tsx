@@ -2,25 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { LocationObject, LocationSubscription } from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
+import { NotificationBell } from '@/components/notification-bell';
 
 const COLORS = {
   background: '#09182d',
   backgroundSoft: '#122745',
   border: 'rgba(255,255,255,0.08)',
+  surfaceLight: '#172b44',
   text: '#f8fafc',
   muted: '#b8c3d6',
   primary: '#2f6dff',
@@ -32,227 +25,129 @@ const COLORS = {
   yellow: '#ffd400',
 };
 
-function toRadians(value: number) {
-  return (value * Math.PI) / 180;
-}
+function toRadians(v: number) { return (v * Math.PI) / 180; }
 
 function calculateDistanceInKm(from: LocationObject, to: LocationObject) {
-  const earthRadiusKm = 6371;
-  const deltaLat = toRadians(to.coords.latitude - from.coords.latitude);
-  const deltaLon = toRadians(to.coords.longitude - from.coords.longitude);
-  const startLat = toRadians(from.coords.latitude);
-  const endLat = toRadians(to.coords.latitude);
-
-  const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(startLat) * Math.cos(endLat) * Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadiusKm * c;
+  const R = 6371;
+  const dLat = toRadians(to.coords.latitude - from.coords.latitude);
+  const dLon = toRadians(to.coords.longitude - from.coords.longitude);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRadians(from.coords.latitude)) * Math.cos(toRadians(to.coords.latitude)) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-function formatDuration(seconds: number) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-
-  const hh = String(hours).padStart(2, '0');
-  const mm = String(minutes).padStart(2, '0');
-  const ss = String(remainingSeconds).padStart(2, '0');
-
-  return hours > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+function formatDuration(s: number) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h > 0 ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
 
-function formatDistance(distanceInKm: number) {
-  if (distanceInKm >= 10) return distanceInKm.toFixed(0);
-  if (distanceInKm >= 1) return distanceInKm.toFixed(1);
-  return distanceInKm.toFixed(2);
+function formatDistance(km: number) {
+  if (km >= 10) return km.toFixed(0);
+  if (km >= 1)  return km.toFixed(1);
+  return km.toFixed(2);
 }
 
 export default function TrackLiveScreen() {
   const insets = useSafeAreaInsets();
-  const [speedKmh, setSpeedKmh] = useState(0);
-  const [distanceKm, setDistanceKm] = useState(0);
+  const [speedKmh,       setSpeedKmh]       = useState(0);
+  const [distanceKm,     setDistanceKm]     = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [isStarting, setIsStarting] = useState(true);
+  const [isStarting,     setIsStarting]     = useState(true);
   const [trackingActive, setTrackingActive] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage,   setErrorMessage]   = useState<string | null>(null);
 
-  const watchRef = useRef<LocationSubscription | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const watchRef    = useRef<LocationSubscription | null>(null);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
-  const previousLocationRef = useRef<LocationObject | null>(null);
+  const prevLocRef  = useRef<LocationObject | null>(null);
 
   const statusText = useMemo(() => {
-    if (errorMessage) return 'GPS Permission Needed';
-    if (isStarting) return 'Starting GPS...';
+    if (errorMessage)   return 'GPS Permission Needed';
+    if (isStarting)     return 'Starting GPS...';
     if (trackingActive) return 'Driving Detected';
     return 'Tracking Stopped';
   }, [errorMessage, isStarting, trackingActive]);
 
   useEffect(() => {
-    const startTracking = async () => {
+    const start = async () => {
       try {
         setIsStarting(true);
         setErrorMessage(null);
-
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setErrorMessage('Location permission was denied.');
-          Alert.alert(
-            'Location permission required',
-            'Please allow location access so the app can track your trip and speed.'
-          );
-          return;
-        }
+        if (status !== 'granted') { setErrorMessage('Location permission was denied.'); Alert.alert('Permission required', 'Please allow location access.'); return; }
+        const ok = await Location.hasServicesEnabledAsync();
+        if (!ok) { setErrorMessage('Please turn on GPS.'); Alert.alert('Location off', 'Turn on GPS then reopen.'); return; }
+        if (Platform.OS === 'android') { try { await Location.enableNetworkProviderAsync(); } catch {} }
 
-        const servicesEnabled = await Location.hasServicesEnabledAsync();
-        if (!servicesEnabled) {
-          setErrorMessage('Please turn on GPS or Location Services on your phone.');
-          Alert.alert(
-            'Location services are off',
-            'Turn on GPS or Location Services, then open the tracking screen again.'
-          );
-          return;
-        }
-
-        if (Platform.OS === 'android') {
-          try {
-            await Location.enableNetworkProviderAsync();
-          } catch {
-            // User may keep current provider settings; foreground GPS tracking can still continue.
-          }
-        }
-
-        const currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.BestForNavigation,
-        });
-
-        previousLocationRef.current = currentLocation;
+        const cur = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation });
+        prevLocRef.current = cur;
         startTimeRef.current = Date.now();
-        setSpeedKmh(Math.max(0, Math.round((currentLocation.coords.speed ?? 0) * 3.6)));
-        setDistanceKm(0);
-        setElapsedSeconds(0);
-        setTrackingActive(true);
+        setSpeedKmh(Math.max(0, Math.round((cur.coords.speed ?? 0) * 3.6)));
+        setDistanceKm(0); setElapsedSeconds(0); setTrackingActive(true);
 
-        timerRef.current = setInterval(() => {
-          setElapsedSeconds(Math.floor((Date.now() - startTimeRef.current) / 1000));
-        }, 1000);
+        timerRef.current = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - startTimeRef.current) / 1000)), 1000);
 
         watchRef.current = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.BestForNavigation,
-            timeInterval: 2000,
-            distanceInterval: 1,
-            mayShowUserSettingsDialog: true,
-          },
-          (nextLocation) => {
-            const previousLocation = previousLocationRef.current;
-
-            if (previousLocation) {
-              const segmentDistanceKm = calculateDistanceInKm(previousLocation, nextLocation);
-              if (Number.isFinite(segmentDistanceKm) && segmentDistanceKm > 0.0005) {
-                setDistanceKm((currentDistance) => currentDistance + segmentDistanceKm);
-              }
+          { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 2000, distanceInterval: 1, mayShowUserSettingsDialog: true },
+          (next) => {
+            const prev = prevLocRef.current;
+            if (prev) {
+              const d = calculateDistanceInKm(prev, next);
+              if (Number.isFinite(d) && d > 0.0005) setDistanceKm(cur => cur + d);
             }
-
-            const reportedSpeedMetersPerSecond = nextLocation.coords.speed ?? 0;
-            let nextSpeedKmh = reportedSpeedMetersPerSecond > 0
-              ? reportedSpeedMetersPerSecond * 3.6
-              : 0;
-
-            if (nextSpeedKmh === 0 && previousLocation) {
-              const timeDeltaSeconds =
-                (new Date(nextLocation.timestamp).getTime() -
-                  new Date(previousLocation.timestamp).getTime()) /
-                1000;
-
-              if (timeDeltaSeconds > 0) {
-                const segmentDistanceKm = calculateDistanceInKm(previousLocation, nextLocation);
-                nextSpeedKmh = (segmentDistanceKm / timeDeltaSeconds) * 3600;
-              }
+            let spd = (next.coords.speed ?? 0) > 0 ? next.coords.speed! * 3.6 : 0;
+            if (spd === 0 && prev) {
+              const dt = (new Date(next.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
+              if (dt > 0) spd = (calculateDistanceInKm(prev, next) / dt) * 3600;
             }
-
-            setSpeedKmh(Math.max(0, Math.round(nextSpeedKmh)));
-            previousLocationRef.current = nextLocation;
+            setSpeedKmh(Math.max(0, Math.round(spd)));
+            prevLocRef.current = next;
           }
         );
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to start GPS tracking.';
-        setErrorMessage(message);
-        Alert.alert('Tracking error', message);
-      } finally {
-        setIsStarting(false);
-      }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unable to start GPS.';
+        setErrorMessage(msg); Alert.alert('Tracking error', msg);
+      } finally { setIsStarting(false); }
     };
-
-    void startTracking();
-
+    void start();
     return () => {
-      if (watchRef.current) {
-        watchRef.current.remove();
-        watchRef.current = null;
-      }
-
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
+      watchRef.current?.remove(); watchRef.current = null;
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     };
   }, []);
 
-  const handleStopTracking = () => {
-    if (watchRef.current) {
-      watchRef.current.remove();
-      watchRef.current = null;
-    }
-
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
+  const handleStop = () => {
+    watchRef.current?.remove(); watchRef.current = null;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setTrackingActive(false);
     router.replace('/track');
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}> 
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Live Tracking</Text>
-
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
-          </Pressable>
+          <NotificationBell iconSize={20} color={COLORS.text} />
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
-            <Ionicons name="person-outline" size={22} color={COLORS.text} />
+            <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
         </View>
       </View>
-
       <View style={styles.divider} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.speedGlow} />
-
         <View style={styles.speedCircle}>
-          {isStarting ? (
-            <ActivityIndicator size="large" color={COLORS.text} />
-          ) : (
-            <>
-              <Text style={styles.speedValue}>{speedKmh}</Text>
-              <Text style={styles.speedUnit}>km/h</Text>
-            </>
+          {isStarting ? <ActivityIndicator size="large" color={COLORS.text} /> : (
+            <><Text style={styles.speedValue}>{speedKmh}</Text><Text style={styles.speedUnit}>km/h</Text></>
           )}
         </View>
 
         <View style={styles.statusPill}>
-          <View style={[styles.statusDot, errorMessage && styles.statusDotError]} />
+          <View style={[styles.statusDot, !!errorMessage && styles.statusDotError]} />
           <Text style={styles.statusText}>{statusText}</Text>
         </View>
-
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
@@ -260,13 +155,11 @@ export default function TrackLiveScreen() {
             <Text style={styles.statValue}>{formatDuration(elapsedSeconds)}</Text>
             <Text style={styles.statLabel}>Duration</Text>
           </View>
-
           <View style={styles.statCard}>
             <Ionicons name="location-outline" size={28} color={COLORS.primary} />
             <Text style={styles.statValue}>{formatDistance(distanceKm)}</Text>
             <Text style={styles.statLabel}>Distance</Text>
           </View>
-
           <View style={styles.statCard}>
             <Ionicons name="alert-circle-outline" size={28} color={COLORS.yellow} />
             <Text style={styles.statValue}>0</Text>
@@ -274,7 +167,7 @@ export default function TrackLiveScreen() {
           </View>
         </View>
 
-        <Pressable style={styles.stopButton} onPress={handleStopTracking}>
+        <Pressable style={styles.stopButton} onPress={handleStop}>
           <Ionicons name="stop-outline" size={28} color={COLORS.red} />
           <Text style={styles.stopButtonText}>Stop Tracking</Text>
         </Pressable>
@@ -284,7 +177,6 @@ export default function TrackLiveScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

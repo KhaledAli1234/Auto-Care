@@ -142,7 +142,7 @@ export class NotificationService {
     return this.notificationRepository.find({
       filter: { recipient: new Types.ObjectId(userId) },
       options: { sort: { createdAt: -1 } },
-      populate: [{ path: 'sender', select: 'username profileImage' }],
+      populate: [{ path: 'sender', select: 'username firstName lastName profileImage' }],
     });
   }
 
