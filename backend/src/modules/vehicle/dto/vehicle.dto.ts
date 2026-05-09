@@ -1,6 +1,5 @@
-import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
-
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateVehicleDTO {
   @IsString()
@@ -36,4 +35,23 @@ export class CreateVehicleDTO {
   @IsString()
   @IsNotEmpty()
   transmission: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  enginePowerHp: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  weightKg: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  fuelCombined: number;
+
+  @IsOptional()
+  @IsString()
+  bodyType: string;
 }

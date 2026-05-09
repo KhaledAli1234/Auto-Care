@@ -445,6 +445,8 @@ const styles = StyleSheet.create({
   deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: '800' },
   divider: { height: 1, backgroundColor: COLORS.divider },
   headerActions:    { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  newTripBtn:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
+  newTripBtnText: { color: COLORS.text, fontSize: 15, fontWeight: '700' },
   headerIconButton: { 
   width: 40, height: 40, borderRadius: 20, 
   borderWidth: 1, borderColor: COLORS.border,

@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMotionUsageDescription": "AutoCare needs motion sensors to analyze your driving."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACTIVITY_RECOGNITION"
+      ]
     },
     "web": {
       "output": "static",
@@ -43,6 +50,12 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location while you are using the app."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow AutoCare to access motion sensors to analyze your driving."
         }
       ]
     ],

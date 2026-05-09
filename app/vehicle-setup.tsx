@@ -1,328 +1,413 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   View,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { APP_COLORS } from '@/constants/app-colors';
 import { useUserProfile } from '@/context/user-profile-context';
-import { vehicleSetupStyles as styles } from '@/styles/vehicle-setup.styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/constants/api';
+import { CAR_DATA } from '@/constants/car-data';
 
-const FUEL_TYPE_OPTIONS = ['Gasoline 92', 'Gasoline 95', 'Diesel'];
+const COLORS = {
+  background:   '#09182d',
+  surface:      '#13243a',
+  surfaceLight: '#172b44',
+  border:       'rgba(255,255,255,0.08)',
+  text:         '#f8fafc',
+  muted:        '#aebbd0',
+  mutedDark:    '#74849a',
+  primary:      '#3268f7',
+  danger:       '#ef4444',
+  input:        '#0f1f34',
+  success:      '#22c55e',
+};
 
-const TRANSMISSION_OPTIONS = ['Automatic', 'Manual'];
+type ModalType = 'brand' | 'model' | 'year' | null;
 
+/* ════════════════════════════════════════
+   SELECT MODAL
+════════════════════════════════════════ */
+function SelectModal({ visible, title, options, selected, onSelect, onClose }: {
+  visible: boolean; title: string; options: string[];
+  selected: string; onSelect: (v: string) => void; onClose: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose} />
+      <View style={styles.modalSheet}>
+        <View style={styles.modalHandle} />
+        <Text style={styles.modalTitle}>{title}</Text>
+
+        {/* Search input for long lists */}
+        {options.length > 8 && (
+          <View style={styles.searchWrap}>
+            <Ionicons name="search-outline" size={16} color={COLORS.mutedDark} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={`Search ${title.toLowerCase()}...`}
+              placeholderTextColor={COLORS.mutedDark}
+              value={search}
+              onChangeText={setSearch}
+              autoFocus
+            />
+            {!!search && (
+              <Pressable onPress={() => setSearch('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={16} color={COLORS.mutedDark} />
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {filtered.length > 0 ? filtered.map(opt => (
+            <Pressable key={opt} style={styles.modalOption} onPress={() => { onSelect(opt); onClose(); setSearch(''); }}>
+              <Text style={[styles.modalOptionText, opt === selected && styles.modalOptionTextActive]}>{opt}</Text>
+              {opt === selected && <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />}
+            </Pressable>
+          )) : (
+            <Text style={[styles.modalOptionText, { textAlign: 'center', paddingVertical: 24 }]}>No results found</Text>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+/* ════════════════════════════════════════
+   SELECT FIELD
+════════════════════════════════════════ */
+function SelectField({ label, value, placeholder, onPress, error, disabled }: {
+  label: string; value: string; placeholder: string;
+  onPress: () => void; error?: string; disabled?: boolean;
+}) {
+  return (
+    <View style={styles.fieldWrap}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        style={[styles.selectBox, !!error && styles.selectBoxError, !!disabled && styles.selectBoxDisabled]}
+        onPress={disabled ? undefined : onPress}
+      >
+        <Text style={[styles.selectText, !value && styles.selectPlaceholder]}>{value || placeholder}</Text>
+        <Ionicons name="chevron-down" size={18} color={disabled ? COLORS.mutedDark : COLORS.muted} />
+      </Pressable>
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+}
+
+/* ════════════════════════════════════════
+   SPEC ROW
+════════════════════════════════════════ */
+function SpecRow({ icon, label, value, highlight }: {
+  icon: string; label: string; value: string; highlight?: boolean;
+}) {
+  return (
+    <View style={styles.specRow}>
+      <View style={[styles.specIconWrap, highlight && styles.specIconWrapHighlight]}>
+        <Ionicons name={icon as any} size={15} color={highlight ? COLORS.primary : COLORS.muted} />
+      </View>
+      <Text style={styles.specLabel}>{label}</Text>
+      <Text style={[styles.specValue, highlight && { color: COLORS.primary }]}>{value}</Text>
+    </View>
+  );
+}
+
+/* ════════════════════════════════════════
+   SCREEN
+════════════════════════════════════════ */
 export default function VehicleSetupScreen() {
   const insets = useSafeAreaInsets();
   const { updateProfile } = useUserProfile();
-  const [vehicleBrand, setVehicleBrand] = useState('Toyota');
-  const [modelName, setModelName] = useState('Camry');
-  const [manufacturingYear, setManufacturingYear] = useState('2022');
-  const [engineCapacity, setEngineCapacity] = useState('2500');
-  const [odometerMileage, setOdometerMileage] = useState('45000');
-  const [fuelType, setFuelType] = useState('');
-  const [tankCapacity, setTankCapacity] = useState('60');
-  const [transmission, setTransmission] = useState('');
-  const [showFuelModal, setShowFuelModal] = useState(false);
-  const [showTransmissionModal, setShowTransmissionModal] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleContinue = async () => {
-    const newErrors: Record<string, string> = {};
+  const [brand,     setBrand]     = useState('');
+  const [model,     setModel]     = useState('');
+  const [year,      setYear]      = useState('');
+  const [mileage,   setMileage]   = useState('');
+  const [openModal, setOpenModal] = useState<ModalType>(null);
+  const [errors,    setErrors]    = useState<Record<string, string>>({});
+  const [loading,   setLoading]   = useState(false);
 
-    if (!vehicleBrand.trim()) newErrors.vehicleBrand = 'الرجاء إدخال ماركة المركبة.';
-    if (!modelName.trim()) newErrors.modelName = 'الرجاء إدخال اسم الموديل.';
-    if (!manufacturingYear.trim()) newErrors.manufacturingYear = 'الرجاء إدخال سنة التصنيع.';
-    if (!engineCapacity.trim()) newErrors.engineCapacity = 'الرجاء إدخال سعة المحرك.';
-    if (!odometerMileage.trim()) newErrors.odometerMileage = 'الرجاء إدخال قراءة العداد.';
-    if (!fuelType) newErrors.fuelType = 'الرجاء اختيار نوع الوقود.';
-    if (!tankCapacity.trim()) newErrors.tankCapacity = 'الرجاء إدخال سعة الخزان.';
-    if (!transmission) newErrors.transmission = 'الرجاء اختيار ناقل الحركة.';
+  const brands = useMemo(() => Object.keys(CAR_DATA).sort(), []);
 
-    const year = parseInt(manufacturingYear, 10);
-    if (manufacturingYear && (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 1)) {
-      newErrors.manufacturingYear = 'سنة التصنيع غير صحيحة.';
-    }
+  const models = useMemo(() => {
+    if (!brand) return [];
+    return Object.keys((CAR_DATA as any)[brand] ?? {}).sort();
+  }, [brand]);
 
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-      const mapFuelType = (value: string) => {
-        if (value.includes('Gasoline')) return 'petrol';
-        if (value === 'Diesel') return 'diesel';
-        return value;
-      };
-      const createVehicle = async (vehicleData: any) => {
-  try {
-      const token = await AsyncStorage.getItem('access_token');
+  const years = useMemo(() => {
+    if (!brand || !model) return [];
+    return Object.keys((CAR_DATA as any)[brand]?.[model] ?? {})
+      .map(Number).sort((a, b) => b - a).map(String);
+  }, [brand, model]);
 
-      if (!token) {
-        throw new Error('No token found');
-      }
+  const selectedCar = useMemo(() => {
+    if (!brand || !model || !year) return null;
+    return (CAR_DATA as any)[brand]?.[model]?.[year] ?? null;
+  }, [brand, model, year]);
 
-      const res = await fetch(`${BASE_URL}/vehicle`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, 
-        },
-        body: JSON.stringify(vehicleData),
-      });
+  const handleBrandSelect = (v: string) => { setBrand(v); setModel(''); setYear(''); setErrors(e => ({ ...e, brand: '' })); };
+  const handleModelSelect = (v: string) => { setModel(v); setYear(''); setErrors(e => ({ ...e, model: '' })); };
+  const handleYearSelect  = (v: string) => { setYear(v); setErrors(e => ({ ...e, year: '' })); };
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.log('Vehicle API Error:', data);
-      throw new Error(data?.message || 'Failed to create vehicle');
-    }
-
-    return data;
-  } catch (err) {
-    console.log('Vehicle Error:', err);
-    throw err;
-  }
-};
-
-      const vehicleData = {
-        brand: vehicleBrand.trim(),
-        model: modelName.trim(),
-        year: Number(manufacturingYear),
-        engineCapacity: Number(engineCapacity),
-        mileage: Number(odometerMileage),
-        fuelType: mapFuelType(fuelType), // مهم
-        transmission: transmission.toLowerCase(), // مهم
-        tankCapacity: Number(tankCapacity),
-      };
-
-      await createVehicle(vehicleData);
-      updateProfile({
-        vehicle: {
-          brand: vehicleData.brand,
-          model: vehicleData.model,
-          year: vehicleData.year,
-          engineCapacity: vehicleData.engineCapacity,
-          mileage: vehicleData.mileage,
-          transmission: vehicleData.transmission,
-          fuelType: vehicleData.fuelType,
-        },
-      });
-
-        await AsyncStorage.setItem('vehicle_profile', JSON.stringify(vehicleData));
-
-        await AsyncStorage.removeItem('needs_vehicle_setup');
-
-        router.replace('/profile');
-            
-      };
-
-  const clearError = (field: string) => {
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
+  const validate = () => {
+    const e: Record<string, string> = {};
+    if (!brand)   e.brand   = 'Please select a brand.';
+    if (!model)   e.model   = 'Please select a model.';
+    if (!year)    e.year    = 'Please select a year.';
+    if (!mileage || isNaN(Number(mileage)) || Number(mileage) < 0) e.mileage = 'Please enter a valid mileage.';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const C = APP_COLORS;
+  const handleContinue = async () => {
+    if (!validate() || !selectedCar) return;
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const vehicleData = {
+        brand:          selectedCar.brand,
+        model:          selectedCar.model,
+        year:           selectedCar.year,
+        engineCapacity: selectedCar.engineCapacity,
+        mileage:        Number(mileage),
+        fuelType:       selectedCar.fuelType,
+        transmission:   selectedCar.transmission,
+        tankCapacity:   selectedCar.tankCapacity,
+        // ── New fields ──
+        enginePowerHp:  selectedCar.enginePowerHp,
+        weightKg:       selectedCar.weightKg,
+        fuelCombined:   selectedCar.fuelCombined,
+        bodyType:       selectedCar.bodyType,
+      };
+      const res = await fetch(`${BASE_URL}/vehicle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}` },
+        body: JSON.stringify(vehicleData),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d?.message ?? 'Failed'); }
+      updateProfile({ vehicle: vehicleData });
+      await AsyncStorage.setItem('vehicle_profile', JSON.stringify(vehicleData));
+      await AsyncStorage.removeItem('needs_vehicle_setup');
+      router.replace('/profile');
+    } catch (err: any) {
+      setErrors({ submit: err.message ?? 'Something went wrong.' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  /* ════════════════════════════════════════
+     RENDER
+  ════════════════════════════════════════ */
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-    <View style={styles.header}>
-      <Pressable
-        onPress={() => router.back()}
-        style={styles.backButton}
-        hitSlop={12}>
-        <Ionicons name="arrow-back" size={24} color={C.text} />
-        <Text style={styles.backLabel}>Back</Text>
-      </Pressable>
-
-      <View style={styles.headerCenter}>
-        <View style={styles.logoRow}>
-          <View style={styles.logoIcon}>
-            <Text style={styles.logoIconText}>B</Text>
-          </View>
-          <Text style={styles.logoAi}>AI</Text>
-        </View>
-
-        <Text style={styles.appTitle} numberOfLines={1}>
-          Smart Car AI Assistant App
-        </Text>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
       </View>
 
-      {/* Right side removed (empty for balance) */}
-      <View style={styles.backButton} />
-    </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 110 }]}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Title */}
           <View style={styles.titleRow}>
-            <Ionicons name="car-outline" size={28} color={C.text} />
-            <Text style={styles.title}>Vehicle Profile</Text>
-          </View>
-          <Text style={styles.subtitle}>Tell us about your car to enable AI baseline</Text>
-
-          <View style={styles.form}>
-            <Text style={styles.label}>Vehicle Brand</Text>
-            <TextInput
-              style={[styles.input, errors.vehicleBrand && styles.inputError]}
-              placeholder="e.g. Toyota"
-              placeholderTextColor={C.textMuted}
-              value={vehicleBrand}
-              onChangeText={(t) => { setVehicleBrand(t); clearError('vehicleBrand'); }}
-            />
-            <Text style={styles.hint}>AI will learn your vehicle&apos;s behavior patterns</Text>
-            {errors.vehicleBrand ? <Text style={styles.errorText}>{errors.vehicleBrand}</Text> : null}
-
-            <Text style={styles.label}>Model Name</Text>
-            <TextInput
-              style={[styles.input, errors.modelName && styles.inputError]}
-              placeholder="e.g. Camry"
-              placeholderTextColor={C.textMuted}
-              value={modelName}
-              onChangeText={(t) => { setModelName(t); clearError('modelName'); }}
-            />
-            {errors.modelName ? <Text style={styles.errorText}>{errors.modelName}</Text> : null}
-
-            <Text style={styles.label}>Manufacturing Year</Text>
-            <TextInput
-              style={[styles.input, errors.manufacturingYear && styles.inputError]}
-              placeholder="e.g. 2022"
-              placeholderTextColor={C.textMuted}
-              value={manufacturingYear}
-              onChangeText={(t) => { setManufacturingYear(t); clearError('manufacturingYear'); }}
-              keyboardType="number-pad"
-            />
-            {errors.manufacturingYear ? (
-              <Text style={styles.errorText}>{errors.manufacturingYear}</Text>
-            ) : null}
-
-            <Text style={styles.label}>Engine Capacity (CC)</Text>
-            <TextInput
-              style={[styles.input, errors.engineCapacity && styles.inputError]}
-              placeholder="e.g. 2500"
-              placeholderTextColor={C.textMuted}
-              value={engineCapacity}
-              onChangeText={(t) => { setEngineCapacity(t); clearError('engineCapacity'); }}
-              keyboardType="number-pad"
-            />
-            {errors.engineCapacity ? (
-              <Text style={styles.errorText}>{errors.engineCapacity}</Text>
-            ) : null}
+            <View style={styles.titleIconWrap}>
+              <Ionicons name="car-sport-outline" size={24} color={COLORS.primary} />
+            </View>
+            <View>
+              <Text style={styles.title}>Vehicle Profile</Text>
+              <Text style={styles.subtitle}>Select your car for AI-powered insights</Text>
+            </View>
           </View>
 
-          <Text style={styles.sectionSubtitle}>Used for fuel efficiency calculations</Text>
-          <View style={styles.form}>
-            <Text style={styles.label}>Current Odometer Mileage</Text>
-            <TextInput
-              style={[styles.input, errors.odometerMileage && styles.inputError]}
-              placeholder="e.g. 45000"
-              placeholderTextColor={C.textMuted}
-              value={odometerMileage}
-              onChangeText={(t) => { setOdometerMileage(t); clearError('odometerMileage'); }}
-              keyboardType="number-pad"
-            />
-            {errors.odometerMileage ? (
-              <Text style={styles.errorText}>{errors.odometerMileage}</Text>
-            ) : null}
+          {/* Car Details Card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Car Details</Text>
 
-            <Text style={styles.label}>Fuel Type</Text>
-            <Pressable
-              style={[styles.selectBox, errors.fuelType && styles.selectBoxError]}
-              onPress={() => { setShowFuelModal(true); clearError('fuelType'); }}>
-              <Text style={[styles.inputPlaceholder, fuelType && { color: C.text }]}>
-                {fuelType || 'Select...'}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={C.textMuted} />
-            </Pressable>
-            {errors.fuelType ? <Text style={styles.errorText}>{errors.fuelType}</Text> : null}
+            <SelectField label="Brand" value={brand} placeholder="Select brand..."
+              onPress={() => setOpenModal('brand')} error={errors.brand} />
+
+            <SelectField label="Model" value={model}
+              placeholder={brand ? 'Select model...' : 'Select brand first'}
+              onPress={() => setOpenModal('model')} error={errors.model} disabled={!brand} />
+
+            <SelectField label="Year" value={year}
+              placeholder={model ? 'Select year...' : 'Select model first'}
+              onPress={() => setOpenModal('year')} error={errors.year} disabled={!model} />
+
+            <View style={styles.fieldWrap}>
+              <Text style={styles.label}>Current Mileage (km)</Text>
+              <TextInput
+                style={[styles.selectBox, styles.textInput, !!errors.mileage && styles.selectBoxError]}
+                placeholder="e.g. 45000"
+                placeholderTextColor={COLORS.mutedDark}
+                value={mileage}
+                onChangeText={v => { setMileage(v); setErrors(e => ({ ...e, mileage: '' })); }}
+                keyboardType="number-pad"
+              />
+              {!!errors.mileage && <Text style={styles.errorText}>{errors.mileage}</Text>}
+            </View>
           </View>
 
-          <Text style={styles.sectionSubtitle}>Helps optimize fuel consumption tracking</Text>
-          <View style={styles.form}>
-            <Text style={styles.label}>Tank Capacity (Liters)</Text>
-            <TextInput
-              style={[styles.input, errors.tankCapacity && styles.inputError]}
-              placeholder="e.g. 60"
-              placeholderTextColor={C.textMuted}
-              value={tankCapacity}
-              onChangeText={(t) => { setTankCapacity(t); clearError('tankCapacity'); }}
-              keyboardType="decimal-pad"
-            />
-            {errors.tankCapacity ? (
-              <Text style={styles.errorText}>{errors.tankCapacity}</Text>
-            ) : null}
+          {/* Specs Card — only shown after full selection */}
+          {selectedCar && (
+            <View style={styles.specsCard}>
+              {/* Header */}
+              <View style={styles.specsHeader}>
+                <View style={styles.specsHeaderLeft}>
+                  <View style={styles.specsCheckIcon}>
+                    <Ionicons name="checkmark" size={14} color="#fff" />
+                  </View>
+                  <View>
+                    <Text style={styles.specsCarName}>{selectedCar.brand} {selectedCar.model} {selectedCar.year}</Text>
+                    <Text style={styles.specsSubtitle}>{selectedCar.bodyType} · Specs loaded</Text>
+                  </View>
+                </View>
+              </View>
 
-            <Text style={styles.label}>Transmission</Text>
-            <Pressable
-              style={[styles.selectBox, errors.transmission && styles.selectBoxError]}
-              onPress={() => { setShowTransmissionModal(true); clearError('transmission'); }}>
-              <Text style={[styles.inputPlaceholder, transmission && { color: C.text }]}>
-                {transmission || 'Select...'}
-              </Text>
-              <Ionicons name="chevron-down" size={20} color={C.textMuted} />
-            </Pressable>
-            <Text style={styles.hint}>AI adapts insights based on transmission type</Text>
-            {errors.transmission ? (
-              <Text style={styles.errorText}>{errors.transmission}</Text>
-            ) : null}
-          </View>
+              <View style={styles.specsDivider} />
 
-          <Pressable style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueText}>Continue</Text>
+              {/* Specs grid — two columns */}
+              <View style={styles.specsGrid}>
+                <View style={styles.specsColumn}>
+                  <SpecRow icon="flash-outline"            label="Engine"       value={`${selectedCar.engineCapacity} CC`} />
+                  <SpecRow icon="speedometer-outline"      label="Power"        value={`${selectedCar.enginePowerHp} HP`} highlight />
+                  <SpecRow icon="cog-outline"              label="Transmission" value={selectedCar.transmission} />
+                  <SpecRow icon="water-outline"            label="Fuel Type"    value={selectedCar.fuelType} />
+                </View>
+                <View style={styles.specsColumnDivider} />
+                <View style={styles.specsColumn}>
+                  <SpecRow icon="analytics-outline"        label="Economy"      value={`${selectedCar.fuelCombined} L/100`} highlight />
+                  <SpecRow icon="battery-charging-outline" label="Tank"         value={`${selectedCar.tankCapacity} L`} />
+                  <SpecRow icon="barbell-outline"          label="Weight"       value={`${selectedCar.weightKg} kg`} />
+                  <SpecRow icon="car-outline"              label="Body"         value={selectedCar.bodyType} />
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Empty specs placeholder */}
+          {!selectedCar && brand && model && (
+            <View style={styles.specsPlaceholder}>
+              <Ionicons name="information-circle-outline" size={20} color={COLORS.mutedDark} />
+              <Text style={styles.specsPlaceholderText}>Select brand, model & year to see full specs</Text>
+            </View>
+          )}
+
+          {/* Submit error */}
+          {errors.submit && (
+            <View style={styles.submitError}>
+              <Ionicons name="alert-circle-outline" size={18} color={COLORS.danger} />
+              <Text style={styles.submitErrorText}>{errors.submit}</Text>
+            </View>
+          )}
+
+          {/* Continue button */}
+          <Pressable
+            style={[styles.continueBtn, (!selectedCar || !mileage || loading) && styles.continueBtnDisabled]}
+            onPress={handleContinue}
+            disabled={!selectedCar || !mileage || loading}
+          >
+            <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.continueBtnText}>{loading ? 'Saving...' : 'Continue'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal visible={showFuelModal} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowFuelModal(false)}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            {FUEL_TYPE_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt}
-                style={styles.modalOption}
-                onPress={() => {
-                  setFuelType(opt);
-                  setShowFuelModal(false);
-                }}>
-                <Text style={styles.modalOptionText}>{opt}</Text>
-              </Pressable>
-            ))}
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal visible={showTransmissionModal} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowTransmissionModal(false)}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            {TRANSMISSION_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt}
-                style={styles.modalOption}
-                onPress={() => {
-                  setTransmission(opt);
-                  setShowTransmissionModal(false);
-                }}>
-                <Text style={styles.modalOptionText}>{opt}</Text>
-              </Pressable>
-            ))}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* Modals */}
+      <SelectModal visible={openModal === 'brand'} title="Select Brand" options={brands}
+        selected={brand} onSelect={handleBrandSelect} onClose={() => setOpenModal(null)} />
+      <SelectModal visible={openModal === 'model'} title="Select Model" options={models}
+        selected={model} onSelect={handleModelSelect} onClose={() => setOpenModal(null)} />
+      <SelectModal visible={openModal === 'year'} title="Select Year" options={years}
+        selected={year} onSelect={handleYearSelect} onClose={() => setOpenModal(null)} />
     </View>
   );
 }
+
+/* ════════════════════════════════════════
+   STYLES
+════════════════════════════════════════ */
+const styles = StyleSheet.create({
+  container:  { flex: 1, backgroundColor: COLORS.background },
+  header:     { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
+  backBtn:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  backText:   { color: COLORS.text, fontSize: 15 },
+  content:    { paddingHorizontal: 20, paddingTop: 8, gap: 16 },
+
+  titleRow:     { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 4 },
+  titleIconWrap:{ width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(50,104,247,0.12)', alignItems: 'center', justifyContent: 'center' },
+  title:        { color: COLORS.text, fontSize: 22, fontWeight: '800' },
+  subtitle:     { color: COLORS.muted, fontSize: 13, marginTop: 2 },
+
+  card:       { backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.border, gap: 4 },
+  cardTitle:  { color: COLORS.text, fontSize: 15, fontWeight: '700', marginBottom: 10 },
+
+  fieldWrap:         { gap: 6, marginBottom: 4 },
+  label:             { color: COLORS.muted, fontSize: 13, fontWeight: '600' },
+  selectBox:         { height: 50, backgroundColor: COLORS.input, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14 },
+  selectBoxError:    { borderColor: COLORS.danger },
+  selectBoxDisabled: { opacity: 0.4 },
+  selectText:        { color: COLORS.text, fontSize: 15, flex: 1 },
+  selectPlaceholder: { color: COLORS.mutedDark },
+  textInput:         { color: COLORS.text, fontSize: 15 },
+  errorText:         { color: COLORS.danger, fontSize: 12 },
+
+  // Specs card
+  specsCard:       { backgroundColor: COLORS.surface, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(50,104,247,0.25)', overflow: 'hidden' },
+  specsHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: 'rgba(50,104,247,0.08)' },
+  specsHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  specsCheckIcon:  { width: 26, height: 26, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  specsCarName:    { color: COLORS.text, fontSize: 15, fontWeight: '800' },
+  specsSubtitle:   { color: COLORS.muted, fontSize: 12, marginTop: 2 },
+  specsDivider:    { height: 1, backgroundColor: 'rgba(255,255,255,0.06)' },
+  specsGrid:       { flexDirection: 'row', padding: 16, gap: 0 },
+  specsColumn:     { flex: 1, gap: 14 },
+  specsColumnDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: 16 },
+
+  specRow:            { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  specIconWrap:       { width: 28, height: 28, borderRadius: 8, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+  specIconWrapHighlight: { backgroundColor: 'rgba(50,104,247,0.12)' },
+  specLabel:          { color: COLORS.muted, fontSize: 12, flex: 1 },
+  specValue:          { color: COLORS.text, fontSize: 13, fontWeight: '700' },
+
+  specsPlaceholder:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: COLORS.border },
+  specsPlaceholderText: { color: COLORS.mutedDark, fontSize: 13 },
+
+  submitError:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 10, padding: 12 },
+  submitErrorText: { color: COLORS.danger, fontSize: 13, flex: 1 },
+
+  continueBtn:         { height: 56, borderRadius: 16, backgroundColor: COLORS.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  continueBtnDisabled: { opacity: 0.45 },
+  continueBtnText:     { color: COLORS.text, fontSize: 17, fontWeight: '800' },
+  
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  modalSheet:    { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40, maxHeight: '75%', borderWidth: 1, borderColor: COLORS.border },
+  modalHandle:   { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 16, opacity: 0.5 },
+  modalTitle:    { color: COLORS.text, fontSize: 18, fontWeight: '800', marginBottom: 12 },
+
+  searchWrap:  { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.input, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, color: COLORS.text, fontSize: 14 },
+
+  modalOption:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  modalOptionText:       { color: COLORS.muted, fontSize: 16 },
+  modalOptionTextActive: { color: COLORS.text, fontWeight: '700' },
+});

@@ -8,9 +8,10 @@ import {
   VehicleRepository,
 } from 'src/DB';
 import { AiService } from './ai/ai.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [TripModel, VehicleModel],
+  imports: [TripModel, VehicleModel , ConfigModule],
   controllers: [TripController],
   providers: [TripService, AiService, TripRepository, VehicleRepository],
 })

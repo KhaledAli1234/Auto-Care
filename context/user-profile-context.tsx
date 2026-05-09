@@ -34,6 +34,11 @@ export type UserProfileData = {
     mileage: number;
     transmission: string;
     fuelType: string;
+    enginePowerHp?: number;
+    weightKg?: number;
+    fuelCombined?: number;
+    bodyType?: string;
+    tankCapacity?: number;
   };
 
   stats?: {

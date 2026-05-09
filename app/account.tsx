@@ -45,7 +45,7 @@ type Availability  = 'public' | 'friends' | 'onlyMe';
 interface ApiReply {
   _id: string;
   id?: string;
-  createdBy: string | { _id: string; firstName?: string; lastName?: string; username?: string };
+  createdBy: string | { _id: string; firstName?: string; lastName?: string; username?: string } | null;
   content: string;
   createdAt?: string;
 }
@@ -53,7 +53,7 @@ interface ApiReply {
 interface ApiComment {
   _id: string;
   id?: string;
-  createdBy: string | { _id: string; firstName?: string; lastName?: string; username?: string };
+  createdBy: string | { _id: string; firstName?: string; lastName?: string; username?: string } | null;
   content: string;
   createdAt?: string;
   replies?: ApiReply[];
@@ -137,30 +137,44 @@ function formatCreatedAt(dateStr?: string) {
 }
 
 function resolveAuthorName(
-  createdBy: ApiComment['createdBy'],
+  createdBy: ApiComment['createdBy'] | null,
   myUserId: string,
   myName: string,
 ): string {
+  if (!createdBy) return 'Deleted User';
+
   if (typeof createdBy === 'string') {
     return createdBy === myUserId ? myName : 'User';
   }
+
   if (createdBy.username) return createdBy.username;
+
   const full = `${createdBy.firstName ?? ''} ${createdBy.lastName ?? ''}`.trim();
   if (full) return full;
+
   return createdBy._id === myUserId ? myName : 'User';
+}
+
+// ✅ FIX: null-safe author ID extraction
+function resolveAuthorId(
+  createdBy: ApiComment['createdBy'] | null,
+): string {
+  if (!createdBy) return '';
+  if (typeof createdBy === 'string') return createdBy;
+  return createdBy._id ?? '';
 }
 
 function normalizeComment(c: ApiComment, myUserId: string, myName: string): PostComment {
   return {
     id:             c._id ?? c.id ?? '',
     author:         resolveAuthorName(c.createdBy, myUserId, myName),
-    authorId:       typeof c.createdBy === 'string' ? c.createdBy : c.createdBy._id,
+    authorId:       resolveAuthorId(c.createdBy),   // ✅ FIXED
     text:           c.content ?? '',
     createdAtLabel: formatCreatedAt(c.createdAt),
     replies: (c.replies ?? []).map(r => ({
       id:             r._id ?? r.id ?? '',
       author:         resolveAuthorName(r.createdBy, myUserId, myName),
-      authorId:       typeof r.createdBy === 'string' ? r.createdBy : r.createdBy._id,
+      authorId:       resolveAuthorId(r.createdBy),  // ✅ FIXED
       text:           r.content ?? '',
       createdAtLabel: formatCreatedAt(r.createdAt),
     })),
@@ -248,7 +262,7 @@ export default function AccountScreen() {
   const [saving,       setSaving]       = useState(false);
 
   const myName    = `${profile?.user?.firstName ?? ''} ${profile?.user?.lastName ?? ''}`.trim() || 'You';
-  const myVehicle = profile?.vehicle ? [profile.vehicle.brand, profile.vehicle.model].filter(Boolean).join(' ') : '';
+  const myVehicle = profile?.vehicle ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ') : '';
   const fullName  = myName;
 
   /* ── load profile + posts ── */
@@ -262,7 +276,7 @@ export default function AccountScreen() {
         const { user, vehicle, stats, posts: apiPosts } = data?.data ?? {};
 
         updateProfile({ user, vehicle, stats, posts: apiPosts ?? [] });
-
+        console.log("API POSTS:", apiPosts);
         const name = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
         const normalized = (apiPosts ?? []).map((p: ApiPost) => normalizePost(p, uid, name));
         setPosts(normalized);
@@ -297,7 +311,6 @@ export default function AccountScreen() {
     try {
       await apiDelete(`/posts/${postId}`);
     } catch {
-      // re-fetch on failure
       const uid  = myUserId;
       const data = await apiGet(`/user/${uid}`);
       const name = myName;
@@ -409,7 +422,7 @@ export default function AccountScreen() {
             ...c, replies: c.replies.map(r => r.id !== tempId ? r : {
               id: saved._id ?? saved.id ?? tempId,
               author: resolveAuthorName(saved.createdBy, myUserId, myName),
-              authorId: typeof saved.createdBy === 'string' ? saved.createdBy : saved.createdBy._id,
+              authorId: resolveAuthorId(saved.createdBy),  // ✅ FIXED
               text: saved.content ?? text,
               createdAtLabel: formatCreatedAt(saved.createdAt),
               pending: false,
@@ -462,11 +475,7 @@ export default function AccountScreen() {
 
   /* ════════ LOGOUT ════════ */
   const handleLogout = async () => {
-    await Promise.all([
-  AsyncStorage.removeItem('access_token'),
-  AsyncStorage.removeItem('refresh_token'),
-  AsyncStorage.removeItem('userId'),
-]);
+    await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'userId']);
     router.replace('/sign-in');
   };
 
@@ -529,12 +538,17 @@ export default function AccountScreen() {
         {/* VEHICLE */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Vehicle Information</Text>
-          <InfoRow label="Brand & Model" value={valueOrFallback(myVehicle)} />
-          <InfoRow label="Year"         value={valueOrFallback(profile?.vehicle?.year)} />
-          <InfoRow label="Engine"       value={valueOrFallback(profile?.vehicle?.engineCapacity ? `${profile.vehicle.engineCapacity} CC` : '')} />
-          <InfoRow label="Mileage"      value={valueOrFallback(profile?.vehicle?.mileage ? `${profile.vehicle.mileage} km` : '')} />
-          <InfoRow label="Transmission" value={valueOrFallback(profile?.vehicle?.transmission)} />
-          <InfoRow label="Fuel Type"    value={valueOrFallback(profile?.vehicle?.fuelType)} />
+          <InfoRow label="Brand & Model"  value={valueOrFallback(myVehicle)} />
+          <InfoRow label="Year"           value={valueOrFallback(profile?.vehicle?.year)} />
+          <InfoRow label="Body Type"      value={valueOrFallback((profile?.vehicle as any)?.bodyType)} />
+          <InfoRow label="Engine"         value={valueOrFallback(profile?.vehicle?.engineCapacity ? `${profile.vehicle.engineCapacity} CC` : '')} />
+          <InfoRow label="Engine Power"   value={valueOrFallback((profile?.vehicle as any)?.enginePowerHp ? `${(profile?.vehicle as any).enginePowerHp} HP` : '')} />
+          <InfoRow label="Transmission"   value={valueOrFallback(profile?.vehicle?.transmission)} />
+          <InfoRow label="Fuel Type"      value={valueOrFallback(profile?.vehicle?.fuelType)} />
+          <InfoRow label="Fuel Economy"   value={valueOrFallback((profile?.vehicle as any)?.fuelCombined ? `${(profile?.vehicle as any).fuelCombined} L/100km` : '')} />
+          <InfoRow label="Tank Capacity"  value={valueOrFallback(profile?.vehicle?.tankCapacity ? `${profile.vehicle.tankCapacity} L` : '')} />
+          <InfoRow label="Weight"         value={valueOrFallback((profile?.vehicle as any)?.weightKg ? `${(profile?.vehicle as any).weightKg} kg` : '')} />
+          <InfoRow label="Mileage"        value={valueOrFallback(profile?.vehicle?.mileage ? `${profile.vehicle.mileage} km` : '')} />
         </View>
 
         {/* POSTS */}
@@ -1104,5 +1118,4 @@ const styles = StyleSheet.create({
   logoutOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
   logoutBox:     { width: '80%', backgroundColor: COLORS.surface, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
   modalBtn:      { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-
 });

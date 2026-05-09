@@ -27,6 +27,7 @@ export default function RootLayout() {
           <Stack.Screen name="reset-password" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="trips" />
+          <Stack.Screen name="record-trip" />
           <Stack.Screen name="track" />
           <Stack.Screen name="track-live" />
           <Stack.Screen name="community" />

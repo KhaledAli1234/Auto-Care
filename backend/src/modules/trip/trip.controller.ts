@@ -113,4 +113,12 @@ export class TripController {
     await this.tripService.deleteTrip(id);
     return successResponse();
   }
+
+  @Post('end')
+  @Auth([RoleEnum.user])
+  async endTrip(@Body() body: any, @Req() req) {
+    const userId = req.credentials.user._id;
+    const data = await this.tripService.createTrip(body, userId);
+    return successResponse({ data });
+  }
 }

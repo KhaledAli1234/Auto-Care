@@ -160,31 +160,47 @@ function formatCreatedAt(dateStr?: string) {
   return `${diffDays}d ago`;
 }
 
-function resolveAuthorId(createdBy: ApiPost["createdBy"]): string {
-  if (typeof createdBy === "string") return createdBy;
-  return createdBy._id ?? "";
+function resolveAuthorId(
+  createdBy: ApiPost["createdBy"],
+): string {
+
+  // null safety
+  if (!createdBy) {
+    return "";
+  }
+
+  if (typeof createdBy === "string") {
+    return createdBy;
+  }
+
+  return createdBy?._id || "";
 }
 
-// FIX #3: When createdBy is a populated object, always use its fields.
-// Only fall back to myName when the ID matches the logged-in user.
 function resolveAuthorName(
-  createdBy: ApiPost["createdBy"],
-  myUserId?: string,
-  myName?: string,
+  createdBy: ApiComment['createdBy'] | null,
+  myUserId: string,
+  myName: string,
 ): string {
-  if (typeof createdBy === "string") {
-    // createdBy is just an ID string — only show our own name if it's us
-    if (myUserId && myName && createdBy === myUserId) return myName;
-    // For other users whose data wasn't populated, we can't know their name
-    return "User";
+
+  if (!createdBy) {
+    return 'Deleted User';
   }
-  // createdBy is a populated object — use it directly
-  if (createdBy.username) return createdBy.username;
-  const fullName = `${createdBy.firstName ?? ""} ${createdBy.lastName ?? ""}`.trim();
-  if (fullName) return fullName;
-  // Last resort: check if it's the logged-in user
-  if (myUserId && myName && createdBy._id === myUserId) return myName;
-  return "User";
+
+  if (typeof createdBy === 'string') {
+    return createdBy === myUserId ? myName : 'User';
+  }
+
+  if (createdBy.username) {
+    return createdBy.username;
+  }
+
+  const full = `${createdBy.firstName ?? ''} ${createdBy.lastName ?? ''}`.trim();
+
+  if (full) {
+    return full;
+  }
+
+  return createdBy._id === myUserId ? myName : 'User';
 }
 
 // FIX #6: Extract vehicle from populated createdBy (after backend populate fix)

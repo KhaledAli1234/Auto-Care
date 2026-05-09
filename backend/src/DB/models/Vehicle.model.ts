@@ -1,20 +1,11 @@
-import {
-  MongooseModule,
-  Prop,
-  Schema,
-  SchemaFactory,
-} from '@nestjs/mongoose';
+import { MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({
   timestamps: true,
 })
 export class Vehicle {
-  @Prop({
-    type: Types.ObjectId,
-    ref: 'User',
-    required: true,
-  })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
   @Prop({ required: true })
@@ -40,12 +31,22 @@ export class Vehicle {
 
   @Prop({ required: true })
   transmission: string;
+
+  @Prop()
+  enginePowerHp: number;
+
+  @Prop()
+  weightKg: number;
+
+  @Prop()
+  fuelCombined: number;
+
+  @Prop()
+  bodyType: string;
 }
 
 export type VehicleDocument = HydratedDocument<Vehicle>;
-
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);
-
 export const VehicleModel = MongooseModule.forFeature([
   { name: Vehicle.name, schema: VehicleSchema },
 ]);
