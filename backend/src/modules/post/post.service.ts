@@ -109,9 +109,9 @@ export class PostService {
     });
 
     if (action === 'like') {
-      const postOwnerId = post.createdBy.toString();
-
-      if (postOwnerId !== userId) {
+      const postOwnerId = (post.createdBy as Types.ObjectId).toHexString();
+      const cleanUserId = new Types.ObjectId(userId).toHexString();
+      if (postOwnerId !== cleanUserId) {
         const sender = await this.userRepository.findById({
           id: new Types.ObjectId(userId),
         });
@@ -120,7 +120,9 @@ export class PostService {
           await this.notificationService.createLikeNotification(
             userId,
             postOwnerId,
-            sender.username, // 👈 fixed (مش userName)
+            `${sender.firstName ?? ''} ${sender.lastName ?? ''}`.trim() ||
+              sender.username ||
+              'Someone',
             postId,
           );
         }

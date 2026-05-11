@@ -26,15 +26,9 @@ export class AiService {
       harsh_brake_count: rawData.harsh_brake_count ?? 0,
       harsh_accel_count: rawData.harsh_accel_count ?? 0,
       engine_cc: vehicle.engineCapacity ?? 1600,
-      engine_power_hp: vehicle.engineCapacity
-        ? Math.round(vehicle.engineCapacity / 25)
-        : 100,
-      weight_kg: vehicle.engineCapacity
-        ? Math.round(vehicle.engineCapacity * 0.6)
-        : 1200,
-      fuel_combined_l_100km: vehicle.tankCapacity
-        ? Math.round((vehicle.tankCapacity / 10) * 10) / 10
-        : 7.0,
+      engine_power_hp: Math.round((vehicle.engineCapacity ?? 1600) / 25),
+      weight_kg: Math.round((vehicle.engineCapacity ?? 1600) * 0.6),
+      fuel_combined_l_100km: 7.0,
       year: vehicle.year ?? 2020,
 
       ...(rawData.previous_fuel_l_100km != null && {

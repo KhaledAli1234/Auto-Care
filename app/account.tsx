@@ -17,11 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserProfile } from '@/context/user-profile-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '@/constants/api';
+import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 
-/* ════════════════════════════════════════
-   COLORS
-════════════════════════════════════════ */
 const COLORS = {
   background:   '#09182d',
   surface:      '#13243a',
@@ -36,9 +33,6 @@ const COLORS = {
   danger:       '#ef4444',
 };
 
-/* ════════════════════════════════════════
-   TYPES
-════════════════════════════════════════ */
 type AllowComments = 'allow' | 'disable';
 type Availability  = 'public' | 'friends' | 'onlyMe';
 
@@ -196,44 +190,7 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string): AccountPos
   };
 }
 
-/* ════════════════════════════════════════
-   API HELPERS
-════════════════════════════════════════ */
-async function authHeaders() {
-  const token = await AsyncStorage.getItem('access_token');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
-  };
-}
-async function apiGet(path: string) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: 'GET', headers: await authHeaders() });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[GET ${path}]`, json);
-  return json;
-}
-async function apiPost(path: string, body?: object) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: 'POST', headers: await authHeaders(), body: body ? JSON.stringify(body) : undefined });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[POST ${path}]`, json);
-  return json;
-}
-async function apiPatch(path: string, body?: object) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: 'PATCH', headers: await authHeaders(), body: body ? JSON.stringify(body) : undefined });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[PATCH ${path}]`, json);
-  return json;
-}
-async function apiDelete(path: string) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers: await authHeaders() });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) console.warn(`[DELETE ${path}]`, json);
-  return json;
-}
 
-/* ════════════════════════════════════════
-   INFO ROW
-════════════════════════════════════════ */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.infoRow}>

@@ -32,7 +32,6 @@ export class CommentService {
       throw new NotFoundException('some tagged users not exist');
     }
   }
-
   async createComment(postId: string, body: any, userId: string) {
     const post = await this.postRepository.findOne({
       filter: {
@@ -56,19 +55,24 @@ export class CommentService {
     });
 
     if (!comment) throw new BadRequestException('fail to create comment');
-    const postOwner = await this.postRepository.findOne({
-      filter: { _id: new Types.ObjectId(postId) },
-    });
-    if (postOwner && postOwner.createdBy.toString() !== userId) {
+
+    if (
+      post &&
+      (post.createdBy as Types.ObjectId).toHexString() !==
+        new Types.ObjectId(userId).toHexString()
+    ) {
       const sender = await this.userRepository.findById({
         id: new Types.ObjectId(userId),
       });
-
       if (sender) {
+        const senderName =
+          `${sender.firstName ?? ''} ${sender.lastName ?? ''}`.trim() ||
+          sender.username ||
+          'Someone';
         await this.notificationService.createCommentNotification(
           userId,
-          postOwner.createdBy.toString(),
-          sender.username,
+          (post.createdBy as Types.ObjectId).toHexString(),
+          senderName,
           postId,
           comment._id.toString(),
         );
@@ -77,7 +81,6 @@ export class CommentService {
 
     return comment;
   }
-
   async replyOnComment(
     postId: string,
     commentId: string,
@@ -111,16 +114,23 @@ export class CommentService {
       filter: { _id: new Types.ObjectId(commentId) },
     });
 
-    if (parentComment && parentComment.createdBy.toString() !== userId) {
+    if (
+      parentComment &&
+      (parentComment.createdBy as Types.ObjectId).toHexString() !==
+        new Types.ObjectId(userId).toHexString()
+    ) {
       const sender = await this.userRepository.findById({
         id: new Types.ObjectId(userId),
       });
-
       if (sender) {
+        const senderName =
+          `${sender.firstName ?? ''} ${sender.lastName ?? ''}`.trim() ||
+          sender.username ||
+          'Someone';
         await this.notificationService.createReplyNotification(
           userId,
-          parentComment.createdBy.toString(),
-          sender.username,
+          (parentComment.createdBy as Types.ObjectId).toHexString(),
+          senderName,
           postId,
           commentId,
         );
@@ -129,7 +139,6 @@ export class CommentService {
 
     return reply;
   }
-
   async updateComment(commentId: string, body: any, user: any) {
     const comment = await this.commentRepository.findOneAndUpdate({
       filter: {
@@ -153,7 +162,6 @@ export class CommentService {
 
     return comment;
   }
-
   async deleteComment(commentId: string, user: any) {
     const comment = await this.commentRepository.findOne({
       filter: {

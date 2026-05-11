@@ -11,7 +11,11 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMotionUsageDescription": "AutoCare needs motion sensors to analyze your driving."
+        "NSMotionUsageDescription": "AutoCare needs motion sensors to analyze your driving.",
+        "NSLocationWhenInUseUsageDescription": "Allow AutoCare to access your location while tracking trips.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
@@ -25,6 +29,7 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACTIVITY_RECOGNITION"
       ]
     },

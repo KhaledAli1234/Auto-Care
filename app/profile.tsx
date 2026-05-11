@@ -15,12 +15,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
-import { BASE_URL } from '@/constants/api';
+import { authHeaders, apiGet } from '@/constants/api-client';
 import { NotificationBell } from '@/components/notification-bell';
 
-/* ════════════════════════════════════════
-   COLORS
-════════════════════════════════════════ */
 const COLORS = {
   background:   '#09182d',
   card:         '#102440',
@@ -39,9 +36,6 @@ const COLORS = {
   danger:       '#ff5f7a',
 };
 
-/* ════════════════════════════════════════
-   TYPES
-════════════════════════════════════════ */
 interface DashboardData {
   totalTrips: number;
   totalDistance: number;
@@ -74,27 +68,7 @@ interface Notification {
   time: string;
 }
 
-/* ════════════════════════════════════════
-   API HELPERS
-════════════════════════════════════════ */
-async function authHeaders() {
-  const token = await AsyncStorage.getItem('access_token');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
-  };
-}
 
-async function apiGet(path: string) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: 'GET', headers: await authHeaders() });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[GET ${path}]`, json);
-  return json;
-}
-
-/* ════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════ */
 function riskTone(level?: string): 'success' | 'warning' | 'danger' {
   if (level === 'high')   return 'danger';
   if (level === 'medium') return 'warning';
@@ -186,9 +160,6 @@ function buildNotifications(d: DashboardData): Notification[] {
   return notes;
 }
 
-/* ════════════════════════════════════════
-   SUB COMPONENTS
-════════════════════════════════════════ */
 function TrendRow({ label, tone }: { label: string; tone: 'success' | 'warning' | 'danger' }) {
   const color = toneColor(tone);
   return (
@@ -222,10 +193,6 @@ function MetricCard({
     </View>
   );
 }
-
-/* ════════════════════════════════════════
-   SCREEN
-════════════════════════════════════════ */
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
 
@@ -246,6 +213,7 @@ export default function DashboardScreen() {
       const d: DashboardData = data?.data?.dashboard;
       if (d) {
         setDashboard(d);
+        setNotifications(buildNotifications(d));
       }
     } catch (err) {
       console.log('dashboard error:', err);
@@ -267,10 +235,6 @@ export default function DashboardScreen() {
   }
 
   const d = dashboard;
-
-  /* ════════════════════════════════════════
-     RENDER
-  ════════════════════════════════════════ */
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* ── HEADER ── */}
@@ -443,9 +407,6 @@ export default function DashboardScreen() {
 
       <BottomNavbar activeTab="home" />
 
-      {/* ════════════════════════════════════════
-          NOTIFICATIONS MODAL
-      ════════════════════════════════════════ */}
       <Modal
         visible={showNotifModal}
         transparent
@@ -495,10 +456,6 @@ export default function DashboardScreen() {
     </View>
   );
 }
-
-/* ════════════════════════════════════════
-   STYLES
-════════════════════════════════════════ */
 const styles = StyleSheet.create({
   container:  { flex: 1, backgroundColor: COLORS.background },
   scroll:     { flex: 1 },

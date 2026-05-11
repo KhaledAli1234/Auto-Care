@@ -12,14 +12,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { authHeaders, apiGet} from '@/constants/api-client';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
 import { NotificationBell } from '@/components/notification-bell';
 
-/* ════════════════════════════════════════
-   COLORS
-════════════════════════════════════════ */
 const COLORS = {
   background:  '#09182d',
   surface:     '#13243a',
@@ -36,9 +33,6 @@ const COLORS = {
   yellow:      '#f59e0b',
 };
 
-/* ════════════════════════════════════════
-   TYPES
-════════════════════════════════════════ */
 export interface ApiTrip {
   _id: string;
   user: string;
@@ -82,9 +76,6 @@ export interface ApiTrip {
   createdAt: string;
 }
 
-/* ════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════ */
 function formatDuration(min?: number) {
   if (!min) return '—';
   if (min < 60) return `${min} min`;
@@ -107,27 +98,6 @@ function scoreLabel(score?: number): { text: string; color: string } {
   return { text: 'Poor', color: COLORS.danger };
 }
 
-/* ════════════════════════════════════════
-   API HELPERS
-════════════════════════════════════════ */
-async function authHeaders() {
-  const token = await AsyncStorage.getItem('access_token');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
-  };
-}
-
-async function apiGet(path: string) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: 'GET', headers: await authHeaders() });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[GET ${path}]`, json);
-  return json;
-}
-
-/* ════════════════════════════════════════
-   SCREEN
-════════════════════════════════════════ */
 export default function TripsScreen() {
   const insets = useSafeAreaInsets();
 
@@ -137,7 +107,7 @@ export default function TripsScreen() {
   const [page,        setPage]        = useState(1);
   const [totalPages,  setTotalPages]  = useState(1);
   const [userId,      setUserId]      = useState('');
-
+  const [totalTrips, setTotalTrips]   = useState(0);
   /* ── fetch ── */
   const fetchTrips = useCallback(async (pageNum = 1, replace = true) => {
     try {
@@ -147,6 +117,7 @@ export default function TripsScreen() {
       const data = await apiGet(`/trips/user/${uid}?page=${pageNum}&size=10`);
       const result: ApiTrip[] = data?.data?.trips ?? [];
       setTrips(prev => replace ? result : [...prev, ...result]);
+      setTotalTrips(data?.data?.docCount ?? result.length);
       setTotalPages(data?.data?.pages ?? 1);
       setPage(pageNum);
     } catch (err) {
@@ -159,9 +130,6 @@ export default function TripsScreen() {
 
   useEffect(() => { fetchTrips(1); }, [fetchTrips]);
 
-  /* ════════════════════════════════════════
-     RENDER
-  ════════════════════════════════════════ */
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -191,7 +159,7 @@ export default function TripsScreen() {
         <View style={styles.topRow}>
           <View>
             <Text style={styles.totalLabel}>Total Trips</Text>
-            <Text style={styles.totalValue}>{trips.length}</Text>
+            <Text style={styles.totalValue}>{totalTrips}</Text>
           </View>
         </View>
 
@@ -218,9 +186,6 @@ export default function TripsScreen() {
   );
 }
 
-/* ════════════════════════════════════════
-   TRIP CARD
-════════════════════════════════════════ */
 function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void }) {
   const [showOptions,   setShowOptions]   = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -389,9 +354,6 @@ function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void })
   );
 }
 
-/* ════════════════════════════════════════
-   STYLES
-════════════════════════════════════════ */
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16 },

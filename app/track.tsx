@@ -21,7 +21,7 @@ export default function TrackScreen() {
   const insets = useSafeAreaInsets();
 
   const handleStartDriving = () => {
-    router.push('/track-live');
+    router.push('/record-trip');
   };
 
   return (

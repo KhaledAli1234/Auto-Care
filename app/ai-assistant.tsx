@@ -17,7 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
-import { BASE_URL } from "@/constants/api";
+import { authHeaders, apiGet } from '@/constants/api-client';
 import { NotificationBell } from "@/components/notification-bell";
 
 /* ════════════════════════════════════════
@@ -39,9 +39,6 @@ const COLORS = {
   danger:      "#ef4444",
 };
 
-/* ════════════════════════════════════════
-   TYPES
-════════════════════════════════════════ */
 type AssistantTab = "ai" | "support";
 
 type ChatMessage = {
@@ -52,9 +49,6 @@ type ChatMessage = {
   isTyping?: boolean;
 };
 
-/* ════════════════════════════════════════
-   CONSTANTS
-════════════════════════════════════════ */
 const QUICK_QUESTIONS = [
   "Is my driving safe?",
   "Is fuel consumption normal?",
@@ -68,30 +62,6 @@ function getCurrentTimeLabel() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-/* ════════════════════════════════════════
-   API HELPERS
-════════════════════════════════════════ */
-async function authHeaders() {
-  const token = await AsyncStorage.getItem("access_token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token?.replace(/"/g, "") ?? ""}`,
-  };
-}
-
-async function apiGet(path: string) {
-  try {
-    const res  = await fetch(`${BASE_URL}${path}`, { method: "GET", headers: await authHeaders() });
-    const json = await res.json();
-    return res.ok ? json : null;
-  } catch {
-    return null;
-  }
-}
-
-/* ════════════════════════════════════════
-   BUILD SYSTEM PROMPT WITH REAL CONTEXT
-════════════════════════════════════════ */
 async function buildSystemPrompt(
   vehicleName: string,
   vehicleDetails: any,

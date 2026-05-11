@@ -1,6 +1,6 @@
 // hooks/useNotifications.ts
 import { useCallback, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authHeaders } from '@/constants/api-client';
 import { BASE_URL } from '@/constants/api';
 
 export interface ApiNotification {
@@ -17,13 +17,6 @@ export interface ApiNotification {
   };
 }
 
-async function authHeaders() {
-  const token = await AsyncStorage.getItem('access_token');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
-  };
-}
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);

@@ -1,92 +1,144 @@
-// app/record-trip.tsx
 import { Accelerometer, Gyroscope } from 'expo-sensors';
 import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, Pressable,
-  StyleSheet, Text, View,
+  ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/constants/api';
+import { Linking } from 'react-native';
 
 const COLORS = {
-  background: '#09182d', surface: '#13243a',
-  surfaceLight: '#172b44', border: 'rgba(255,255,255,0.07)',
-  text: '#f8fafc', muted: '#aebbd0', mutedDark: '#74849a',
-  primary: '#3268f7', danger: '#ef4444', green: '#22c55e',
+  background:   '#09182d',
+  surface:      '#13243a',
+  surfaceLight: '#172b44',
+  border:       'rgba(255,255,255,0.07)',
+  text:         '#f8fafc',
+  muted:        '#aebbd0',
+  mutedDark:    '#74849a',
+  primary:      '#3268f7',
+  danger:       '#ef4444',
+  green:        '#22c55e',
+  yellow:       '#f59e0b',
 };
 
 interface SensorReading { x: number; y: number; z: number; }
-interface LocationPoint { speed: number; timestamp: number; }
+interface LocationPoint  { speed: number; timestamp: number; }
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatTime(s: number) {
+  const h   = Math.floor(s / 3600);
+  const m   = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function scoreColor(events: number) {
+  if (events === 0) return COLORS.green;
+  if (events < 5)   return COLORS.yellow;
+  return COLORS.danger;
+}
 
 export default function RecordTripScreen() {
   const insets = useSafeAreaInsets();
 
-  const [isRecording, setIsRecording]   = useState(false);
-  const [isPaused,    setIsPaused]      = useState(false);
-  const [elapsed,     setElapsed]       = useState(0);
-  const [distance,    setDistance]      = useState(0);
-  const [currentSpeed,setCurrentSpeed] = useState(0);
-  const [sending,     setSending]       = useState(false);
+  const [isRecording,  setIsRecording]  = useState(false);
+  const [elapsed,      setElapsed]      = useState(0);
+  const [distance,     setDistance]     = useState(0);
+  const [currentSpeed, setCurrentSpeed] = useState(0);
+  const [sending,      setSending]      = useState(false);
+  const [eventCount,   setEventCount]   = useState(0);
 
-  // Sensor data refs — don't need re-render
   const accelData    = useRef<SensorReading[]>([]);
   const gyroData     = useRef<SensorReading[]>([]);
   const locationData = useRef<LocationPoint[]>([]);
   const harshBrakes  = useRef(0);
   const harshAccels  = useRef(0);
   const maxSpeed     = useRef(0);
-  const lastSpeed    = useRef(0);
   const lastLocation = useRef<{ lat: number; lng: number } | null>(null);
 
-  // Subscriptions
   const accelSub    = useRef<any>(null);
   const gyroSub     = useRef<any>(null);
   const locationSub = useRef<any>(null);
   const timer       = useRef<any>(null);
   
+  const lastEventTime = useRef(0);
 
-  // ── Timer ──
   useEffect(() => {
-    if (isRecording && !isPaused) {
+    if (isRecording) {
       timer.current = setInterval(() => setElapsed(e => e + 1), 1000);
     } else {
       clearInterval(timer.current);
     }
     return () => clearInterval(timer.current);
-  }, [isRecording, isPaused]);
+  }, [isRecording]);
 
-  // ── Start Recording ──
-  const startRecording = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
+const startRecording = async () => {
+  console.log('[startRecording] called');
+
+  const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+  console.log('[startRecording] location status:', status, 'canAskAgain:', canAskAgain);
+
+  if (status !== 'granted') {
+    if (!canAskAgain) {
+      Alert.alert(
+        'Location Permission Required',
+        'Please enable location access in your device Settings to track trips.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ]
+      );
+    } else {
       Alert.alert('Permission needed', 'Location access is required to track your trip.');
-      return;
     }
+    return;
+  }
 
-    // Reset all data
     accelData.current    = [];
     gyroData.current     = [];
     locationData.current = [];
     harshBrakes.current  = 0;
     harshAccels.current  = 0;
     maxSpeed.current     = 0;
-    lastSpeed.current    = 0;
     lastLocation.current = null;
     setElapsed(0);
     setDistance(0);
+    setCurrentSpeed(0);
+    setEventCount(0); 
 
-    // Accelerometer
-    Accelerometer.setUpdateInterval(100); // 10 readings/sec
+    Accelerometer.setUpdateInterval(100);
     accelSub.current = Accelerometer.addListener(data => {
       accelData.current.push(data);
-      // Detect harsh events
+      
+      const now = Date.now();
       const magnitude = Math.sqrt(data.x ** 2 + data.y ** 2 + data.z ** 2);
-      if (magnitude > 1.8) harshBrakes.current  += 1;
-      if (magnitude > 2.0) harshAccels.current  += 1;
+      
+      if (now - lastEventTime.current > 1000) {
+        if (magnitude > 3.5) {
+          harshBrakes.current += 1;
+          setEventCount(harshBrakes.current + harshAccels.current);
+          lastEventTime.current = now;
+        } else if (magnitude > 4.0) {
+          harshAccels.current += 1;
+          setEventCount(harshBrakes.current + harshAccels.current);
+          lastEventTime.current = now;
+        }
+      }
     });
 
     // Gyroscope
@@ -99,13 +151,11 @@ export default function RecordTripScreen() {
     locationSub.current = await Location.watchPositionAsync(
       { accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 5 },
       loc => {
-        const speed = (loc.coords.speed ?? 0) * 3.6; // m/s → km/h
+        const speed = Math.max(0, (loc.coords.speed ?? 0) * 3.6);
         setCurrentSpeed(Math.round(speed));
         locationData.current.push({ speed, timestamp: loc.timestamp });
-
         if (speed > maxSpeed.current) maxSpeed.current = speed;
 
-        // Calculate distance
         if (lastLocation.current) {
           const d = haversineDistance(
             lastLocation.current.lat, lastLocation.current.lng,
@@ -114,17 +164,13 @@ export default function RecordTripScreen() {
           setDistance(prev => prev + d);
         }
         lastLocation.current = { lat: loc.coords.latitude, lng: loc.coords.longitude };
-        lastSpeed.current = speed;
       },
     );
 
     setIsRecording(true);
-    setIsPaused(false);
   };
 
-
   const stopAndSend = async () => {
-    
     accelSub.current?.remove();
     gyroSub.current?.remove();
     locationSub.current?.remove();
@@ -139,26 +185,26 @@ export default function RecordTripScreen() {
     try {
       const token = await AsyncStorage.getItem('access_token');
 
-      const speeds     = locationData.current.map(l => l.speed);
-      const avgSpeed   = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
-      const speedVar   = speeds.length ? Math.sqrt(speeds.map(s => (s - avgSpeed) ** 2).reduce((a, b) => a + b, 0) / speeds.length) : 0;
-      const overspeed  = speeds.filter(s => s > 120).length / (speeds.length || 1);
-      const accel = accelData.current.slice(-100);
-      const gyro  = gyroData.current.slice(-100);
+      const speeds   = locationData.current.map(l => l.speed);
+      const avgSpeed = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
+      const speedVar = speeds.length
+        ? Math.sqrt(speeds.map(s => (s - avgSpeed) ** 2).reduce((a, b) => a + b, 0) / speeds.length)
+        : 0;
+      const overspeed = speeds.filter(s => s > 120).length / (speeds.length || 1);
 
       const payload = {
-        trip_id:              `trip_${Date.now()}`,
-        date:                 new Date().toISOString().split('T')[0],
-        accelerometer_data:   accel,
-        gyroscope_data:       gyro,
-        avg_speed:            Math.round(avgSpeed),
-        max_speed:            Math.round(maxSpeed.current),
-        distance_km:          Math.round(distance * 10) / 10,
-        trip_duration_min:    Math.round(elapsed / 60),
-        overspeed_ratio:      Math.round(overspeed * 100) / 100,
-        speed_variance:       Math.round(speedVar * 10) / 10,
-        harsh_brake_count:    harshBrakes.current,
-        harsh_accel_count:    harshAccels.current,
+        trip_id:            `trip_${Date.now()}`,
+        date:               new Date().toISOString().split('T')[0],
+        accelerometer_data: accelData.current.slice(-100),
+        gyroscope_data:     gyroData.current.slice(-100),
+        avg_speed:          Math.round(avgSpeed),
+        max_speed:          Math.round(maxSpeed.current),
+        distance_km:        Math.round(distance * 10) / 10,
+        trip_duration_min:  Math.round(elapsed / 60),
+        overspeed_ratio:    Math.round(overspeed * 100) / 100,
+        speed_variance:     Math.round(speedVar * 10) / 10,
+        harsh_brake_count:  harshBrakes.current,
+        harsh_accel_count:  harshAccels.current,
       };
 
       const res = await fetch(`${BASE_URL}/trips/end`, {
@@ -166,146 +212,224 @@ export default function RecordTripScreen() {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
+          'ngrok-skip-browser-warning': 'true',
         },
         body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        Alert.alert('Trip Saved! ✅', 'Your trip has been analyzed and saved.', [
-          { text: 'View Trips', onPress: () => router.replace('/trips') },
-        ]);
+        Alert.alert(
+          '✅ Trip Saved',
+          `Distance: ${distance.toFixed(1)} km\nDuration: ${formatTime(elapsed)}\nEvents: ${harshBrakes.current + harshAccels.current}`,
+          [{ text: 'View Trips', onPress: () => router.replace('/trips') }],
+        );
       } else {
-        throw new Error('Failed to save trip');
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message ?? 'Failed to save trip');
       }
-    } catch (err) {
-      Alert.alert('Error', 'Failed to save trip. Please try again.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message ?? 'Failed to save trip. Please try again.');
     } finally {
       setSending(false);
     }
   };
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60).toString().padStart(2, '0');
-    const sec = (s % 60).toString().padStart(2, '0');
-    return `${m}:${sec}`;
-  };
+  const events = harshBrakes.current + harshAccels.current;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
+          <Ionicons name="arrow-back" size={20} color={COLORS.text} />
         </Pressable>
         <Text style={styles.title}>Record Trip</Text>
         <View style={{ width: 36 }} />
       </View>
 
-      <View style={styles.content}>
-        {/* Timer */}
-        <View style={styles.timerCard}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Timer Card ── */}
+        <View style={[styles.timerCard, isRecording && styles.timerCardActive]}>
           <Text style={styles.timerLabel}>Duration</Text>
           <Text style={styles.timerValue}>{formatTime(elapsed)}</Text>
+
           {isRecording && (
-            <View style={styles.recordingDot}>
-              <View style={styles.dot} />
+            <View style={styles.recordingPill}>
+              <View style={styles.recordingDot} />
               <Text style={styles.recordingText}>Recording</Text>
             </View>
           )}
+
+          {!isRecording && elapsed === 0 && (
+            <Text style={styles.timerHint}>Press Start to begin recording</Text>
+          )}
         </View>
 
-        {/* Stats */}
+        {/* ── Stats Row ── */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Ionicons name="speedometer-outline" size={20} color={COLORS.primary} />
+            <View style={[styles.statIconWrap, { backgroundColor: 'rgba(50,104,247,0.12)' }]}>
+              <Ionicons name="speedometer-outline" size={18} color={COLORS.primary} />
+            </View>
             <Text style={styles.statValue}>{currentSpeed}</Text>
             <Text style={styles.statLabel}>km/h</Text>
           </View>
+
           <View style={styles.statCard}>
-            <Ionicons name="location-outline" size={20} color={COLORS.primary} />
+            <View style={[styles.statIconWrap, { backgroundColor: 'rgba(50,104,247,0.12)' }]}>
+              <Ionicons name="location-outline" size={18} color={COLORS.primary} />
+            </View>
             <Text style={styles.statValue}>{distance.toFixed(1)}</Text>
             <Text style={styles.statLabel}>km</Text>
           </View>
+
           <View style={styles.statCard}>
-            <Ionicons name="warning-outline" size={20} color={COLORS.danger} />
-            <Text style={styles.statValue}>{harshBrakes.current + harshAccels.current}</Text>
+            <View style={[styles.statIconWrap, { backgroundColor: `${scoreColor(eventCount)}18` }]}>
+              <Ionicons name="warning-outline" size={18} color={scoreColor(eventCount)} />
+            </View>
+            <Text style={[styles.statValue, { color: scoreColor(eventCount) }]}>{eventCount}</Text>
             <Text style={styles.statLabel}>events</Text>
           </View>
         </View>
 
-        {/* Buttons */}
-        {!isRecording ? (
-          <Pressable style={styles.startBtn} onPress={startRecording}>
-            <Ionicons name="play" size={28} color={COLORS.text} />
-            <Text style={styles.startBtnText}>Start Trip</Text>
-          </Pressable>
-        ) : (
-          <View style={styles.controlsRow}>
-            <Pressable
-              style={[styles.stopBtn, sending && { opacity: 0.6 }]}
-              onPress={stopAndSend}
-              disabled={sending}
-            >
-              {sending
-                ? <ActivityIndicator color={COLORS.text} />
-                : <>
-                    <Ionicons name="stop" size={24} color={COLORS.text} />
-                    <Text style={styles.stopBtnText}>End Trip</Text>
-                  </>
-              }
-            </Pressable>
+        {/* ── Breakdown (shown when recording) ── */}
+        {isRecording && (
+          <View style={styles.breakdownCard}>
+            <View style={styles.breakdownRow}>
+              <View style={styles.breakdownItem}>
+                <Ionicons name="arrow-down-circle-outline" size={16} color={COLORS.danger} />
+                <Text style={styles.breakdownLabel}>Harsh Brakes</Text>
+                <Text style={[styles.breakdownValue, { color: harshBrakes.current > 0 ? COLORS.danger : COLORS.green }]}>
+                  {harshBrakes.current}
+                </Text>
+              </View>
+              <View style={styles.breakdownDivider} />
+              <View style={styles.breakdownItem}>
+                <Ionicons name="arrow-up-circle-outline" size={16} color={COLORS.yellow} />
+                <Text style={styles.breakdownLabel}>Harsh Accels</Text>
+                <Text style={[styles.breakdownValue, { color: harshAccels.current > 0 ? COLORS.yellow : COLORS.green }]}>
+                  {harshAccels.current}
+                </Text>
+              </View>
+              <View style={styles.breakdownDivider} />
+              <View style={styles.breakdownItem}>
+                <Ionicons name="trending-up-outline" size={16} color={COLORS.primary} />
+                <Text style={styles.breakdownLabel}>Max Speed</Text>
+                <Text style={styles.breakdownValue}>{Math.round(maxSpeed.current)} km/h</Text>
+              </View>
+            </View>
           </View>
         )}
 
-        {/* Info */}
+        {/* ── Buttons ── */}
+        {!isRecording ? (
+          <Pressable style={styles.startBtn} onPress={startRecording} disabled={sending}>
+            <View style={styles.startBtnInner}>
+              <Ionicons name="play" size={26} color={COLORS.text} />
+              <Text style={styles.startBtnText}>Start Trip</Text>
+            </View>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={[styles.stopBtn, sending && styles.btnDisabled]}
+            onPress={stopAndSend}
+            disabled={sending}
+          >
+            {sending ? (
+              <View style={styles.startBtnInner}>
+                <ActivityIndicator color={COLORS.text} size="small" />
+                <Text style={styles.stopBtnText}>Analyzing trip...</Text>
+              </View>
+            ) : (
+              <View style={styles.startBtnInner}>
+                <Ionicons name="stop" size={26} color={COLORS.text} />
+                <Text style={styles.stopBtnText}>End Trip</Text>
+              </View>
+            )}
+          </Pressable>
+        )}
+
+        {/* ── Info Card ── */}
         <View style={styles.infoCard}>
-          <Ionicons name="information-circle-outline" size={18} color={COLORS.mutedDark} />
+          <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.primary} />
           <Text style={styles.infoText}>
-            Keep the app open while driving. Your trip will be analyzed by AI when you end it.
+            Keep the app open while driving. Your trip will be analyzed by AI when you end it and saved to your history.
           </Text>
         </View>
-      </View>
+
+        {/* ── Tips (only before recording) ── */}
+        {!isRecording && (
+          <View style={styles.tipsCard}>
+            <Text style={styles.tipsTitle}>Tips for accurate tracking</Text>
+            <View style={styles.tipRow}>
+              <Ionicons name="phone-portrait-outline" size={14} color={COLORS.mutedDark} />
+              <Text style={styles.tipText}>Keep your phone stable (in a mount or pocket)</Text>
+            </View>
+            <View style={styles.tipRow}>
+              <Ionicons name="wifi-outline" size={14} color={COLORS.mutedDark} />
+              <Text style={styles.tipText}>GPS works best outdoors and in open areas</Text>
+            </View>
+            <View style={styles.tipRow}>
+              <Ionicons name="battery-half-outline" size={14} color={COLORS.mutedDark} />
+              <Text style={styles.tipText}>Ensure battery is charged for long trips</Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
-// ── Haversine distance formula ──
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14 },
+  header:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   backBtn:   { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
   title:     { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+  content:   { paddingHorizontal: 20, paddingTop: 20, gap: 14 },
 
-  content:   { flex: 1, paddingHorizontal: 20, paddingTop: 20, gap: 16 },
+  // Timer
+  timerCard:       { backgroundColor: COLORS.surface, borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
+  timerCardActive: { borderColor: 'rgba(239,68,68,0.4)', backgroundColor: '#13243a' },
+  timerLabel:      { color: COLORS.muted, fontSize: 14, fontWeight: '600', marginBottom: 8, letterSpacing: 1, textTransform: 'uppercase' },
+  timerValue:      { color: COLORS.text, fontSize: 68, fontWeight: '800', letterSpacing: 2, fontVariant: ['tabular-nums'] },
+  timerHint:       { color: COLORS.mutedDark, fontSize: 13, marginTop: 10 },
+  recordingPill:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(239,68,68,0.3)' },
+  recordingDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.danger },
+  recordingText:   { color: COLORS.danger, fontSize: 13, fontWeight: '700' },
 
-  timerCard:      { backgroundColor: COLORS.surface, borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border },
-  timerLabel:     { color: COLORS.muted, fontSize: 16, marginBottom: 8 },
-  timerValue:     { color: COLORS.text, fontSize: 64, fontWeight: '800', letterSpacing: 2 },
-  recordingDot:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
-  dot:            { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.danger },
-  recordingText:  { color: COLORS.danger, fontSize: 14, fontWeight: '700' },
+  // Stats
+  statsRow:    { flexDirection: 'row', gap: 10 },
+  statCard:    { flex: 1, backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: COLORS.border },
+  statIconWrap:{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  statValue:   { color: COLORS.text, fontSize: 22, fontWeight: '800' },
+  statLabel:   { color: COLORS.muted, fontSize: 12 },
 
-  statsRow:  { flexDirection: 'row', gap: 10 },
-  statCard:  { flex: 1, backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: COLORS.border },
-  statValue: { color: COLORS.text, fontSize: 24, fontWeight: '800' },
-  statLabel: { color: COLORS.muted, fontSize: 13 },
+  // Breakdown
+  breakdownCard:    { backgroundColor: COLORS.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: COLORS.border },
+  breakdownRow:     { flexDirection: 'row', alignItems: 'center' },
+  breakdownItem:    { flex: 1, alignItems: 'center', gap: 6 },
+  breakdownDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
+  breakdownLabel:   { color: COLORS.muted, fontSize: 11, textAlign: 'center' },
+  breakdownValue:   { color: COLORS.text, fontSize: 20, fontWeight: '800' },
 
-  startBtn:     { height: 64, borderRadius: 20, backgroundColor: COLORS.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  startBtnText: { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+  // Buttons
+  startBtn:      { height: 64, borderRadius: 20, backgroundColor: COLORS.green, alignItems: 'center', justifyContent: 'center' },
+  startBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  startBtnText:  { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+  stopBtn:       { height: 64, borderRadius: 20, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
+  stopBtnText:   { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+  btnDisabled:   { opacity: 0.6 },
 
-  controlsRow: { gap: 12 },
-  stopBtn:     { height: 64, borderRadius: 20, backgroundColor: COLORS.danger, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  stopBtnText: { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+  // Info
+  infoCard: { flexDirection: 'row', gap: 10, backgroundColor: 'rgba(50,104,247,0.08)', borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: 'rgba(50,104,247,0.2)' },
+  infoText: { color: COLORS.muted, fontSize: 13, lineHeight: 20, flex: 1 },
 
-  infoCard: { flexDirection: 'row', gap: 10, backgroundColor: COLORS.surfaceLight, borderRadius: 14, padding: 14, alignItems: 'flex-start' },
-  infoText: { color: COLORS.mutedDark, fontSize: 13, lineHeight: 20, flex: 1 },
+  // Tips
+  tipsCard:  { backgroundColor: COLORS.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: COLORS.border, gap: 10 },
+  tipsTitle: { color: COLORS.text, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  tipRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tipText:   { color: COLORS.mutedDark, fontSize: 13, flex: 1 },
 });

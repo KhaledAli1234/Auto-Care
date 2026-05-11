@@ -107,7 +107,7 @@ export class TripController {
     return successResponse({ data: { message } });
   }
 
-  @Auth([RoleEnum.admin])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Delete(':id')
   async deleteTrip(@Param('id') id: string): Promise<IResponse> {
     await this.tripService.deleteTrip(id);
@@ -116,6 +116,9 @@ export class TripController {
 
   @Post('end')
   @Auth([RoleEnum.user])
+  @UsePipes(
+    new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false }),
+  )
   async endTrip(@Body() body: any, @Req() req) {
     const userId = req.credentials.user._id;
     const data = await this.tripService.createTrip(body, userId);

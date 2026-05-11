@@ -58,7 +58,8 @@ export default function SignInScreen() {
 
     try {
       setIsSubmitting(true);
-
+      console.log('BASE_URL:', BASE_URL);
+      console.log('Sending to:', `${BASE_URL}/auth/login`);
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {

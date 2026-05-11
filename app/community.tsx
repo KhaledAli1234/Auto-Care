@@ -19,12 +19,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
-import { BASE_URL } from "@/constants/api";
+import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 import { NotificationBell } from "@/components/notification-bell";
 
-/* ════════════════════════════════════════
-   COLORS
-════════════════════════════════════════ */
 const COLORS = {
   background:   "#09182d",
   surface:      "#13243a",
@@ -40,9 +37,6 @@ const COLORS = {
   danger:       "#ef4444",
 };
 
-/* ════════════════════════════════════════
-   TYPES
-════════════════════════════════════════ */
 type BrandFilter    = "All" | "Toyota" | "BMW" | "Honda" | "Kia" | "Ford";
 type Availability   = "public" | "friends" | "onlyMe";
 type AllowComments  = "allow" | "disable";
@@ -121,9 +115,6 @@ interface CommunityPost {
   pending?: boolean;
 }
 
-/* ════════════════════════════════════════
-   CONSTANTS
-════════════════════════════════════════ */
 const BRAND_FILTERS: BrandFilter[] = ["All", "Toyota", "BMW", "Honda", "Kia", "Ford"];
 
 const AVAIL_OPTIONS: { value: Availability; label: string; icon: string }[] = [
@@ -132,9 +123,6 @@ const AVAIL_OPTIONS: { value: Availability; label: string; icon: string }[] = [
   { value: "onlyMe",  label: "Only Me", icon: "lock-closed-outline" },
 ];
 
-/* ════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════ */
 function getInitials(name: string) {
   const n = name.trim();
   if (!n) return "U";
@@ -261,54 +249,6 @@ function normalizePost(
   };
 }
 
-/* ════════════════════════════════════════
-   API HELPERS
-════════════════════════════════════════ */
-async function authHeaders() {
-  const token = await AsyncStorage.getItem("access_token");
-  return {
-    "Content-Type": "application/json",
-    Authorization:  `Bearer ${token?.replace(/"/g, "") ?? ""}`,
-  };
-}
-
-async function apiGet(path: string) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: "GET", headers: await authHeaders() });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[GET ${path}] ${res.status}`, json);
-  return json;
-}
-
-async function apiPost(path: string, body?: object) {
-  const res  = await fetch(`${BASE_URL}${path}`, {
-    method: "POST", headers: await authHeaders(),
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[POST ${path}] ${res.status}`, json);
-  return json;
-}
-
-async function apiPatch(path: string, body?: object) {
-  const res  = await fetch(`${BASE_URL}${path}`, {
-    method: "PATCH", headers: await authHeaders(),
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json();
-  if (!res.ok) console.warn(`[PATCH ${path}] ${res.status}`, json);
-  return json;
-}
-
-async function apiDelete(path: string) {
-  const res  = await fetch(`${BASE_URL}${path}`, { method: "DELETE", headers: await authHeaders() });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) console.warn(`[DELETE ${path}] ${res.status}`, json);
-  return json;
-}
-
-/* ════════════════════════════════════════
-   SCREEN
-════════════════════════════════════════ */
 export default function CommunityScreen() {
   const insets   = useSafeAreaInsets();
   const { profile } = useUserProfile();
