@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,8 +17,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserProfile } from '@/context/user-profile-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 
+/* ════════════════════════════════════════
+   COLORS
+════════════════════════════════════════ */
 const COLORS = {
   background:   '#09182d',
   surface:      '#13243a',
@@ -31,10 +34,24 @@ const COLORS = {
   primary:      '#3268f7',
   input:        '#0f1f34',
   danger:       '#ef4444',
+  star:         '#f59e0b',
+  starEmpty:    'rgba(245,158,11,0.25)',
 };
 
+/* ════════════════════════════════════════
+   TYPES
+════════════════════════════════════════ */
 type AllowComments = 'allow' | 'disable';
 type Availability  = 'public' | 'friends' | 'onlyMe';
+
+// Rating data loaded per-post from GET /posts/:postId/rating
+interface PostRating {
+  average:  number;  // 0–5, one decimal
+  count:    number;
+  myRating: number;  // 0 = not rated yet
+}
+
+const DEFAULT_RATING: PostRating = { average: 0, count: 0, myRating: 0 };
 
 interface ApiReply {
   _id: string;
@@ -70,22 +87,13 @@ interface ApiPost {
 }
 
 interface PostComment {
-  id: string;
-  author: string;
-  authorId: string;
-  text: string;
-  createdAtLabel: string;
-  replies: PostReply[];
-  pending?: boolean;
+  id: string; author: string; authorId: string;
+  text: string; createdAtLabel: string; replies: PostReply[]; pending?: boolean;
 }
 
 interface PostReply {
-  id: string;
-  author: string;
-  authorId: string;
-  text: string;
-  createdAtLabel: string;
-  pending?: boolean;
+  id: string; author: string; authorId: string;
+  text: string; createdAtLabel: string; pending?: boolean;
 }
 
 interface AccountPost {
@@ -100,6 +108,7 @@ interface AccountPost {
   comments: PostComment[];
   shares: number;
   pending?: boolean;
+  rating: PostRating;   // ← NEW: loaded lazily when card mounts
 }
 
 /* ════════════════════════════════════════
@@ -119,15 +128,13 @@ function valueOrFallback(value: string | number | null | undefined, fallback = '
 
 function formatCreatedAt(dateStr?: string) {
   if (!dateStr) return '';
-  const date    = new Date(dateStr);
-  const now     = new Date();
-  const diffMs  = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1)  return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24)   return `${diffH}h ago`;
-  return `${Math.floor(diffH / 24)}d ago`;
+  const date = new Date(dateStr), now = new Date();
+  const m = Math.floor((now.getTime() - date.getTime()) / 60000);
+  if (m < 1)  return 'Just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 function resolveAuthorName(
@@ -136,23 +143,14 @@ function resolveAuthorName(
   myName: string,
 ): string {
   if (!createdBy) return 'Deleted User';
-
-  if (typeof createdBy === 'string') {
-    return createdBy === myUserId ? myName : 'User';
-  }
-
+  if (typeof createdBy === 'string') return createdBy === myUserId ? myName : 'User';
   if (createdBy.username) return createdBy.username;
-
   const full = `${createdBy.firstName ?? ''} ${createdBy.lastName ?? ''}`.trim();
   if (full) return full;
-
   return createdBy._id === myUserId ? myName : 'User';
 }
 
-// ✅ FIX: null-safe author ID extraction
-function resolveAuthorId(
-  createdBy: ApiComment['createdBy'] | null,
-): string {
+function resolveAuthorId(createdBy: ApiComment['createdBy'] | null): string {
   if (!createdBy) return '';
   if (typeof createdBy === 'string') return createdBy;
   return createdBy._id ?? '';
@@ -162,13 +160,13 @@ function normalizeComment(c: ApiComment, myUserId: string, myName: string): Post
   return {
     id:             c._id ?? c.id ?? '',
     author:         resolveAuthorName(c.createdBy, myUserId, myName),
-    authorId:       resolveAuthorId(c.createdBy),   // ✅ FIXED
+    authorId:       resolveAuthorId(c.createdBy),
     text:           c.content ?? '',
     createdAtLabel: formatCreatedAt(c.createdAt),
     replies: (c.replies ?? []).map(r => ({
       id:             r._id ?? r.id ?? '',
       author:         resolveAuthorName(r.createdBy, myUserId, myName),
-      authorId:       resolveAuthorId(r.createdBy),  // ✅ FIXED
+      authorId:       resolveAuthorId(r.createdBy),
       text:           r.content ?? '',
       createdAtLabel: formatCreatedAt(r.createdAt),
     })),
@@ -187,9 +185,9 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string): AccountPos
     likedByMe:      Array.isArray(p.likes) ? p.likes.includes(myUserId) : false,
     comments:       (p.comments ?? []).map(c => normalizeComment(c, myUserId, myName)),
     shares:         0,
+    rating:         DEFAULT_RATING,  // populated lazily via fetchRating
   };
 }
-
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -201,16 +199,83 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 /* ════════════════════════════════════════
+   STAR RATING COMPONENT
+════════════════════════════════════════ */
+function StarRating({
+  rating,
+  // On account screen the user IS the author, so they can't rate their own posts.
+  // We keep the prop for consistency but it's always true here.
+  isMyPost = true,
+  onRate,
+}: {
+  rating: PostRating;
+  isMyPost?: boolean;
+  onRate: (value: number) => void;
+}) {
+  // Owner can't rate their own post — stars are display-only
+  const canRate = !isMyPost;
+
+  return (
+    <View style={starStyles.wrap}>
+      <View style={starStyles.starsRow}>
+        {[1, 2, 3, 4, 5].map(star => {
+          const myR    = rating.myRating;
+          const isMine = myR > 0 && star <= myR;
+          const isAvg  = myR === 0 && star <= Math.round(rating.average);
+          const filled = isMine || isAvg;
+          return (
+            <Pressable
+              key={star}
+              onPress={() => canRate && onRate(star)}
+              hitSlop={4}
+              style={({ pressed }) => [starStyles.star, pressed && canRate && { opacity: 0.6 }]}
+              disabled={!canRate}
+            >
+              <Ionicons
+                name={filled ? 'star' : 'star-outline'}
+                size={18}
+                color={isMine ? COLORS.star : filled ? `${COLORS.star}99` : COLORS.starEmpty}
+              />
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={starStyles.info}>
+        {rating.count > 0 ? (
+          <>
+            <Text style={starStyles.avg}>{rating.average.toFixed(1)}</Text>
+            <Text style={starStyles.count}>({rating.count} {rating.count === 1 ? 'rating' : 'ratings'})</Text>
+          </>
+        ) : (
+          <Text style={starStyles.noRating}>No ratings yet</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const starStyles = StyleSheet.create({
+  wrap:       { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 4 },
+  starsRow:   { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  star:       { padding: 2 },
+  info:       { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  avg:        { color: COLORS.star, fontSize: 14, fontWeight: '700' },
+  count:      { color: COLORS.mutedDark, fontSize: 13 },
+  noRating:   { color: COLORS.mutedDark, fontSize: 12 },
+});
+
+/* ════════════════════════════════════════
    SCREEN
 ════════════════════════════════════════ */
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { profile, updateProfile } = useUserProfile();
 
-  const [myUserId,         setMyUserId]         = useState('');
-  const [posts,            setPosts]            = useState<AccountPost[]>([]);
-  const [loading,          setLoading]          = useState(true);
-  const [showLogoutConfirm,setShowLogoutConfirm]= useState(false);
+  const [myUserId,          setMyUserId]          = useState('');
+  const [posts,             setPosts]             = useState<AccountPost[]>([]);
+  const [loading,           setLoading]           = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // edit post
   const [editPostId,   setEditPostId]   = useState<string | null>(null);
@@ -219,8 +284,9 @@ export default function AccountScreen() {
   const [saving,       setSaving]       = useState(false);
 
   const myName    = `${profile?.user?.firstName ?? ''} ${profile?.user?.lastName ?? ''}`.trim() || 'You';
-  const myVehicle = profile?.vehicle ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ') : '';
-  const fullName  = myName;
+  const myVehicle = profile?.vehicle
+    ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ')
+    : '';
 
   /* ── load profile + posts ── */
   useEffect(() => {
@@ -231,9 +297,7 @@ export default function AccountScreen() {
         setMyUserId(uid);
         const data = await apiGet(`/user/${uid}`);
         const { user, vehicle, stats, posts: apiPosts } = data?.data ?? {};
-
         updateProfile({ user, vehicle, stats, posts: apiPosts ?? [] });
-        console.log("API POSTS:", apiPosts);
         const name = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
         const normalized = (apiPosts ?? []).map((p: ApiPost) => normalizePost(p, uid, name));
         setPosts(normalized);
@@ -245,6 +309,21 @@ export default function AccountScreen() {
     };
     load();
   }, []);
+
+  /* ── rating helpers ── */
+
+  // Called once per post when the card mounts — fetches average + count
+  const fetchRating = useCallback(async (postId: string) => {
+    try {
+      const data = await apiGet(`/posts/${postId}/rating`);
+      const r: PostRating = data?.data ?? DEFAULT_RATING;
+      setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, rating: r }));
+    } catch { /* silent */ }
+  }, []);
+
+  // Not needed on account screen (owner can't rate own posts)
+  // Kept as a no-op so AccountPostCard interface stays consistent with community screen
+  const handleRate = useCallback(async (_postId: string, _value: number) => {}, []);
 
   /* ════════ LIKE ════════ */
   const handleToggleLike = async (postId: string, likedByMe: boolean) => {
@@ -297,9 +376,7 @@ export default function AccountScreen() {
         allowComments: cur?.allowComments ?? 'allow',
         availability:  cur?.availability  ?? 'public',
       });
-      setEditPostId(null);
-      setEditPostText('');
-      setEditPostTags('');
+      setEditPostId(null); setEditPostText(''); setEditPostTags('');
     } catch {
       setPosts(ps => ps.map(p => p.id !== editPostId ? p : { ...p, content: prevContent, tags: prevTags }));
     } finally {
@@ -322,9 +399,7 @@ export default function AccountScreen() {
       const saved: ApiComment | null = data?.data?.comment ?? data?.data?.result ?? data?.data ?? null;
       if (saved && (saved._id || saved.id)) {
         setPosts(cur => cur.map(p => p.id !== postId ? p : {
-          ...p, comments: p.comments.map(c =>
-            c.id !== tempId ? c : normalizeComment(saved, myUserId, myName)
-          ),
+          ...p, comments: p.comments.map(c => c.id !== tempId ? c : normalizeComment(saved, myUserId, myName)),
         }));
       } else {
         setPosts(cur => cur.map(p => p.id !== postId ? p : {
@@ -379,7 +454,7 @@ export default function AccountScreen() {
             ...c, replies: c.replies.map(r => r.id !== tempId ? r : {
               id: saved._id ?? saved.id ?? tempId,
               author: resolveAuthorName(saved.createdBy, myUserId, myName),
-              authorId: resolveAuthorId(saved.createdBy),  // ✅ FIXED
+              authorId: resolveAuthorId(saved.createdBy),
               text: saved.content ?? text,
               createdAtLabel: formatCreatedAt(saved.createdAt),
               pending: false,
@@ -459,10 +534,10 @@ export default function AccountScreen() {
         <View style={styles.card}>
           <View style={styles.identityRow}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{toInitials(fullName)}</Text>
+              <Text style={styles.avatarText}>{toInitials(myName)}</Text>
             </View>
             <View style={styles.identityText}>
-              <Text style={styles.name}>{valueOrFallback(fullName, 'User')}</Text>
+              <Text style={styles.name}>{valueOrFallback(myName, 'User')}</Text>
               <Text style={styles.meta}>{valueOrFallback(profile?.user?.email)}</Text>
               <Text style={styles.meta}>{valueOrFallback(profile?.user?.phone)}</Text>
             </View>
@@ -529,6 +604,8 @@ export default function AccountScreen() {
               onAddReply={(cId, t)         => handleAddReply(post.id, cId, t)}
               onEditReply={(cId, rId, t)   => handleEditReply(post.id, cId, rId, t)}
               onDeleteReply={(cId, rId)    => handleDeleteReply(post.id, cId, rId)}
+              onMounted={()                => fetchRating(post.id)}
+              onRate={v                    => handleRate(post.id, v)}
             />
           ))
         ) : (
@@ -538,7 +615,7 @@ export default function AccountScreen() {
 
       <BottomNavbar activeTab="home" />
 
-      {/* ── EDIT POST MODAL ── */}
+      {/* EDIT POST MODAL */}
       <Modal visible={!!editPostId} transparent animationType="slide" onRequestClose={() => setEditPostId(null)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setEditPostId(null)} />
@@ -554,8 +631,7 @@ export default function AccountScreen() {
                 style={styles.composerInput}
                 value={editPostText}
                 onChangeText={setEditPostText}
-                multiline
-                textAlignVertical="top"
+                multiline textAlignVertical="top"
                 placeholderTextColor={COLORS.mutedDark}
                 placeholder="Edit your post..."
               />
@@ -582,7 +658,7 @@ export default function AccountScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── LOGOUT CONFIRM ── */}
+      {/* LOGOUT CONFIRM */}
       {showLogoutConfirm && (
         <View style={styles.logoutOverlay}>
           <View style={styles.logoutBox}>
@@ -611,6 +687,7 @@ function AccountPostCard({
   onToggleLike, onEdit, onDelete,
   onAddComment, onEditComment, onDeleteComment,
   onAddReply, onEditReply, onDeleteReply,
+  onMounted, onRate,
 }: {
   post: AccountPost; myUserId: string; myName: string; myVehicle: string;
   onToggleLike: () => void; onEdit: () => void; onDelete: () => void;
@@ -620,15 +697,20 @@ function AccountPostCard({
   onAddReply:    (cId: string, t: string) => void;
   onEditReply:   (cId: string, rId: string, t: string) => void;
   onDeleteReply: (cId: string, rId: string) => void;
+  onMounted: () => void;
+  onRate: (value: number) => void;
 }) {
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [commentText,     setCommentText]     = useState('');
   const [showOptions,     setShowOptions]     = useState(false);
   const [confirmDelete,   setConfirmDelete]   = useState(false);
 
+  // Fetch rating once when this card first appears
+  useEffect(() => { onMounted(); }, [post.id]);
+
   const availIcon =
-    post.availability === 'public'  ? 'globe-outline'       :
-    post.availability === 'friends' ? 'people-outline'      :
+    post.availability === 'public'  ? 'globe-outline'      :
+    post.availability === 'friends' ? 'people-outline'     :
                                       'lock-closed-outline';
 
   const handleSend = () => {
@@ -675,6 +757,13 @@ function AccountPostCard({
         </View>
       )}
 
+      {/* ★ STAR RATING — display-only on account screen (owner can't rate own posts) */}
+      <StarRating
+        rating={post.rating}
+        isMyPost={true}   // always true on account screen
+        onRate={onRate}
+      />
+
       <View style={styles.actionsDivider} />
 
       {/* Actions */}
@@ -684,7 +773,6 @@ function AccountPostCard({
             color={post.likedByMe ? COLORS.primary : COLORS.muted} />
           <Text style={[styles.actionText, post.likedByMe && styles.actionTextActive]}>{post.likes}</Text>
         </Pressable>
-
         {post.allowComments === 'allow' && (
           <Pressable style={styles.actionButton} onPress={() => setCommentsVisible(v => !v)}>
             <Ionicons name="chatbubble-outline" size={22} color={COLORS.muted} />
@@ -709,7 +797,6 @@ function AccountPostCard({
               <Ionicons name="send" size={18} color={COLORS.text} />
             </Pressable>
           </View>
-
           {commentsVisible && (
             <View style={styles.commentsWrap}>
               {post.comments.map(comment => (
@@ -850,7 +937,10 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
           <View style={styles.commentInputRow}>
             <TextInput style={styles.commentInput} placeholder="Write a reply..." placeholderTextColor={COLORS.mutedDark}
               value={replyText} onChangeText={setReplyText} multiline />
-            <Pressable style={styles.sendButton} onPress={() => { if (!replyText.trim()) return; onAddReply(replyText); setReplyText(''); setRepliesVisible(true); }}>
+            <Pressable style={styles.sendButton} onPress={() => {
+              if (!replyText.trim()) return;
+              onAddReply(replyText); setReplyText(''); setRepliesVisible(true);
+            }}>
               <Ionicons name="send" size={16} color={COLORS.text} />
             </Pressable>
           </View>
@@ -901,9 +991,9 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
   reply: PostReply; myUserId: string;
   onEdit: (t: string) => void; onDelete: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [editText, setEditText] = useState(reply.text);
-  const [showOptions, setShowOptions] = useState(false);
+  const [editing,       setEditing]       = useState(false);
+  const [editText,      setEditText]      = useState(reply.text);
+  const [showOptions,   setShowOptions]   = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isMyReply = reply.authorId === myUserId;
   const handleClose = () => { setShowOptions(false); setConfirmDelete(false); };
@@ -984,7 +1074,6 @@ const styles = StyleSheet.create({
   scroll:       { flex: 1 },
   content:      { paddingHorizontal: 20 },
   title:        { color: COLORS.text, fontSize: 30, fontWeight: '700', marginBottom: 14 },
-
   card:         { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 14, marginBottom: 14 },
   identityRow:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar:       { width: 56, height: 56, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
@@ -1000,7 +1089,6 @@ const styles = StyleSheet.create({
   statBox:      { alignItems: 'center', flex: 1 },
   statNumber:   { color: COLORS.text, fontSize: 20, fontWeight: '700' },
   statLabel:    { color: COLORS.muted, fontSize: 13, marginTop: 4 },
-
   postCard:      { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 18, marginBottom: 16 },
   postHeader:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
   postAvatar:    { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
@@ -1020,7 +1108,6 @@ const styles = StyleSheet.create({
   actionText:    { color: COLORS.muted, fontSize: 16 },
   actionTextActive: { color: COLORS.primary, fontWeight: '700' },
   dotsBtn:       { padding: 6 },
-
   commentsWrap:     { marginTop: 10, gap: 10 },
   commentItem:      { backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 10, gap: 6 },
   commentHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -1039,7 +1126,6 @@ const styles = StyleSheet.create({
   commentInputRow:  { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
   commentInput:     { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 14, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
   sendButton:       { width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-
   modalOverlay:    { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.58)' },
   composerSheet:   { backgroundColor: COLORS.surface, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 20, paddingTop: 18, borderWidth: 1, borderColor: COLORS.border, maxHeight: '90%' },
@@ -1052,7 +1138,6 @@ const styles = StyleSheet.create({
   publishButton:         { height: 54, borderRadius: 17, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   publishButtonDisabled: { opacity: 0.45 },
   publishButtonText:     { color: COLORS.text, fontSize: 17, fontWeight: '800' },
-
   backdrop:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet:        { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: COLORS.border },
   handle:       { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 20, opacity: 0.5 },
@@ -1069,7 +1154,6 @@ const styles = StyleSheet.create({
   confirmSub:   { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: '800' },
-
   logoutButton:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.08)' },
   logoutText:    { color: COLORS.danger, fontSize: 14, fontWeight: '600' },
   logoutOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },

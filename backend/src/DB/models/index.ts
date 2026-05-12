@@ -10,4 +10,5 @@ export * from './Post.model';
 export * from './Comment.model';
 export * from './Follow.model';
 export * from './Notifications.model';
+export * from './Rating.model';
 

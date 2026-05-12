@@ -109,4 +109,27 @@ export class PostController {
     await this.postService.deletePost(postId, userId);
     return successResponse();
   }
+
+  @Auth([RoleEnum.user])
+  @Post(':postId/rate')
+  async ratePost(
+    @Param('postId') postId: string,
+    @Body('value') value: number,
+    @Req() req,
+  ): Promise<IResponse> {
+    const userId = req.credentials.user._id;
+    const result = await this.postService.ratePost(postId, userId, value);
+    return successResponse({ data: result });
+  }
+
+  @Auth([RoleEnum.user])
+  @Get(':postId/rating')
+  async getPostRating(
+    @Param('postId') postId: string,
+    @Req() req,
+  ): Promise<IResponse> {
+    const userId = req.credentials.user._id;
+    const result = await this.postService.getPostRating(postId, userId);
+    return successResponse({ data: result });
+  }
 }

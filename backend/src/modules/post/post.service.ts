@@ -8,6 +8,7 @@ import {
   CommentRepository,
   FollowRepository,
   PostRepository,
+  RatingRepository,
   UserRepository,
 } from 'src/DB';
 import {
@@ -24,6 +25,7 @@ export class PostService {
     private readonly userRepository: UserRepository,
     private readonly followRepository: FollowRepository,
     private readonly commentRepository: CommentRepository,
+    private readonly ratingRepository: RatingRepository,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -248,5 +250,50 @@ export class PostService {
     if (!deleted.deletedCount) {
       throw new BadRequestException('delete failed');
     }
+  }
+
+  async ratePost(postId: string, userId: string, value: number) {
+    if (value < 1 || value > 5)
+      throw new BadRequestException('Rating must be 1-5');
+
+    await this.ratingRepository.findOneAndUpdate({
+      filter: {
+        postId: new Types.ObjectId(postId),
+        userId: new Types.ObjectId(userId),
+      },
+      update: { $set: { value } },
+      options: { upsert: true, new: true },
+    });
+
+    const ratings = await this.ratingRepository.find({
+      filter: { postId: new Types.ObjectId(postId) },
+    });
+
+    const avg = ratings.length
+      ? ratings.reduce((sum, r) => sum + r.value, 0) / ratings.length
+      : 0;
+
+    return {
+      average: Math.round(avg * 10) / 10,
+      count: ratings.length,
+      myRating: value,
+    };
+  }
+
+  async getPostRating(postId: string, userId: string) {
+    const ratings = await this.ratingRepository.find({
+      filter: { postId: new Types.ObjectId(postId) },
+    });
+
+    const myRating = ratings.find((r) => r.userId.toString() === userId);
+    const avg = ratings.length
+      ? ratings.reduce((sum, r) => sum + r.value, 0) / ratings.length
+      : 0;
+
+    return {
+      average: Math.round(avg * 10) / 10,
+      count: ratings.length,
+      myRating: myRating?.value ?? 0,
+    };
   }
 }

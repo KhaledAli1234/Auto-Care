@@ -10,13 +10,22 @@ import {
   NotificationRepository,
   PostModel,
   PostRepository,
+  RatingModel,
+  RatingRepository,
   UserModel,
   UserRepository,
 } from 'src/DB';
 import { NotificationService } from '../notification/notification.service';
 
 @Module({
-  imports: [UserModel, PostModel, FollowModel, CommentModel, NotificationModel],
+  imports: [
+    UserModel,
+    PostModel,
+    FollowModel,
+    CommentModel,
+    NotificationModel,
+    RatingModel,
+  ],
   controllers: [PostController],
   providers: [
     PostService,
@@ -26,6 +35,7 @@ import { NotificationService } from '../notification/notification.service';
     CommentRepository,
     NotificationService,
     NotificationRepository,
+    RatingRepository,
   ],
 })
 export class PostModule {}
