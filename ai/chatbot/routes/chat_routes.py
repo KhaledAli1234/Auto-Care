@@ -1,21 +1,21 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from flask import Blueprint, request, jsonify
 from core.chatbot_engine import ChatbotEngine
 
-router = APIRouter(prefix="/chat", tags=["Chat"])
-
+chat_bp = Blueprint("chat", __name__)
 engine = ChatbotEngine()
 
+@chat_bp.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
 
-class ChatRequest(BaseModel):
-    user_id: str
-    message: str
+    if not data:
+        return jsonify({"error": "No JSON body sent"}), 400
 
+    user_id = data.get("user_id")
+    message = data.get("message")
 
-@router.post("/")
-def chat(req: ChatRequest):
-    response = engine.handle_message(
-        user_id=req.user_id,
-        message=req.message
-    )
-    return {"response": response}
+    if not user_id or not message:
+        return jsonify({"error": "user_id and message are required"}), 400
+
+    response = engine.handle_message(user_id, message)
+    return jsonify({"response": response})
