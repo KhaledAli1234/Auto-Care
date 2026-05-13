@@ -163,6 +163,7 @@ export class TokenService {
     const jwtid = randomUUID();
     const payload = {
       sub: user._id.toString(),
+      role: user.role,
     };
     const access_token = await this.generateToken({
       payload,

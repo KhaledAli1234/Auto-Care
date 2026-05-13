@@ -26,6 +26,8 @@ export default function RootLayout() {
           <Stack.Screen name="forgot-password" />
           <Stack.Screen name="reset-password" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="admin-posts" />
+          <Stack.Screen name="account" />
           <Stack.Screen name="trips" />
           <Stack.Screen name="record-trip" />
           <Stack.Screen name="track" />

@@ -1,11 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from './api';
 
+// Decode JWT payload without verifying signature
+function decodeTokenRole(token: string): string {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded.role ?? 'user';
+  } catch {
+    return 'user';
+  }
+}
+
 export async function authHeaders() {
-  const token = await AsyncStorage.getItem('access_token');
+  const raw   = await AsyncStorage.getItem('access_token');
+  const token = raw?.replace(/"/g, '') ?? '';
+  const role  = token ? decodeTokenRole(token) : 'user';
+
+  // Admin uses "System" prefix, regular users use "Bearer"
+  const prefix = role === 'admin' ? 'System' : 'Bearer';
+
   return {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
+    Authorization: `${prefix} ${token}`,
     'ngrok-skip-browser-warning': 'true',
   };
 }

@@ -16,67 +16,47 @@ export class UserService {
     private readonly vehicleRepository: VehicleRepository,
   ) {}
 
-  async getProfile(userId: string, viewerId: string) {
+  async getProfile(userId: string, viewerId: string, viewerRole?: string) {
     const userObjectId = new Types.ObjectId(userId);
     const viewerObjectId = new Types.ObjectId(viewerId);
 
-    const user = await this.userRepository.findById({
-      id: userObjectId,
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    const user = await this.userRepository.findById({ id: userObjectId });
+    if (!user) throw new NotFoundException('User not found');
 
     let vehicle: any = null;
-
     if (user.vehicleId) {
       vehicle = await this.vehicleRepository.findOne({
         filter: { _id: user.vehicleId },
       });
     }
 
+    const isOwnProfile = userId === viewerId;
+    const isAdmin = viewerRole === 'admin';
+    const postFilter =
+      isOwnProfile && isAdmin
+        ? { createdBy: userObjectId } // أدمن بيشوف بوستاته كلها
+        : { createdBy: userObjectId, status: 'approved' }; // باقي الحالات approved بس
+
     const [followersCount, followingCount, postsCount, posts, isFollowing] =
       await Promise.all([
-        this.followRepository.count({
-          filter: { following: userObjectId },
-        }),
-
-        this.followRepository.count({
-          filter: { follower: userObjectId },
-        }),
-
-        this.postRepository.count({
-          filter: { createdBy: userObjectId, status: 'approved' },
-        }),
+        this.followRepository.count({ filter: { following: userObjectId } }),
+        this.followRepository.count({ filter: { follower: userObjectId } }),
+        this.postRepository.count({ filter: postFilter }),
         this.postRepository.findWithDeepPopulate({
-          filter: {
-            createdBy: userObjectId,
-            status: 'approved',
-          },
+          filter: postFilter,
           page: 1,
           size: 10,
         }),
-
         this.followRepository.findOne({
-          filter: {
-            follower: viewerObjectId,
-            following: userObjectId,
-          },
+          filter: { follower: viewerObjectId, following: userObjectId },
         }),
       ]);
 
     return {
       user,
       vehicle,
-      stats: {
-        followersCount,
-        followingCount,
-        postsCount,
-      },
-
+      stats: { followersCount, followingCount, postsCount },
       posts,
-
       isFollowing: !!isFollowing,
     };
   }

@@ -132,4 +132,15 @@ export class PostController {
     const result = await this.postService.getPostRating(postId, userId);
     return successResponse({ data: result });
   }
+
+  @Auth([RoleEnum.admin])
+  @Get('admin/list')
+  async adminPosts(
+    @Query('status') status: string = 'pending',
+    @Query('page') page: number = 1,
+    @Query('size') size: number = 50,
+  ): Promise<IResponse> {
+    const posts = await this.postService.adminPosts(status, page, size);
+    return successResponse({ data: { posts } });
+  }
 }

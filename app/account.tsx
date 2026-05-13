@@ -288,6 +288,18 @@ export default function AccountScreen() {
     ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ')
     : '';
 
+  // Read role directly from the stored JWT payload
+  const [myRole, setMyRole] = useState<'user' | 'admin'>('user');
+  useEffect(() => {
+    AsyncStorage.getItem('access_token').then(raw => {
+      try {
+        const token   = raw?.replace(/"/g, '') ?? '';
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setMyRole(payload.role === 'admin' ? 'admin' : 'user');
+      } catch { setMyRole('user'); }
+    });
+  }, []);
+
   /* ── load profile + posts ── */
   useEffect(() => {
     const load = async () => {
@@ -546,6 +558,18 @@ export default function AccountScreen() {
               <Text style={styles.logoutText}>Logout</Text>
             </Pressable>
           </View>
+
+          {/* Admin-only: Post Moderation button */}
+          {myRole === 'admin' && (
+            <Pressable
+              style={styles.adminButton}
+              onPress={() => router.push('/admin-posts')}
+            >
+              <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
+              <Text style={styles.adminButtonText}>Post Moderation</Text>
+              <Ionicons name="chevron-forward" size={16} color="#fff" style={{ marginLeft: 'auto' }} />
+            </Pressable>
+          )}
         </View>
 
         {/* STATS */}
@@ -1154,6 +1178,8 @@ const styles = StyleSheet.create({
   confirmSub:   { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: '800' },
+  adminButton:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: '#3268f7' },
+  adminButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   logoutButton:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.08)' },
   logoutText:    { color: COLORS.danger, fontSize: 14, fontWeight: '600' },
   logoutOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },

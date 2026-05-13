@@ -171,9 +171,6 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string, followedAut
   };
 }
 
-/* ════════════════════════════════════════
-   SCREEN
-════════════════════════════════════════ */
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
   const { profile } = useUserProfile();

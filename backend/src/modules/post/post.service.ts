@@ -27,7 +27,9 @@ export class PostService {
     private readonly commentRepository: CommentRepository,
     private readonly ratingRepository: RatingRepository,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) {
+    console.log('JWT_SECRET:', process.env.JWT_SECRET?.slice(0, 5));
+  }
 
   async validateTags(tags: string[], userId: string) {
     if (!tags?.length) return;
@@ -55,7 +57,7 @@ export class PostService {
           createdBy: new Types.ObjectId(userId),
           allowComments: body.allowComments ?? AllowCommentsEnum.allow,
           availability: body.availability ?? PostAvailabilityEnum.public,
-          status: 'approved',
+          status: 'pending',
         },
       ],
     });
@@ -134,10 +136,13 @@ export class PostService {
 
   async postList(user: any, page: number, size: number) {
     const currentUserId = user._id;
+    const isAdmin = user.role === 'admin';
 
     const [posts, following] = await Promise.all([
       this.postRepository.paginate({
-        filter: { status: 'approved' },
+        filter: isAdmin
+          ? {}
+          : { status: 'approved' },
         page,
         size,
         populate: [
@@ -180,7 +185,7 @@ export class PostService {
           },
         ],
       }),
-
+      
       this.followRepository.find({
         filter: {
           follower: new Types.ObjectId(currentUserId),
@@ -295,5 +300,22 @@ export class PostService {
       count: ratings.length,
       myRating: myRating?.value ?? 0,
     };
+  }
+
+  async adminPosts(status: string, page: number, size: number) {
+    return this.postRepository.paginate({
+      filter: { status },
+      page,
+      size,
+      options: {
+        sort: { createdAt: -1 },
+      },
+      populate: [
+        {
+          path: 'createdBy',
+          select: 'firstName lastName username',
+        },
+      ],
+    });
   }
 }
