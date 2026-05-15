@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from './api';
+import { Buffer } from 'buffer';
 
-// Decode JWT payload without verifying signature
 function decodeTokenRole(token: string): string {
   try {
     const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload));
+    const decoded = JSON.parse(
+      Buffer.from(payload, 'base64').toString('utf8')
+    );
     return decoded.role ?? 'user';
   } catch {
     return 'user';

@@ -60,8 +60,12 @@ export class DashboardService {
       (t) => (t.trip_summary?.distance_km ?? 0) > 100,
     ).length;
 
-    const totalLiters = fuels.reduce<number>(
-      (sum, fuel) => sum + (fuel.amount ?? 0),
+    const totalLiters = trips.reduce<number>(
+      (sum, trip) =>
+        sum +
+        ((trip.fuel_efficiency?.actual_fuel_l_100km ?? 0) *
+          (trip.trip_summary?.distance_km ?? 0)) /
+          100,
       0,
     );
     const totalFuelCost = fuels.reduce<number>(

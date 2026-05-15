@@ -1,38 +1,42 @@
 class IntentDetector:
-
     def detect(self, message: str) -> str:
         msg = message.lower()
 
-        # Latest trip — عربي + إنجليزي
         if any(k in msg for k in [
             "latest", "last trip", "آخر رحلة", "الرحلة الاخيرة",
-            "قيّم رحلتي", "رحلتي الاخيرة", "آخر رحلة"
+            "قيّم رحلتي", "رحلتي الاخيرة",
+            "اخر رحله", "اخر رحلة", "آخر رحله",  # ← أضف دي
+            "last", "recent",
         ]):
             return "latest_trip"
 
-        # Weekly report
         if any(k in msg for k in [
-            "week", "weekly", "أسبوع", "أسبوعي", "التقرير", "تقرير"
+            "week", "weekly", "أسبوع", "أسبوعي", "التقرير", "تقرير",
         ]):
             return "weekly_report"
 
-        # Fuel
         if any(k in msg for k in [
-            "fuel", "consumption", "بنزين", "وقود", "استهلاك"
+            "fuel", "consumption", "بنزين", "وقود", "استهلاك",
         ]):
             return "fuel_analysis"
 
-        # Vehicle health — أزلنا كلمة "car" علشان واسعة أوي وبتتعارض مع intents تانية
         if any(k in msg for k in [
-            "health", "vehicle health", "صحة", "عربية", "سيارة",
-            "محرك", "فرامل", "إطارات", "هيبوظ", "بوظ", "maintenance"
+            "safe", "safety", "is my driving", "am i driving",
+            "driving safe", "risk", "accident",
+            "آمن", "أمان", "سلامة", "قيادتي آمنة", "هل قيادتي",
         ]):
-            return "vehicle_health"
+            return "safe_driving"
 
-        # Driving advice
         if any(k in msg for k in [
-            "advice", "improve", "tip", "نصيحة", "نصايح", "تحسين", "أحسن"
+            "advice", "improve", "tip", "score", "how to",
+            "نصيحة", "نصايح", "تحسين", "أحسن", "احسن", "درجة", "ازاي احسن",
         ]):
             return "driving_advice"
+
+        if any(k in msg for k in [
+            "health", "vehicle health", "صحة", "عربية", "سيارة",
+            "محرك", "فرامل", "إطارات", "هيبوظ", "بوظ", "maintenance",
+        ]):
+            return "vehicle_health"
 
         return "general_question"

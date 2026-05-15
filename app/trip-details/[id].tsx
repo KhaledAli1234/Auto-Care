@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
 import { ApiTrip } from '../trips';
+import { authHeaders } from '@/constants/api-client';
 
 /* ════════════════════════════════════════
    COLORS
@@ -72,13 +73,11 @@ export default function TripDetailsScreen() {
     const load = async () => {
       try {
         setLoading(true);
-        const token = await AsyncStorage.getItem('access_token');
-        const res   = await fetch(`${BASE_URL}/trips/${id}`, {
-          headers: { Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}` },
-        });
-        const json = await res.json();
+        const headers = await authHeaders();
+        const res = await fetch(`${BASE_URL}/trips/${id}`, { headers });
+        const text = await res.text();
+        const json = JSON.parse(text);
         if (!res.ok) throw new Error(json?.message ?? 'Failed to load trip');
-        // backend returns either data.trip or data directly
         setTrip(json?.data?.trip ?? json?.data ?? null);
       } catch (err: any) {
         setError(err.message ?? 'Something went wrong');

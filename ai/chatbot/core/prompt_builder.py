@@ -1,68 +1,91 @@
+import re
 from utils.helpers import serialize_mongo
 
 
 class PromptBuilder:
 
-    SYSTEM = """You are CarAI Assistant — a friendly, smart car advisor in a Smart Car app.
+    SYSTEM = """You are CarAI — a witty, warm car buddy living inside a Smart Driving app.
+You talk to everyday drivers (young and old) who just want quick, honest feedback about their car and driving.
 
-CRITICAL RULES:
-- Detect the language of the user's message.
-- If Arabic → respond ONLY in Egyptian Arabic.
-- If English → respond ONLY in English.
-- NEVER switch languages inside the same response.
-- NEVER use formal Arabic (no "مرحباً", no "ما شاء الله").
-- NEVER say system messages like "no data available" unless explicitly asked.
+LANGUAGE RULES:
+- Detect the language of the user's message automatically.
+- If Arabic → reply ONLY in casual Egyptian Arabic (عامية مصرية).
+- If English → reply ONLY in natural conversational English.
+- NEVER mix languages in the same reply.
+- NEVER use formal Arabic.
+- NEVER use Franco/Arabizi like: Enta, ana, mashy, 3ayez, el, ya.
+- If replying in Arabic, use Arabic letters only.
 
-GREETING RULE:
-- If the user is greeting (hi, hello, hey, عامل ايه, ازيك):
-  → respond with a SHORT friendly greeting ONLY
-  → DO NOT mention any data or system info
+PERSONALITY:
+- You're like that smart friend who knows cars — helpful, honest, occasionally funny.
+- Warm and encouraging, never cold or robotic.
+- Add a light joke or playful comment when it fits naturally — don't force it.
+- Use emojis lightly to add energy, not to spam. Max 2 emojis.
 
-STYLE:
-- Casual, human, smooth tone.
-- Short replies unless user asks for details.
-- Light emojis only (👋💡🔥).
-- No robotic or generic responses.
+STYLE RULES:
+- Keep replies SHORT and clear unless the user asks for details.
+- No long bullet walls.
+- Celebrate good driving if score is high.
+- If something needs attention, be honest but calm.
+- Never say "based on the data" or "according to the system".
+- If data is missing, say it naturally in the same language.
 
-BEHAVIOR:
-- Only use trip/vehicle data when the user explicitly asks about car performance.
-- If data is missing, still respond naturally WITHOUT mentioning missing data.
+IMPORTANT SAFETY:
+- Do not invent the user's name.
+- Do not treat words like "اي", "إيه", "ايه", "what" as a name.
+- If the user asks "انا اسمي ايه" and the name is not available, say you don't know their name yet.
+- If the user asks about trips and total trips exists, answer with the number clearly.
+- If the requested info is missing, say that naturally without making up numbers.
+- NEVER invent driving scores, distances, or safety statistics if no real data is provided.
+- If no trip data is available, say so directly. Do NOT make up encouraging stats.
 
 GOAL:
-Sound like a real Egyptian smart assistant inside a car app — not an AI model.
+Feel like texting a knowledgeable car-loving friend — not reading an AI report.
 """
 
     TASK_MAP = {
-        "greeting":        "Respond with a short friendly greeting only.",
-        "latest_trip":     "Analyze the latest trip and give feedback on driving score, speed, and any harsh events.",
-        "fuel_analysis":   "Analyze fuel consumption. Is it normal? What's causing it? How to improve?",
-        "vehicle_health":  "Explain the vehicle health scores (engine, brakes, tires). What needs attention soon?",
-        "driving_advice":  "Give 3 practical tips to improve driving score and reduce wear on the vehicle.",
-        "weekly_report":   "Summarize weekly driving performance. Highlight improvements and areas to work on.",
-        "general_question":"Answer the user's question based on available driving data.",
+        "greeting": "Respond with a short, warm, and slightly fun greeting. Keep it 1-2 lines max.",
+        "latest_trip": "Give a fun, honest recap of the latest trip. Highlight the driving score with energy. Mention speed or harsh events only if notable.",
+        "fuel_analysis": "Talk about fuel like a friend. Is it good or could be better? Give one simple tip to improve.",
+        "vehicle_health": "Give a quick health check vibe. Mention what's good and what needs attention. Be reassuring unless urgent.",
+        "driving_advice": "Give 2-3 practical tips that feel personal and actionable.",
+        "safe_driving": "Assess the user's driving safety honestly based ONLY on the data provided. If no data is available, say so clearly — do not invent scores.",
+        "weekly_report": "Summarize the week like a coach giving a pep talk. Mention total trips, distance, score, and fuel if available.",
+        "general_question": "Answer naturally and helpfully based on the available data. Sound like a real person, not a manual.",
     }
+
+    # ✅ FIX: Greeting task instructions per language (used inside build() directly)
+    GREETING_TASK = {
+        "arabic": "رد بتحية قصيرة ودودة وخفيفة. جملة أو اتنين بالأكتر. بالعربي فقط.",
+        "english": "Respond with a short, warm, and slightly fun greeting. Keep it 1-2 lines max. English only.",
+    }
+
+    def detect_language(self, msg: str) -> str:
+        if not msg:
+            return "english"
+        arabic_chars = re.findall(r"[\u0600-\u06FF]", msg)
+        if len(arabic_chars) > 0:
+            return "arabic"
+        return "english"
 
     def is_greeting(self, msg: str) -> bool:
         msg = msg.lower().strip()
-        return msg in [
-            "hi", "hello", "hey",
-            "عامل ايه", "عامل ايه؟",
-            "ازيك", "إزيك", "ازيّك",
-            "ايه الاخبار", "ايه اخبارك"
+        greetings = [
+            "hi", "hello", "hey", "howdy", "sup",
+            "what's up", "whats up",
+            "good morning", "good evening", "good night",
+            "عامل ايه", "عامل ايه؟", "عامل إيه",
+            "ازيك", "إزيك", "ازيّك", "ازيك؟",
+            "ايه الاخبار", "ايه اخبارك", "ايه الأخبار",
+            "صباح الخير", "مساء الخير",
         ]
+        return any(greeting in msg for greeting in greetings)
 
     def _extract_context(self, data: dict) -> str:
-        """
-        بيبني الـ context string من الـ trip document.
-        بيتعامل مع:
-          - Trip document كامل (latest_trip / vehicle_health / fuel_analysis / driving_advice)
-          - Weekly report aggregate (weekly_report)
-        """
         if not data:
-            return ""
+            return "NO_DATA"  # ✅ FIX: explicit marker instead of empty string
 
-        # ── Weekly report aggregate ──────────────────────────────
-        # بيرجع من ReportService كـ flat dict مع keys معينة
+        # Weekly Report
         if "total_trips" in data:
             return f"""
 Weekly Report:
@@ -72,17 +95,24 @@ Weekly Report:
 - Avg Fuel Usage:    {round(data.get("avg_fuel", 0), 2)} L/100km
 """
 
-        # ── Full trip document ───────────────────────────────────
-        # serialize أي datetime objects قبل ما نقرأ الـ data
         data = serialize_mongo(data)
 
-        trip     = data.get("trip_summary", {})
+        trip = data.get("trip_summary", {})
         behavior = data.get("driving_behavior", {})
-        health   = data.get("vehicle_health", {})
-        fuel     = data.get("fuel_efficiency", {})
-        vehicle  = data.get("vehicle_info", {})
+        health = data.get("vehicle_health", {})
+        fuel = data.get("fuel_efficiency", {})
+        vehicle = data.get("vehicle_info", {})
+        user_raw = data.get("user", {}) or data.get("user_info", {}) or {}
+        user = user_raw if isinstance(user_raw, dict) else {}
+
+        # ✅ FIX: if no meaningful fields, return NO_DATA
+        if not trip and not behavior and not health and not fuel:
+            return "NO_DATA"
 
         return f"""
+User Info:
+- Name: {user.get("name", "N/A")}
+
 Trip Summary:
 - Distance:   {trip.get("distance_km", "N/A")} km
 - Duration:   {trip.get("duration_min", "N/A")} min
@@ -94,7 +124,6 @@ Driving Behavior:
 - Driver Style:        {behavior.get("driver_style", "N/A")}
 - Harsh Brakes:        {behavior.get("harsh_brake_count", "N/A")}
 - Harsh Acceleration:  {behavior.get("harsh_accel_count", "N/A")}
-
 
 Vehicle Health:
 - Overall Score:      {health.get("vehicle_health_score", "N/A")} / 100
@@ -118,22 +147,86 @@ Vehicle Info:
 - Base Fuel: {vehicle.get("fuel_combined_l_100km", "N/A")} L/100km
 """
 
+    def _build_language_lock(self, detected_language: str) -> str:
+        if detected_language == "arabic":
+            return """
+CRITICAL LANGUAGE LOCK:
+- The user's current message is Arabic.
+- Reply ONLY in casual Egyptian Arabic.
+- Use Arabic letters only.
+- NEVER use English.
+- NEVER use Franco/Arabizi.
+- Bad examples you must avoid: "Enta", "ana", "mashy", "3ayez", "el", "ya".
+- Good style example: "أيوه يا صاحبي، أنت عملت 3 رحلات."
+"""
+        return """
+CRITICAL LANGUAGE LOCK:
+- The user's current message is English.
+- Reply ONLY in natural conversational English.
+- NEVER use Arabic words.
+- NEVER use Franco/Arabizi.
+"""
+
     def build(self, intent: str, user_message: str, data: dict) -> str:
+        detected_language = self.detect_language(user_message)
+        language_lock = self._build_language_lock(detected_language)
 
-        # HARD OVERRIDE: greetings لا بيوصلوش للـ LLM
+        # ✅ FIX: Greeting now builds a real prompt instead of returning a raw string
         if self.is_greeting(user_message):
-            return "GREETING_MODE"
+            task = self.GREETING_TASK[detected_language]
+            return f"""{self.SYSTEM}
 
-        task    = self.TASK_MAP.get(intent, self.TASK_MAP["general_question"])
+{language_lock}
+
+User Question:
+{user_message}
+
+Task:
+{task}
+
+Answer:
+"""
+
+        task = self.TASK_MAP.get(intent, self.TASK_MAP["general_question"])
         context = self._extract_context(data)
 
-        return f"""{self.SYSTEM}
+        # ✅ FIX: explicit NO_DATA instruction so LLM doesn't hallucinate
+        data_section = ""
+        if context == "NO_DATA":
+            data_section = """
+Data:
+No trip data is available for this user yet.
 
-User Question: {user_message}
-
-Task: {task}
-
+IMPORTANT: Since there is no real data, do NOT invent any numbers, scores, or driving stats.
+Tell the user clearly (in the locked language) that you don't have their data yet.
+"""
+        else:
+            data_section = f"""
 Data:
 {context}
 
-Answer:"""
+Final Answer Rules:
+- Answer in the locked language only.
+- Keep it short and natural.
+- Do not invent missing information.
+- If the user asks for their name and it is N/A or missing, say you don't know it yet.
+- If the user asks how many trips they made, use Total Trips if available.
+- If Total Trips is not available, say you can't see the total trips right now.
+- Do not repeat the user's question.
+- Do not output explanations about language detection.
+"""
+
+        return f"""{self.SYSTEM}
+
+{language_lock}
+
+User Question:
+{user_message}
+
+Task:
+{task}
+
+{data_section}
+
+Answer:
+"""

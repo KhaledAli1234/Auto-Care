@@ -29,7 +29,7 @@ import { RoleEnum } from 'src/common/enums';
 export class TripController {
   constructor(private readonly tripService: TripService) {}
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Post()
   async createTrip(
     @Body() body: CreateTripDTO,
@@ -83,7 +83,7 @@ export class TripController {
     return successResponse();
   }
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Get('latest/me')
   async getLatest(@Req() req): Promise<IResponse> {
     const userId = req.credentials.user._id;
@@ -91,7 +91,7 @@ export class TripController {
     return successResponse({ data: trip });
   }
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Get('weekly/me')
   async getWeekly(@Req() req): Promise<IResponse> {
     const userId = req.credentials.user._id;
@@ -99,7 +99,7 @@ export class TripController {
     return successResponse({ data });
   }
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Get('latest/chatbot')
   async getLatestForChatbot(@Req() req): Promise<IResponse> {
     const userId = req.credentials.user._id;
@@ -115,7 +115,7 @@ export class TripController {
   }
 
   @Post('end')
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @UsePipes(
     new ValidationPipe({ whitelist: false, forbidNonWhitelisted: false }),
   )

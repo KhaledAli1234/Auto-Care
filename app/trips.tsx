@@ -201,10 +201,10 @@ function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void })
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      const token = await AsyncStorage.getItem('access_token');
+      const headers = await authHeaders(); 
       await fetch(`${BASE_URL}/trips/${trip._id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}` },
+        headers,
       });
       onDeleted();
     } catch (err) {

@@ -11,5 +11,6 @@ export * from './comment.repository';
 export * from './follow.repository';
 export * from './notification.repository';
 export * from './rating.repository';
+export * from './SupportTicket.repository';
 
 

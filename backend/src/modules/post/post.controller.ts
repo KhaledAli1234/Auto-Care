@@ -110,7 +110,7 @@ export class PostController {
     return successResponse();
   }
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Post(':postId/rate')
   async ratePost(
     @Param('postId') postId: string,
@@ -122,7 +122,7 @@ export class PostController {
     return successResponse({ data: result });
   }
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Get(':postId/rating')
   async getPostRating(
     @Param('postId') postId: string,

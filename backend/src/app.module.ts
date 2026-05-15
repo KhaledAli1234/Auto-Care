@@ -18,6 +18,7 @@ import { PostModule } from './modules/post/post.module';
 import { CommentModule } from './modules/comment/comment.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { SupportModule } from './modules/support/support.module';
 
 
 @Module({
@@ -40,7 +41,8 @@ import { NotificationModule } from './modules/notification/notification.module';
     PostModule,
     CommentModule,
     FollowModule,
-    NotificationModule
+    NotificationModule,
+    SupportModule
   ],
   controllers: [AppController],
   providers: [AppService],

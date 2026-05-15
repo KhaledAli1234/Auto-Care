@@ -43,7 +43,11 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - PYTHONUNBUFFERED=1
       - MONGO_URI=mongodb://host.docker.internal:27017
       - GROQ_API_KEY=${GROQ_API_KEY}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
