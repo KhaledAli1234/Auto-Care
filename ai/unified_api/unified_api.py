@@ -6,9 +6,9 @@ import time
 app = Flask(__name__)
 
 # ─── Model APIs ───────────────────────────────────────────────
-MODEL1_URL = "http://127.0.0.1:5000/predict"          # Driver Behavior
-MODEL2_URL = "http://127.0.0.1:5001/predict-health"   # Vehicle Health
-MODEL3_URL = "http://127.0.0.1:5002/predict"          # Fuel Efficiency
+MODEL1_URL = "http://smart_driving_driver:5000/predict"
+MODEL2_URL = "http://smart_driving_vehicle:5001/predict-health"
+MODEL3_URL = "http://smart_driving_fuel:5002/predict"
 
 TIMEOUT = 10  # seconds per request
 
@@ -248,4 +248,4 @@ if __name__ == "__main__":
     print("🚀 Unified API running on port 5003")
     print("   POST /predict  — run all 3 models")
     print("   GET  /health   — check all models")
-    app.run(debug=True, port=5003)
+    app.run(host='0.0.0.0', port=5003, debug=True)

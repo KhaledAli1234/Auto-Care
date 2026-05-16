@@ -23,6 +23,8 @@ export class AiService {
       distance_km: rawData.trip_summary?.distance_km ?? 0,
       harsh_brake_count: rawData.driving_behavior?.harsh_brake_count ?? 0,
       harsh_accel_count: rawData.driving_behavior?.harsh_accel_count ?? 0,
+      overspeed_ratio: rawData.trip_summary?.overspeed_ratio ?? 0,
+      speed_variance: rawData.trip_summary?.speed_variance ?? 0,
       engine_cc: vehicle.engineCapacity ?? 1600,
       engine_power_hp: Math.round((vehicle.engineCapacity ?? 1600) / 25),
       weight_kg: Math.round((vehicle.engineCapacity ?? 1600) * 0.6),
@@ -106,8 +108,35 @@ export class AiService {
   private fallback(payload: any) {
     const brake = payload.harsh_brake_count;
     const accel = payload.harsh_accel_count;
+    const speed = payload.avg_speed ?? 0;
+    const distance = payload.distance_km ?? 0;
+    const duration = payload.trip_duration_min ?? 1;
+
     const score = Math.max(0, Math.min(100, 100 - (brake * 5 + accel * 3)));
     const health = Math.max(0, 100 - (brake * 4 + accel * 3));
+
+    const engineHealth = Math.max(0, 90 - (brake * 3 + (speed > 120 ? 10 : 0)));
+
+    const tireHealth = Math.max(0, 95 - (brake * 5 + (distance > 100 ? 5 : 0)));
+
+    const baseFuel = payload.fuel_combined_l_100km ?? 7.0;
+    const aggressionFactor =
+      1 + (brake * 0.03 + accel * 0.02 + (speed > 120 ? 0.1 : 0));
+    const actualFuel = Number((baseFuel * aggressionFactor).toFixed(2));
+
+    const efficiencyLabel =
+      actualFuel <= baseFuel * 1.05
+        ? 'Efficient'
+        : actualFuel <= baseFuel * 1.15
+          ? 'Average'
+          : 'Poor';
+
+    const trend =
+      actualFuel < baseFuel
+        ? 'Improving'
+        : actualFuel > baseFuel * 1.1
+          ? 'Worsening'
+          : 'Stable';
 
     return {
       trip_summary: {
@@ -127,22 +156,22 @@ export class AiService {
         vehicle_health_score: Math.round(health),
         health_status: health > 80 ? 'Good' : health > 60 ? 'Normal' : 'Bad',
         maintenance_risk: health > 80 ? 'Low' : health > 60 ? 'Medium' : 'High',
-        engine_health: 80,
+        engine_health: Math.round(engineHealth),
         brake_health: Math.max(0, 100 - brake * 10),
-        tire_health: 85,
+        tire_health: Math.round(tireHealth),
         alerts: [],
       },
       fuel_efficiency: {
-        actual_fuel_l_100km: payload.fuel_combined_l_100km,
-        base_fuel_l_100km: payload.fuel_combined_l_100km,
-        efficiency_label: 'Average',
-        trend: 'Stable',
+        actual_fuel_l_100km: actualFuel,
+        base_fuel_l_100km: baseFuel,
+        efficiency_label: efficiencyLabel,
+        trend,
       },
       vehicle_info: {
         engine_cc: payload.engine_cc,
         engine_power_hp: payload.engine_power_hp,
         weight_kg: payload.weight_kg,
-        fuel_combined_l_100km: payload.fuel_combined_l_100km,
+        fuel_combined_l_100km: baseFuel,
         year: payload.year,
       },
     };

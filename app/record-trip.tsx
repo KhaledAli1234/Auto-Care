@@ -129,11 +129,11 @@ const startRecording = async () => {
       const magnitude = Math.sqrt(data.x ** 2 + data.y ** 2 + data.z ** 2);
       
       if (now - lastEventTime.current > 1000) {
-        if (magnitude > 3.5) {
+        if (magnitude > 4.0) {
           harshBrakes.current += 1;
           setEventCount(harshBrakes.current + harshAccels.current);
           lastEventTime.current = now;
-        } else if (magnitude > 4.0) {
+        } else if (magnitude > 2.8) {
           harshAccels.current += 1;
           setEventCount(harshBrakes.current + harshAccels.current);
           lastEventTime.current = now;
@@ -192,19 +192,33 @@ const startRecording = async () => {
         : 0;
       const overspeed = speeds.filter(s => s > 120).length / (speeds.length || 1);
 
+
       const payload = {
-        trip_id:            `trip_${Date.now()}`,
-        date:               new Date().toISOString().split('T')[0],
+        trip_id: `trip_${Date.now()}`,
+        date:    new Date().toISOString().split('T')[0],
+
         accelerometer_data: accelData.current.slice(-100),
         gyroscope_data:     gyroData.current.slice(-100),
-        avg_speed:          Math.round(avgSpeed),
-        max_speed:          Math.round(maxSpeed.current),
-        distance_km:        Math.round(distance * 10) / 10,
-        trip_duration_min:  Math.round(elapsed / 60),
-        overspeed_ratio:    Math.round(overspeed * 100) / 100,
-        speed_variance:     Math.round(speedVar * 10) / 10,
-        harsh_brake_count:  harshBrakes.current,
-        harsh_accel_count:  harshAccels.current,
+        trip_summary: {
+          avg_speed:        Math.round(avgSpeed),
+          max_speed:        Math.round(maxSpeed.current),
+          distance_km:      Math.round(distance * 10) / 10,
+          duration_min:     Math.round(elapsed / 60),
+          overspeed_ratio:  Math.round(overspeed * 100) / 100,
+          speed_variance:   Math.round(speedVar * 10) / 10,
+        },
+        driving_behavior: {
+          harsh_brake_count: harshBrakes.current,
+          harsh_accel_count: harshAccels.current,
+        },
+        avg_speed:         Math.round(avgSpeed),
+        max_speed:         Math.round(maxSpeed.current),
+        distance_km:       Math.round(distance * 10) / 10,
+        trip_duration_min: Math.round(elapsed / 60),
+        overspeed_ratio:   Math.round(overspeed * 100) / 100,
+        speed_variance:    Math.round(speedVar * 10) / 10,
+        harsh_brake_count: harshBrakes.current,
+        harsh_accel_count: harshAccels.current,
       };
 
       const res = await fetch(`${BASE_URL}/trips/end`, {

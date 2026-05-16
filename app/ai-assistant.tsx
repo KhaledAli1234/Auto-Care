@@ -22,7 +22,7 @@ import { apiGet, apiPost, authHeaders } from "@/constants/api-client";
 import { BASE_URL } from "@/constants/api";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const CHATBOT_BASE_URL = "https://concentration-quote-brass-renewable.trycloudflare.com";
+const CHATBOT_BASE_URL = "https://folks-enlargement-lauren-epson.trycloudflare.com";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const COLORS = {
