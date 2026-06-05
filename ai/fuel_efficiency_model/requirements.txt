@@ -1,5 +1,5 @@
 flask
 pandas
-numpy
-scikit-learn
-joblib
+numpy==2.2.6
+scikit-learn==1.8.0
+joblib==1.5.1

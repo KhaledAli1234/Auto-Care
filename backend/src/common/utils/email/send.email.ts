@@ -17,6 +17,6 @@ export const sendEmail = async (data: Mail.Options): Promise<void> => {
 
   await transporter.sendMail({
     ...data,
-    from: `"Mr/Khaled A." <${process.env.EMAIL as string}>`,
+    from: `"Car Assistant" <${process.env.EMAIL as string}>`,
   });
 };
