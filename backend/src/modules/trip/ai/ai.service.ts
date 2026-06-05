@@ -8,8 +8,7 @@ export class AiService {
 
   constructor(private readonly configService: ConfigService) {
     this.unifiedApiUrl =
-      this.configService.get<string>('UNIFIED_API_URL') ??
-      'http://localhost:5003';
+      this.configService.get<string>('UNIFIED_API_URL') || '';
   }
 
   async buildTrip(rawData: any, vehicle: any) {
