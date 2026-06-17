@@ -1,1 +1,1 @@
-export const BASE_URL = 'https://preview-wanting-saffron.ngrok-free.dev';
+export const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;

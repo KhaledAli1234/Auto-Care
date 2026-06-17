@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthenticationModule  } from './modules/auth/auth.module';
+import { AuthenticationModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
@@ -20,6 +20,7 @@ import { FollowModule } from './modules/follow/follow.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { SupportModule } from './modules/support/support.module';
 
+console.log('DB_URI =', process.env.DB_URI);
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { SupportModule } from './modules/support/support.module';
     CommentModule,
     FollowModule,
     NotificationModule,
-    SupportModule
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

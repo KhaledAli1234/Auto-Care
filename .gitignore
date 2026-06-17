@@ -1,58 +1,110 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# =========================
+# Dependencies
+# =========================
 node_modules/
 
+# Package manager
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
 # Expo
+# =========================
 .expo/
+.expo-shared/
 dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# Expo cache
+.expo/web/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# AI Environment Variables
+ai/.env
+ai/**/.env
+
+# =========================
+# Native folders
+# =========================
+/android
+/ios
+
+# Native files
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
 
-# Metro
+# =========================
+# Metro Bundler
+# =========================
 .metro-health-check*
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
+# =========================
+# TypeScript
+# =========================
 *.tsbuildinfo
 
-app-example
+# =========================
+# macOS
+# =========================
+.DS_Store
 
-# generated native folders
-/ios
-/android
+# =========================
+# Certificates
+# =========================
+*.pem
 
-# AI Models & Python
+# =========================
+# Python / AI
+# =========================
+venv/
+.venv/
+env/
+
+__pycache__/
+**/__pycache__/
+
+*.pyc
+*.pyo
+*.pyd
+
+# AI Models
 *.pth
 *.pt
 *.h5
 *.pkl
-venv/
-.venv/
-__pycache__/
-**/__pycache__/
-*.pyc
+*.onnx
 
-# AI Environment variables
-ai/.env
-ai/**/.env
+# Jupyter
+.ipynb_checkpoints/
+
+# =========================
+# VS Code
+# =========================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# =========================
+# Misc
+# =========================
+coverage/
+tmp/
+temp/
+
+# Example app folder
+app-example/

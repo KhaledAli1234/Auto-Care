@@ -22,7 +22,8 @@ import { apiGet, apiPost, authHeaders } from "@/constants/api-client";
 import { BASE_URL } from "@/constants/api";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const CHATBOT_BASE_URL = "https://superb-cellular-sequences-calendar.trycloudflare.com";
+const CHATBOT_BASE_URL =
+  process.env.EXPO_PUBLIC_CHATBOT_BASE_URL!;
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const COLORS = {

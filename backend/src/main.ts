@@ -7,6 +7,7 @@ import path from 'node:path';
 async function bootstrap() {
   const port = process.env.PORT ?? 5000;
   const app = await NestFactory.create(AppModule);
+  console.log('DB_URI =', process.env.DB_URI);
   app.enableCors({
     origin: '*',
     allowedHeaders: [
