@@ -139,23 +139,27 @@ export default function SignInScreen() {
         JSON.stringify(userProfile)
       );
 
-      const needsVehicleSetup = await AsyncStorage.getItem(
-        'needs_vehicle_setup'
-      );
+      const vehicleRes = await fetch(`${BASE_URL}/vehicle/user/${userId}`, {
+        headers: { 
+          Authorization: `Bearer ${accessToken}`,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      });
 
-      const savedVehicleProfile = await AsyncStorage.getItem(
-        'vehicle_profile'
-      );
-
-      console.log('NEEDS VEHICLE SETUP:', needsVehicleSetup);
-
-      console.log('SAVED VEHICLE PROFILE:', savedVehicleProfile);
-
-      if (needsVehicleSetup === 'true' || !savedVehicleProfile) {
-        router.replace('/vehicle-setup');
+      if (vehicleRes.ok) {
+        const resData = await vehicleRes.json();
+        const vehicleData = resData?.data?.vehicles?.[0]; 
+        if (vehicleData) {
+          await AsyncStorage.setItem('vehicle_profile', JSON.stringify(vehicleData));
+          await AsyncStorage.setItem('vehicle_setup_done', 'true');
+          router.replace('/profile');
+        } else {
+          router.replace('/vehicle-setup');
+        }
       } else {
-        router.replace('/profile');
+        router.replace('/vehicle-setup');
       }
+
     } catch (err) {
       console.log('LOGIN ERROR:', err);
 

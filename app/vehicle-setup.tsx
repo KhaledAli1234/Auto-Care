@@ -17,6 +17,7 @@ import { useUserProfile } from '@/context/user-profile-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/constants/api';
 import { CAR_DATA } from '@/constants/car-data';
+import { useEffect } from 'react';
 
 const COLORS = {
   background:   '#09182d',
@@ -140,6 +141,15 @@ export default function VehicleSetupScreen() {
   const [errors,    setErrors]    = useState<Record<string, string>>({});
   const [loading,   setLoading]   = useState(false);
 
+  useEffect(() => {
+  (async () => {
+    const done = await AsyncStorage.getItem('vehicle_setup_done');
+    if (done === 'true') {
+      router.replace('/profile');
+    }
+  })();
+  }, []);
+
   const brands = useMemo(() => Object.keys(CAR_DATA).sort(), []);
 
   const models = useMemo(() => {
@@ -201,6 +211,7 @@ export default function VehicleSetupScreen() {
       updateProfile({ vehicle: vehicleData });
       await AsyncStorage.setItem('vehicle_profile', JSON.stringify(vehicleData));
       await AsyncStorage.removeItem('needs_vehicle_setup');
+      await AsyncStorage.setItem('vehicle_setup_done', 'true');
       router.replace('/profile');
     } catch (err: any) {
       setErrors({ submit: err.message ?? 'Something went wrong.' });

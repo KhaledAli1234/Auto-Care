@@ -19,7 +19,7 @@ import { IResponse, successResponse, Auth, RoleEnum } from 'src/common';
 export class VehicleController {
   constructor(private readonly vehicleService: VehicleService) {}
 
-  @Auth([RoleEnum.user])
+  @Auth([RoleEnum.user, RoleEnum.admin])
   @Post()
   async createVehicle(
     @Body() body: CreateVehicleDTO,
