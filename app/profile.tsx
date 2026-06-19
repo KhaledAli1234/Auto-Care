@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -12,11 +13,11 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
-import { authHeaders, apiGet } from '@/constants/api-client';
 import { NotificationBell } from '@/components/notification-bell';
+import { PressableScale } from '@/components/pressable-scale';
+import { apiGet } from '@/constants/api-client';
 
 const COLORS = {
   background:   '#09182d',
@@ -171,15 +172,16 @@ function TrendRow({ label, tone }: { label: string; tone: 'success' | 'warning' 
 }
 
 function MetricCard({
-  title, value, unit, icon, trendLabel, trendTone, description,
+  title, value, unit, icon, trendLabel, trendTone, description, onPress,
 }: {
   title: string; value: string; unit?: string;
   icon: keyof typeof Ionicons.glyphMap;
   trendLabel: string; trendTone: 'success' | 'warning' | 'danger';
   description: string;
+  onPress?: () => void;
 }) {
   return (
-    <View style={styles.metricCard}>
+    <PressableScale style={styles.metricCard} onPress={onPress}>
       <View style={styles.metricHeader}>
         <Text style={styles.metricTitle}>{title}</Text>
         <Ionicons name={icon} size={16} color={COLORS.blue} />
@@ -190,7 +192,7 @@ function MetricCard({
       </View>
       <TrendRow label={trendLabel} tone={trendTone} />
       <Text style={styles.metricDescription}>{description}</Text>
-    </View>
+    </PressableScale>
   );
 }
 export default function DashboardScreen() {
@@ -242,9 +244,9 @@ export default function DashboardScreen() {
           <Text style={styles.title}>Dashboard</Text>
           <View style={styles.headerActions}>
             <NotificationBell iconSize={20} color={COLORS.text} />
-            <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
+            <PressableScale style={styles.headerIcon} onPress={() => router.push('/account')}>
               <Ionicons name="person-outline" size={20} color={COLORS.text} />
-            </Pressable>
+            </PressableScale>
           </View>
         </View>
      {/* ← الـ divider ثابت */}
@@ -260,7 +262,11 @@ export default function DashboardScreen() {
 
         {/* ── MAINTENANCE ALERT BANNER ── */}
         {d && d.maintenance.upcomingCount > 0 && (
-          <View style={styles.alertCard}>
+          <PressableScale
+            style={styles.alertCard}
+            scaleTo={0.985}
+            onPress={() => router.push('/maintenance-baseline')}
+          >
             <View style={styles.alertTitleRow}>
               <Ionicons name="warning-outline" size={18} color={COLORS.warning} />
               <Text style={styles.alertTitle}>Maintenance Alert</Text>
@@ -271,7 +277,7 @@ export default function DashboardScreen() {
                 {d.maintenance.riskLevel.toUpperCase()}
               </Text>. Schedule service soon.
             </Text>
-          </View>
+          </PressableScale>
         )}
 
         {/* ── METRICS GRID ── */}
@@ -343,7 +349,11 @@ export default function DashboardScreen() {
 
         {/* ── DRIVING STREAK ── */}
         {d && (
-          <View style={styles.streakCard}>
+          <PressableScale
+            style={styles.streakCard}
+            scaleTo={0.985}
+            onPress={() => router.push('/track')}
+          >
             <View style={styles.streakTopRow}>
               <View>
                 <Text style={styles.streakLabel}>Safe Driving Streak</Text>
@@ -380,27 +390,27 @@ export default function DashboardScreen() {
                 </View>
               )}
             </View>
-          </View>
+          </PressableScale>
         )}
 
         {/* ── BOTTOM STATS ── */}
         {d && (
           <View style={styles.bottomStatsRow}>
-            <View style={styles.bottomStatCard}>
+            <PressableScale style={styles.bottomStatCard} onPress={() => router.push('/trips')}>
               <Text style={styles.bottomStatTitle}>Total Trips</Text>
               <Text style={styles.bottomStatValue}>{d.totalTrips}</Text>
               <Text style={styles.bottomStatUnit}>recorded</Text>
-            </View>
-            <View style={styles.bottomStatCard}>
+            </PressableScale>
+            <PressableScale style={styles.bottomStatCard} onPress={() => router.push('/trips')}>
               <Text style={styles.bottomStatTitle}>Distance</Text>
               <Text style={styles.bottomStatValue}>{d.totalDistance > 999 ? `${(d.totalDistance / 1000).toFixed(1)}k` : d.totalDistance}</Text>
               <Text style={styles.bottomStatUnit}>km total</Text>
-            </View>
-            <View style={styles.bottomStatCard}>
+            </PressableScale>
+            <PressableScale style={styles.bottomStatCard} >
               <Text style={styles.bottomStatTitle}>Maintenance</Text>
               <Text style={styles.bottomStatValue}>{d.streak.maintenance}</Text>
               <Text style={styles.bottomStatUnit}>streak days</Text>
-            </View>
+            </PressableScale>
           </View>
         )}
       </ScrollView>
@@ -419,9 +429,9 @@ export default function DashboardScreen() {
           <View style={styles.sheetHandle} />
           <View style={styles.notifHeader}>
             <Text style={styles.notifTitle}>Notifications</Text>
-            <Pressable onPress={() => setShowNotifModal(false)} style={styles.closeBtn} hitSlop={10}>
+            <PressableScale onPress={() => setShowNotifModal(false)} style={styles.closeBtn} hitSlop={10}>
               <Ionicons name="close" size={20} color={COLORS.text} />
-            </Pressable>
+            </PressableScale>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>

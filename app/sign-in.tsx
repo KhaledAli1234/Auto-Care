@@ -10,11 +10,11 @@ import {
   Text,
   TextInput,
   View,
+  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserProfile } from '@/context/user-profile-context';
 import { APP_COLORS } from '@/constants/app-colors';
-import { signInStyles as styles } from '@/styles/sign-in.styles';
 import { BASE_URL } from '@/constants/api';
 import { jwtDecode } from 'jwt-decode';
 
@@ -28,9 +28,11 @@ function getCredentials(data: any) {
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
+  const C = APP_COLORS;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +41,6 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     const trimmedEmail = email.trim();
-
     const newErrors: Record<string, string> = {};
 
     if (!trimmedEmail) {
@@ -53,22 +54,14 @@ export default function SignInScreen() {
     }
 
     setErrors(newErrors);
-
     if (Object.keys(newErrors).length > 0) return;
 
     try {
       setIsSubmitting(true);
-      console.log('BASE_URL:', BASE_URL);
-      console.log('Sending to:', `${BASE_URL}/auth/login`);
       const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: trimmedEmail,
-          password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -78,69 +71,45 @@ export default function SignInScreen() {
           email: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
           password: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
         });
-
         return;
       }
 
       const credentials = getCredentials(data);
-
       const accessToken = credentials?.access_token;
       const refreshToken = credentials?.refresh_token;
 
       if (!accessToken) {
-        setErrors({
-          email: 'لم يتم استلام التوكن من السيرفر.',
-        });
-
+        setErrors({ email: 'لم يتم استلام التوكن من السيرفر.' });
         return;
       }
 
       await AsyncStorage.setItem('access_token', accessToken);
-
-      if (refreshToken) {
-        await AsyncStorage.setItem('refresh_token', refreshToken);
-      }
+      if (refreshToken) await AsyncStorage.setItem('refresh_token', refreshToken);
 
       const decoded: any = jwtDecode(accessToken);
-
       const userId = decoded?.sub;
-
-      if (!userId) {
-        throw new Error('User ID not found in token');
-      }
+      if (!userId) throw new Error('User ID not found in token');
 
       await AsyncStorage.setItem('userId', userId);
 
       const savedUserProfile = await AsyncStorage.getItem('user_profile');
-
-      const oldUserProfile = savedUserProfile
-        ? JSON.parse(savedUserProfile)
-        : {};
+      const oldUserProfile = savedUserProfile ? JSON.parse(savedUserProfile) : {};
 
       const userProfile = {
         user: {
           firstName: oldUserProfile.user?.firstName || '',
-
           lastName: oldUserProfile.user?.lastName || '',
-
           email: oldUserProfile.user?.email || trimmedEmail,
-
           phone: oldUserProfile.user?.phone || '',
-
-          drivingExperience:
-            oldUserProfile.user?.drivingExperience ?? null,
+          drivingExperience: oldUserProfile.user?.drivingExperience ?? null,
         },
       };
 
       updateProfile(userProfile);
-
-      await AsyncStorage.setItem(
-        'user_profile',
-        JSON.stringify(userProfile)
-      );
+      await AsyncStorage.setItem('user_profile', JSON.stringify(userProfile));
 
       const vehicleRes = await fetch(`${BASE_URL}/vehicle/user/${userId}`, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${accessToken}`,
           'ngrok-skip-browser-warning': 'true',
         },
@@ -148,7 +117,7 @@ export default function SignInScreen() {
 
       if (vehicleRes.ok) {
         const resData = await vehicleRes.json();
-        const vehicleData = resData?.data?.vehicles?.[0]; 
+        const vehicleData = resData?.data?.vehicles?.[0];
         if (vehicleData) {
           await AsyncStorage.setItem('vehicle_profile', JSON.stringify(vehicleData));
           await AsyncStorage.setItem('vehicle_setup_done', 'true');
@@ -159,13 +128,9 @@ export default function SignInScreen() {
       } else {
         router.replace('/vehicle-setup');
       }
-
     } catch (err) {
       console.log('LOGIN ERROR:', err);
-
-      setErrors({
-        email: 'حدث خطأ في الاتصال بالسيرفر.',
-      });
+      setErrors({ email: 'حدث خطأ في الاتصال بالسيرفر.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -174,149 +139,118 @@ export default function SignInScreen() {
   const clearError = (field: string) => {
     setErrors((prev) => {
       const next = { ...prev };
-
       delete next[field];
-
       return next;
     });
   };
 
-  const C = APP_COLORS;
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+
+      {/* ── Header ── */}
       <View style={styles.header}>
-        <View style={styles.backButton} />
-
-        <View style={styles.headerCenter}>
-          <View style={styles.logoRow}>
-            <View style={styles.logoIcon}>
-              <Text style={styles.logoIconText}>B</Text>
-            </View>
-
-            <Text style={styles.logoAi}>AI</Text>
-          </View>
-
-          <Text style={styles.appTitle} numberOfLines={1}>
-            Smart Car AI Assistant App
-          </Text>
-        </View>
-
-        <Pressable style={styles.viewChatButton}>
-          <Text style={styles.viewChatText}>View chat</Text>
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
+          <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
         </Pressable>
+
+        <Text style={styles.headerTitle}>
+          Auto<Text style={styles.headerTitleBlue}>Care</Text>
+        </Text>
+
+        {/* Spacer to balance the back button */}
+        <View style={styles.backBtn} />
       </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}>
+        style={styles.keyboardView}
+      >
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingBottom: insets.bottom + 110,
-            },
-          ]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={styles.title}>Welcome Back</Text>
-
-          <Text style={styles.subtitle}>
-            Sign in to continue to your dashboard
-          </Text>
+          <Text style={styles.subtitle}>Sign in to continue to your dashboard</Text>
 
           <View style={styles.form}>
+            {/* Email */}
             <Text style={styles.label}>Email Address</Text>
-
             <TextInput
               style={[styles.input, errors.email && styles.inputError]}
               placeholder="john@example.com"
-              placeholderTextColor={C.textMuted}
+              placeholderTextColor="rgba(100,135,170,0.6)"
               value={email}
-              onChangeText={(t) => {
-                setEmail(t);
-                clearError('email');
-              }}
+              onChangeText={(t) => { setEmail(t); clearError('email'); }}
               onFocus={() => clearError('email')}
               keyboardType="email-address"
               autoCapitalize="none"
             />
+            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
-            {errors.email ? (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            ) : null}
-
+            {/* Password */}
             <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordWrapper}>
+              <TextInput
+                style={[styles.passwordInput, errors.password && styles.inputError]}
+                placeholder="••••••••"
+                placeholderTextColor="rgba(100,135,170,0.6)"
+                value={password}
+                onChangeText={(t) => { setPassword(t); clearError('password'); }}
+                onFocus={() => clearError('password')}
+                secureTextEntry={!showPassword}
+              />
+              <Pressable
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeBtn}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="rgba(100,135,170,0.8)"
+                />
+              </Pressable>
+            </View>
+            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
-            <TextInput
-              style={[styles.input, errors.password && styles.inputError]}
-              placeholder="••••••••"
-              placeholderTextColor={C.textMuted}
-              value={password}
-              onChangeText={(t) => {
-                setPassword(t);
-                clearError('password');
-              }}
-              onFocus={() => clearError('password')}
-              secureTextEntry
-            />
-
-            {errors.password ? (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            ) : null}
-
+            {/* Remember me + Forgot password */}
             <View style={styles.optionsRow}>
               <Pressable
                 onPress={() => setRememberMe(!rememberMe)}
                 style={styles.rememberRow}
-                hitSlop={8}>
-                <View
-                  style={[
-                    styles.checkbox,
-                    rememberMe && styles.checkboxChecked,
-                  ]}>
-                  {rememberMe && (
-                    <Ionicons
-                      name="checkmark"
-                      size={14}
-                      color={C.text}
-                    />
-                  )}
+                hitSlop={8}
+              >
+                <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                  {rememberMe && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
                 </View>
-
                 <Text style={styles.rememberText}>Remember me</Text>
               </Pressable>
 
-              <Pressable
-                hitSlop={8}
-                onPress={() => router.push('/forgot-password')}>
-                <Text style={styles.forgotLink}>
-                  Forgot Password?
-                </Text>
+              <Pressable hitSlop={8} onPress={() => router.push('/forgot-password')}>
+                <Text style={styles.forgotLink}>Forgot Password?</Text>
               </Pressable>
             </View>
           </View>
 
+          {/* Sign In Button */}
           <Pressable
-            style={styles.signInButton}
+            style={[styles.signInButton, isSubmitting && { opacity: 0.7 }]}
             onPress={handleSignIn}
-            disabled={isSubmitting}>
+            disabled={isSubmitting}
+          >
             <Text style={styles.signInButtonText}>
               {isSubmitting ? 'Signing In...' : 'Sign In'}
             </Text>
           </Pressable>
 
+          {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Don&apos;t have an account?{' '}
-            </Text>
-
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
             <Link href="/create-account" asChild>
               <Pressable>
-                <Text style={styles.createAccountLink}>
-                  Create Account
-                </Text>
+                <Text style={styles.createAccountLink}>Create Account</Text>
               </Pressable>
             </Link>
           </View>
@@ -325,3 +259,204 @@ export default function SignInScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0D1621',
+  },
+
+  // ── Header ──
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(30, 144, 255, 0.1)',
+  },
+
+  backBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+
+  headerTitleBlue: {
+    color: '#4DA8FF',
+  },
+
+  // ── Keyboard / Scroll ──
+  keyboardView: {
+    flex: 1,
+  },
+
+  scroll: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 36,
+  },
+
+  // ── Title ──
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 6,
+    letterSpacing: 0.3,
+  },
+
+  subtitle: {
+    fontSize: 14,
+    color: 'rgba(150, 185, 220, 0.8)',
+    marginBottom: 32,
+  },
+
+  // ── Form ──
+  form: {
+    gap: 6,
+    marginBottom: 24,
+  },
+
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(150, 185, 220, 0.9)',
+    marginBottom: 6,
+    marginTop: 14,
+  },
+
+  input: {
+    height: 52,
+    backgroundColor: '#111E2E',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 144, 255, 0.15)',
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
+
+  inputError: {
+    borderColor: 'rgba(255, 80, 80, 0.6)',
+  },
+
+  errorText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginTop: 4,
+  },
+
+  // ── Password with eye icon ──
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111E2E',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(30, 144, 255, 0.15)',
+    height: 52,
+    paddingHorizontal: 16,
+  },
+
+  passwordInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#FFFFFF',
+    height: '100%',
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+  },
+
+  eyeBtn: {
+    padding: 4,
+  },
+
+  // ── Remember me / Forgot ──
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(30, 144, 255, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+
+  checkboxChecked: {
+    backgroundColor: '#1E90FF',
+    borderColor: '#1E90FF',
+  },
+
+  rememberText: {
+    fontSize: 13,
+    color: 'rgba(150, 185, 220, 0.8)',
+  },
+
+  forgotLink: {
+    fontSize: 13,
+    color: '#1E90FF',
+    fontWeight: '600',
+  },
+
+  // ── Sign In Button ──
+  signInButton: {
+    height: 54,
+    backgroundColor: '#1E90FF',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+
+  signInButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+
+  // ── Footer ──
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  footerText: {
+    fontSize: 13,
+    color: 'rgba(150, 185, 220, 0.7)',
+  },
+
+  createAccountLink: {
+    fontSize: 13,
+    color: '#1E90FF',
+    fontWeight: '700',
+  },
+});
