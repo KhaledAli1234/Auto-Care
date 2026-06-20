@@ -3,10 +3,12 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, Stack, usePathname } from "expo-router";
 
 import { UserProfileProvider } from "@/context/user-profile-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -14,14 +16,44 @@ import SplashScreen from "./splash";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 3000);
+
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const publicRoutes = new Set([
+      "/",
+      "/welcome",
+      "/sign-in",
+      "/create-account",
+      "/forgot-password",
+      "/verify-otp",
+      "/reset-password",
+    ]);
+
+    const redirectIfLoggedOut = async () => {
+      if (showSplash || publicRoutes.has(pathname)) return;
+
+      const token = await AsyncStorage.getItem("access_token");
+
+      if (!token) {
+        if (router.canDismiss()) {
+          router.dismissAll();
+        }
+
+        router.replace("/welcome");
+      }
+    };
+
+    redirectIfLoggedOut();
+  }, [pathname, showSplash]);
 
   if (showSplash) {
     return <SplashScreen />;
@@ -30,11 +62,13 @@ export default function RootLayout() {
   return (
     <UserProfileProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ 
-          headerShown: false,
-          animation: 'fade',
-          animationDuration: 150,
-        }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: "fade",
+            animationDuration: 150,
+          }}
+        >
           <Stack.Screen name="index" />
           <Stack.Screen name="welcome" />
           <Stack.Screen name="sign-in" />
@@ -53,18 +87,24 @@ export default function RootLayout() {
           <Stack.Screen name="track-live" />
           <Stack.Screen name="community" />
           <Stack.Screen name="ai-assistant" />
-          <Stack.Screen 
+
+          <Stack.Screen
             name="trip-details/[id]"
-            options={{ 
-              animation: 'fade_from_bottom',
+            options={{
+              animation: "fade_from_bottom",
               animationDuration: 200,
-            }} 
+            }}
           />
+
           <Stack.Screen
             name="modal"
-            options={{ presentation: "modal", animation: 'slide_from_bottom' }}
+            options={{
+              presentation: "modal",
+              animation: "slide_from_bottom",
+            }}
           />
         </Stack>
+
         <StatusBar style="light" />
       </ThemeProvider>
     </UserProfileProvider>

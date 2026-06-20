@@ -19,9 +19,7 @@ import { BottomNavbar } from '@/components/bottom-navbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 
-/* ════════════════════════════════════════
-   COLORS
-════════════════════════════════════════ */
+
 const COLORS = {
   background:   '#09182d',
   surface:      '#13243a',
@@ -38,17 +36,14 @@ const COLORS = {
   starEmpty:    'rgba(245,158,11,0.25)',
 };
 
-/* ════════════════════════════════════════
-   TYPES
-════════════════════════════════════════ */
+
 type AllowComments = 'allow' | 'disable';
 type Availability  = 'public' | 'friends' | 'onlyMe';
 
-// Rating data loaded per-post from GET /posts/:postId/rating
 interface PostRating {
-  average:  number;  // 0–5, one decimal
+  average:  number;  
   count:    number;
-  myRating: number;  // 0 = not rated yet
+  myRating: number;  
 }
 
 const DEFAULT_RATING: PostRating = { average: 0, count: 0, myRating: 0 };
@@ -108,12 +103,10 @@ interface AccountPost {
   comments: PostComment[];
   shares: number;
   pending?: boolean;
-  rating: PostRating;   // ← NEW: loaded lazily when card mounts
+  rating: PostRating;   
 }
 
-/* ════════════════════════════════════════
-   HELPERS
-════════════════════════════════════════ */
+
 function toInitials(fullName?: string | null) {
   const name = (fullName ?? '').trim();
   if (!name) return 'U';
@@ -198,13 +191,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/* ════════════════════════════════════════
-   STAR RATING COMPONENT
-════════════════════════════════════════ */
+
 function StarRating({
   rating,
-  // On account screen the user IS the author, so they can't rate their own posts.
-  // We keep the prop for consistency but it's always true here.
+  
   isMyPost = true,
   onRate,
 }: {
@@ -212,7 +202,7 @@ function StarRating({
   isMyPost?: boolean;
   onRate: (value: number) => void;
 }) {
-  // Owner can't rate their own post — stars are display-only
+ 
   const canRate = !isMyPost;
 
   return (
@@ -265,9 +255,7 @@ const starStyles = StyleSheet.create({
   noRating:   { color: COLORS.mutedDark, fontSize: 12 },
 });
 
-/* ════════════════════════════════════════
-   SCREEN
-════════════════════════════════════════ */
+
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { profile, updateProfile } = useUserProfile();
@@ -288,7 +276,6 @@ export default function AccountScreen() {
     ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ')
     : '';
 
-  // Read role directly from the stored JWT payload
   const [myRole, setMyRole] = useState<'user' | 'admin'>('user');
   useEffect(() => {
     AsyncStorage.getItem('access_token').then(raw => {
@@ -300,7 +287,7 @@ export default function AccountScreen() {
     });
   }, []);
 
-  /* ── load profile + posts ── */
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -322,9 +309,7 @@ export default function AccountScreen() {
     load();
   }, []);
 
-  /* ── rating helpers ── */
 
-  // Called once per post when the card mounts — fetches average + count
   const fetchRating = useCallback(async (postId: string) => {
     try {
       const data = await apiGet(`/posts/${postId}/rating`);
@@ -333,11 +318,10 @@ export default function AccountScreen() {
     } catch { /* silent */ }
   }, []);
 
-  // Not needed on account screen (owner can't rate own posts)
-  // Kept as a no-op so AccountPostCard interface stays consistent with community screen
+  
   const handleRate = useCallback(async (_postId: string, _value: number) => {}, []);
 
-  /* ════════ LIKE ════════ */
+
   const handleToggleLike = async (postId: string, likedByMe: boolean) => {
     setPosts(cur => cur.map(p => p.id !== postId ? p : {
       ...p, likedByMe: !likedByMe,
@@ -353,7 +337,6 @@ export default function AccountScreen() {
     }
   };
 
-  /* ════════ DELETE POST ════════ */
   const handleDeletePost = async (postId: string) => {
     setPosts(cur => cur.filter(p => p.id !== postId));
     try {
@@ -366,7 +349,7 @@ export default function AccountScreen() {
     }
   };
 
-  /* ════════ EDIT POST ════════ */
+
   const handleOpenEdit = (post: AccountPost) => {
     setEditPostId(post.id);
     setEditPostText(post.content);
@@ -396,7 +379,6 @@ export default function AccountScreen() {
     }
   };
 
-  /* ════════ COMMENTS ════════ */
   const handleAddComment = async (postId: string, text: string) => {
     if (!text.trim()) return;
     const tempId = `temp-c-${Date.now()}`;
@@ -445,7 +427,7 @@ export default function AccountScreen() {
     catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: prev })); }
   };
 
-  /* ════════ REPLIES ════════ */
+
   const handleAddReply = async (postId: string, commentId: string, text: string) => {
     if (!text.trim()) return;
     const tempId = `temp-r-${Date.now()}`;
@@ -517,15 +499,48 @@ export default function AccountScreen() {
     })); }
   };
 
-  /* ════════ LOGOUT ════════ */
-  const handleLogout = async () => {
-    await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'userId']);
-    router.replace('/sign-in');
-  };
 
-  /* ════════════════════════════════════════
-     RENDER
-  ════════════════════════════════════════ */
+const handleLogout = async () => {
+  await AsyncStorage.multiRemove([
+    'access_token',
+    'refresh_token',
+    'userId',
+    'needs_vehicle_setup',
+    'vehicle_setup_done',
+    'vehicle_profile',
+    'user_profile',
+  ]);
+
+  updateProfile({
+    user: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      drivingExperience: null,
+    },
+    vehicle: {
+      brand: '',
+      model: '',
+      year: 0,
+      engineCapacity: 0,
+      mileage: 0,
+      transmission: '',
+      fuelType: '',
+    },
+    stats: { followersCount: 0, followingCount: 0, postsCount: 0 },
+    posts: [],
+  });
+
+  setShowLogoutConfirm(false);
+
+  if (router.canDismiss()) {
+    router.dismissAll();
+  }
+
+  router.replace('/welcome');
+};
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
