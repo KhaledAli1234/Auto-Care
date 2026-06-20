@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '@/constants/api';
 import { Linking } from 'react-native';
+import { authHeaders } from '@/constants/api-client';
 
 const COLORS = {
   background:   '#09182d',
@@ -183,7 +184,7 @@ const startRecording = async () => {
 
     setSending(true);
     try {
-      const token = await AsyncStorage.getItem('access_token');
+      const headers = await authHeaders();
 
       const speeds   = locationData.current.map(l => l.speed);
       const avgSpeed = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
@@ -223,11 +224,7 @@ const startRecording = async () => {
 
       const res = await fetch(`${BASE_URL}/trips/end`, {
         method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}`,
-          'ngrok-skip-browser-warning': 'true',
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 

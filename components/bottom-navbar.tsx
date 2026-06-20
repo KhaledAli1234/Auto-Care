@@ -24,6 +24,9 @@ const TABS: {
   { key: 'ai',        label: 'AI',        icon: 'chatbox-ellipses-outline', route: '/ai-assistant' },
 ];
 
+// الـ ICON_SIZE + LABEL_HEIGHT + GAP = الارتفاع الكلي لأي tab عادي
+const ICON_SIZE = 22;
+
 function TabItem({ tab, active }: { tab: typeof TABS[number]; active: boolean }) {
   const progress = useSharedValue(active ? 1 : 0);
 
@@ -32,7 +35,7 @@ function TabItem({ tab, active }: { tab: typeof TABS[number]; active: boolean })
   }, [active]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + progress.value * 0.1 }], // 1 → 1.1
+    transform: [{ scale: 1 + progress.value * 0.1 }],
   }));
 
   const color = active ? '#e6edf3' : '#8b949e';
@@ -44,7 +47,7 @@ function TabItem({ tab, active }: { tab: typeof TABS[number]; active: boolean })
       onPress={() => { if (tab.route) router.push(tab.route); }}
     >
       <Animated.View style={animatedStyle}>
-        <Ionicons name={tab.icon} size={22} color={color} />
+        <Ionicons name={tab.icon} size={ICON_SIZE} color={color} />
       </Animated.View>
       <Text style={[styles.label, active && styles.labelActive]}>
         {tab.label}
@@ -71,7 +74,10 @@ function TrackTabItem({ active }: { active: boolean }) {
       scaleTo={0.95}
       onPress={() => router.push('/track')}
     >
-      <Animated.View style={[styles.trackInner, active && styles.trackInnerActive, animatedStyle]}>
+      {/* الـ button بيطلع فوق بـ marginTop سلبي بس */}
+      <Animated.View
+        style={[styles.trackInner, active && styles.trackInnerActive, animatedStyle]}
+      >
         <Ionicons name="radio-outline" size={26} color="#fff" />
       </Animated.View>
       <Text style={[styles.label, active && styles.labelActive]}>Track</Text>
@@ -94,20 +100,21 @@ export function BottomNavbar({ activeTab }: { activeTab: TabKey }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#0d1b2e',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.08)',
+    overflow: 'visible',  
   },
   wrap: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',   
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 20,
+    overflow: 'visible',   
   },
   item: {
     flex: 1,
@@ -119,8 +126,9 @@ const styles = StyleSheet.create({
   trackButton: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     gap: 5,
+    paddingVertical: 8,
   },
   trackInner: {
     width: 62,
@@ -129,8 +137,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3b82f6',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
-    marginTop: -32,
+    marginTop: -50,         
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
