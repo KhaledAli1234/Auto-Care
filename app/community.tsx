@@ -199,6 +199,17 @@ export default function CommunityScreen() {
   const myVehicle = profile.vehicle
     ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(" ")
     : "";
+    const [myRole, setMyRole] = useState<'user' | 'admin'>('user');
+
+    useEffect(() => {
+      AsyncStorage.getItem('access_token').then(raw => {
+        try {
+          const token   = raw?.replace(/"/g, '') ?? '';
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setMyRole(payload.role === 'admin' ? 'admin' : 'user');
+        } catch { setMyRole('user'); }
+      });
+    }, []);
 
   useEffect(() => {
     AsyncStorage.getItem("userId").then(id => setMyUserId(id?.replace(/"/g, "") ?? ""));
@@ -212,7 +223,8 @@ export default function CommunityScreen() {
       const uid  = await AsyncStorage.getItem("userId").then(v => v?.replace(/"/g, "") ?? "");
 
       const result: ApiPost[] = (data?.data?.posts?.result ?? [])
-        .filter((p: ApiPost) => p.status === "approved");
+        .filter((p: ApiPost) => p.status === "approved")
+        .sort((a: ApiPost, b: ApiPost) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setFollowedAuthorIds(prev => {
         const newFollowedIds = new Set(prev);
@@ -468,6 +480,11 @@ export default function CommunityScreen() {
       const data = await apiPost("/posts", payload);
       const saved: ApiPost | null = data?.data?.post ?? data?.data?.result ?? data?.data ?? null;
       if (saved && (saved._id || saved.id)) {
+        if (myRole === 'admin') {
+          const postId = saved._id ?? saved.id;
+          await apiPatch(`/posts/${postId}/approve`);
+          saved.status = 'approved';
+        }
         setPosts(cur => cur.map(p => p.id !== tempId ? p : normalizePost(saved, uid, myName, followedAuthorIds, myVehicle)));
       } else {
         setPosts(cur => cur.filter(p => p.id !== tempId));

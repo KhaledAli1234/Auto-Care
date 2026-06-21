@@ -20,8 +20,6 @@ export async function authHeaders() {
   const raw   = await AsyncStorage.getItem('access_token');
   const token = raw?.replace(/"/g, '') ?? '';
   const role  = token ? decodeTokenRole(token) : 'user';
-
-  // Admin uses "System" prefix, regular users use "Bearer"
   const prefix = role === 'admin' ? 'System' : 'Bearer';
 
   return {
