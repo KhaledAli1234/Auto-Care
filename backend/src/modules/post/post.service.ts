@@ -17,6 +17,7 @@ import {
   PostAvailabilityEnum,
 } from './dto/post.dto';
 import { NotificationService } from '../notification/notification.service';
+import { RoleEnum } from 'src/common';
 
 @Injectable()
 export class PostService {
@@ -49,6 +50,11 @@ export class PostService {
   }
 
   async createPost(body: any, userId: string) {
+    const [user] = await this.userRepository.find({
+      filter: { _id: new Types.ObjectId(userId) },
+      select: 'role',
+    });
+    const isAdmin = user?.role === RoleEnum.admin;
     const [post] = await this.postRepository.create({
       data: [
         {
@@ -57,7 +63,7 @@ export class PostService {
           createdBy: new Types.ObjectId(userId),
           allowComments: body.allowComments ?? AllowCommentsEnum.allow,
           availability: body.availability ?? PostAvailabilityEnum.public,
-          status: 'pending',
+          status: isAdmin ? 'approved' : 'pending',
         },
       ],
     });
@@ -140,11 +146,10 @@ export class PostService {
 
     const [posts, following] = await Promise.all([
       this.postRepository.paginate({
-        filter: isAdmin
-          ? {}
-          : { status: 'approved' },
+        filter: { status: 'approved' },
         page,
         size,
+        options: { sort: { createdAt: -1 } },
         populate: [
           {
             path: 'createdBy',
@@ -185,7 +190,7 @@ export class PostService {
           },
         ],
       }),
-      
+
       this.followRepository.find({
         filter: {
           follower: new Types.ObjectId(currentUserId),

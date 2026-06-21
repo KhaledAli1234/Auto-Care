@@ -186,7 +186,9 @@ export default function VehicleSetupScreen() {
     if (!validate() || !selectedCar) return;
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem('access_token');
+      const { authHeaders } = await import('@/constants/api-client');
+      const headers = await authHeaders();
+      
       const vehicleData = {
         brand:          selectedCar.brand,
         model:          selectedCar.model,
@@ -196,17 +198,18 @@ export default function VehicleSetupScreen() {
         fuelType:       selectedCar.fuelType,
         transmission:   selectedCar.transmission,
         tankCapacity:   selectedCar.tankCapacity,
-        // ── New fields ──
         enginePowerHp:  selectedCar.enginePowerHp,
         weightKg:       selectedCar.weightKg,
         fuelCombined:   selectedCar.fuelCombined,
         bodyType:       selectedCar.bodyType,
       };
+
       const res = await fetch(`${BASE_URL}/vehicle`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token?.replace(/"/g, '') ?? ''}` },
+        headers,
         body: JSON.stringify(vehicleData),
       });
+
       if (!res.ok) { const d = await res.json(); throw new Error(d?.message ?? 'Failed'); }
       updateProfile({ vehicle: vehicleData });
       await AsyncStorage.setItem('vehicle_profile', JSON.stringify(vehicleData));

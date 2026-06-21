@@ -38,7 +38,7 @@ const COLORS = {
   primarySoft:  "#1e4fd6",
   input:        "#0f1f34",
   danger:       "#ef4444",
-  star:         "#f59e0b",       // amber for filled stars
+  star:         "#f59e0b",
   starEmpty:    "rgba(245,158,11,0.25)",
 };
 
@@ -68,11 +68,10 @@ interface ApiPost {
   isFollowing?: boolean;
 }
 
-// Rating data loaded per-post from GET /posts/:postId/rating
 interface PostRating {
-  average: number;   // 0–5, one decimal
+  average: number;
   count:   number;
-  myRating: number;  // 0 = not rated yet
+  myRating: number;
 }
 
 interface CommunityReply {
@@ -89,7 +88,6 @@ interface CommunityPost {
   allowComments: AllowComments; availability: Availability; images: string[];
   likes: number; comments: CommunityComment[]; shares: number;
   likedByMe: boolean; followedAuthor: boolean; pending?: boolean;
-  // rating fields — populated lazily when post becomes visible
   rating: PostRating;
 }
 
@@ -167,7 +165,7 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string, followedAut
     comments: (p.comments ?? []).map(c => normalizeComment(c, myUserId, myName)),
     shares: 0, followedAuthor: p.isFollowing ?? followedAuthorIds.has(authorId),
     pending: false,
-    rating: DEFAULT_RATING,   // loaded lazily via fetchRating
+    rating: DEFAULT_RATING,
   };
 }
 
@@ -212,22 +210,24 @@ export default function CommunityScreen() {
       pageNum === 1 ? setLoading(true) : setLoadingMore(true);
       const data = await apiGet(`/posts?page=${pageNum}&size=10`);
       const uid  = await AsyncStorage.getItem("userId").then(v => v?.replace(/"/g, "") ?? "");
-      const result: ApiPost[] = data?.data?.posts?.result ?? [];
+
+      const result: ApiPost[] = (data?.data?.posts?.result ?? [])
+        .filter((p: ApiPost) => p.status === "approved");
 
       setFollowedAuthorIds(prev => {
-        const next = new Set(prev);
+        const newFollowedIds = new Set(prev);
         result.forEach(p => {
           const aid = resolveAuthorId(p.createdBy);
-          if (p.isFollowing === true)  next.add(aid);
-          if (p.isFollowing === false && !prev.has(aid)) next.delete(aid);
+          if (p.isFollowing === true)  newFollowedIds.add(aid);
+          if (p.isFollowing === false && !prev.has(aid)) newFollowedIds.delete(aid);
         });
-        return next;
-      });
-      setFollowedAuthorIds(prev => {
-        const normalized = result.map(p => normalizePost(p, uid, myName, prev, myVehicle));
+
+        const normalized = result.map(p => normalizePost(p, uid, myName, newFollowedIds, myVehicle));
         setPosts(cur => replace ? normalized : [...cur, ...normalized]);
-        return prev;
+
+        return newFollowedIds;
       });
+
       setTotalPages(data?.data?.posts?.pages ?? 1);
       setPage(pageNum);
     } catch (err) { console.log("fetchPosts error:", err); }
@@ -246,8 +246,6 @@ export default function CommunityScreen() {
   }, [activeFilter, posts]);
 
   /* ── rating helpers ── */
-
-  // Called once per post when the card mounts — fetches average + myRating
   const fetchRating = useCallback(async (postId: string) => {
     try {
       const data = await apiGet(`/posts/${postId}/rating`);
@@ -256,25 +254,20 @@ export default function CommunityScreen() {
     } catch { /* silent */ }
   }, []);
 
-  // Called when user taps a star — POST /posts/:postId/rate
   const handleRate = useCallback(async (postId: string, value: number) => {
-    // Optimistic: update myRating immediately and recalc local average
     setPosts(cur => cur.map(p => {
       if (p.id !== postId) return p;
       const wasRated  = p.rating.myRating > 0;
       const prevCount = p.rating.count;
       const prevSum   = p.rating.average * prevCount;
       const newCount  = wasRated ? prevCount : prevCount + 1;
-      const newSum    = wasRated
-        ? prevSum - p.rating.myRating + value
-        : prevSum + value;
+      const newSum    = wasRated ? prevSum - p.rating.myRating + value : prevSum + value;
       const newAvg    = newCount > 0 ? Math.round((newSum / newCount) * 10) / 10 : 0;
       return { ...p, rating: { average: newAvg, count: newCount, myRating: value } };
     }));
     try {
       await apiPost(`/posts/${postId}/rate`, { value });
     } catch (err) {
-      // Revert on failure by re-fetching
       fetchRating(postId);
       console.log("rate error:", err);
     }
@@ -314,7 +307,7 @@ export default function CommunityScreen() {
     }
   };
 
-  const handleShare   = (id: string) => {
+  const handleShare = (id: string) => {
     if (posts.find(p => p.id === id)?.pending) return;
     setPosts(cur => cur.map(p => p.id !== id ? p : { ...p, shares: p.shares + 1 }));
   };
@@ -636,8 +629,6 @@ export default function CommunityScreen() {
 
 /* ════════════════════════════════════════
    STAR RATING COMPONENT
-   Renders 5 tappable stars. Shows average + count.
-   Highlights user's own rating with a distinct color.
 ════════════════════════════════════════ */
 function StarRating({
   rating, postId, isMyPost, isPending, onRate,
@@ -645,15 +636,13 @@ function StarRating({
   rating: PostRating; postId: string; isMyPost: boolean; isPending: boolean;
   onRate: (value: number) => void;
 }) {
-  // Don't allow rating your own post
   const canRate = !isMyPost && !isPending;
 
   return (
     <View style={starStyles.wrap}>
       <View style={starStyles.starsRow}>
         {[1, 2, 3, 4, 5].map(star => {
-          // Filled if star ≤ myRating (own choice) or ≤ average when not yet rated
-          const myR   = rating.myRating;
+          const myR    = rating.myRating;
           const isMine = myR > 0 && star <= myR;
           const isAvg  = myR === 0 && star <= Math.round(rating.average);
           const filled = isMine || isAvg;
@@ -695,15 +684,15 @@ function StarRating({
 }
 
 const starStyles = StyleSheet.create({
-  wrap:      { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 4 },
-  starsRow:  { flexDirection: "row", alignItems: "center", gap: 3 },
-  star:      { padding: 2 },
-  info:      { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
-  avg:       { color: COLORS.star, fontSize: 14, fontWeight: "700" },
-  count:     { color: COLORS.mutedDark, fontSize: 13 },
-  noRating:  { color: COLORS.mutedDark, fontSize: 12 },
-  myBadge:   { backgroundColor: "rgba(245,158,11,0.12)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" },
-  myBadgeText:{ color: COLORS.star, fontSize: 11, fontWeight: "700" },
+  wrap:        { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 4 },
+  starsRow:    { flexDirection: "row", alignItems: "center", gap: 3 },
+  star:        { padding: 2 },
+  info:        { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  avg:         { color: COLORS.star, fontSize: 14, fontWeight: "700" },
+  count:       { color: COLORS.mutedDark, fontSize: 13 },
+  noRating:    { color: COLORS.mutedDark, fontSize: 12 },
+  myBadge:     { backgroundColor: "rgba(245,158,11,0.12)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" },
+  myBadgeText: { color: COLORS.star, fontSize: 11, fontWeight: "700" },
 });
 
 /* ════════════════════════════════════════
@@ -726,7 +715,7 @@ function CommunityPostCard({
   onEditReply:   (cId: string, rId: string, t: string) => void;
   onDeleteReply: (cId: string, rId: string) => void;
   onShare: () => void; onEdit: () => void; onDelete: () => void;
-  onMounted: () => void;   // triggers rating fetch
+  onMounted: () => void;
   onRate: (value: number) => void;
 }) {
   const [commentsVisible, setCommentsVisible] = useState(false);
@@ -736,7 +725,6 @@ function CommunityPostCard({
   const isMyPost  = post.authorId === myUserId;
   const isPending = !!post.pending;
 
-  // Fetch rating once when this card mounts
   useEffect(() => { if (!isPending) onMounted(); }, [post.id]);
 
   const availIcon = post.availability === "public" ? "globe-outline" : post.availability === "friends" ? "people-outline" : "lock-closed-outline";
@@ -745,7 +733,6 @@ function CommunityPostCard({
 
   return (
     <View style={styles.postCard}>
-      {/* ── header ── */}
       <View style={styles.postHeader}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{post.initials}</Text></View>
         <View style={styles.postIdentity}>
@@ -773,24 +760,20 @@ function CommunityPostCard({
         )}
       </View>
 
-      {/* ── content ── */}
       <Text style={styles.postText}>{post.content}</Text>
 
-      {/* ── tags ── */}
       {post.tags.length > 0 && (
         <View style={styles.tagsRow}>
           {post.tags.map(tag => <View key={tag} style={styles.tagPill}><Text style={styles.tagText}>#{tag}</Text></View>)}
         </View>
       )}
 
-      {/* ── images ── */}
       {post.images.length > 0 && (
         <View style={[styles.imagesGrid, post.images.length > 1 && styles.imagesGridTwo]}>
           {post.images.slice(0, 2).map(uri => <Image key={uri} source={{ uri }} style={styles.postImage} resizeMode="cover" />)}
         </View>
       )}
 
-      {/* ── ★ STAR RATING ── */}
       {!isPending && (
         <StarRating
           rating={post.rating}
@@ -803,7 +786,6 @@ function CommunityPostCard({
 
       <View style={styles.actionsDivider} />
 
-      {/* ── actions ── */}
       <View style={[styles.actionsRow, isPending && { opacity: 0.4 }]}>
         <Pressable style={styles.actionButton} onPress={onToggleLike} disabled={isPending}>
           <Ionicons name={post.likedByMe ? "heart" : "heart-outline"} size={25} color={post.likedByMe ? COLORS.primary : COLORS.muted} />
@@ -821,7 +803,6 @@ function CommunityPostCard({
         </Pressable>
       </View>
 
-      {/* ── comments ── */}
       {post.allowComments === "allow" && !isPending && (
         <>
           <View style={[styles.commentInputRow, { marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.divider, paddingTop: 12 }]}>
@@ -846,7 +827,6 @@ function CommunityPostCard({
         </>
       )}
 
-      {/* POST OPTIONS MODAL */}
       <Modal visible={showOptions} transparent animationType="fade" onRequestClose={handleCloseOptions}>
         <Pressable style={styles.backdrop} onPress={handleCloseOptions}>
           <Pressable style={styles.sheet} onPress={e => e.stopPropagation()}>

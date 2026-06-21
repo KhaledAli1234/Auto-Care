@@ -5,8 +5,10 @@ import { Buffer } from 'buffer';
 function decodeTokenRole(token: string): string {
   try {
     const payload = token.split('.')[1];
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
     const decoded = JSON.parse(
-      Buffer.from(payload, 'base64').toString('utf8')
+      Buffer.from(padded, 'base64').toString('utf8')
     );
     return decoded.role ?? 'user';
   } catch {

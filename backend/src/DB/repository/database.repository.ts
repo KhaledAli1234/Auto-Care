@@ -111,10 +111,10 @@ export abstract class DatabaseRepository<
 
     if (populate) doc.populate(populate);
 
-    if (options?.sort) doc.sort(options.sort);
-    if (options?.skip) doc.skip(options.skip);
+    doc.sort(options?.sort || { createdAt: -1 });
+    
     if (options?.limit) doc.limit(options.limit);
-    // if (options?.lean) doc.lean();
+    if (options?.skip) doc.skip(options.skip);
 
     return doc.exec();
   }
@@ -149,7 +149,7 @@ export abstract class DatabaseRepository<
     const result = await this.find({
       filter,
       select,
-      options,
+      options: { ...options, sort: { createdAt: -1 } },
       populate,
     });
 

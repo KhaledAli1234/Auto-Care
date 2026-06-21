@@ -108,9 +108,11 @@ export default function SignInScreen() {
       updateProfile(userProfile);
       await AsyncStorage.setItem('user_profile', JSON.stringify(userProfile));
 
+      const prefix = decoded?.role === 'admin' ? 'System' : 'Bearer';
+
       const vehicleRes = await fetch(`${BASE_URL}/vehicle/user/${userId}`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `${prefix} ${accessToken}`,
           'ngrok-skip-browser-warning': 'true',
         },
       });

@@ -34,8 +34,8 @@ export class UserService {
     const isAdmin = viewerRole === 'admin';
     const postFilter =
       isOwnProfile && isAdmin
-        ? { createdBy: userObjectId } // أدمن بيشوف بوستاته كلها
-        : { createdBy: userObjectId, status: 'approved' }; // باقي الحالات approved بس
+        ? { createdBy: userObjectId }
+        : { createdBy: userObjectId, status: 'approved' }; 
 
     const [followersCount, followingCount, postsCount, posts, isFollowing] =
       await Promise.all([
