@@ -132,6 +132,7 @@ export class DashboardService {
       healthScore,
       monthlyCost: totalFuelCost,
       monthlyCostByMonth,
+      avgDriverScore: Math.round(avgDriverScore), 
     };
 
     return dashboard;

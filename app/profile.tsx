@@ -41,6 +41,7 @@ interface DashboardData {
   healthScore: number;
   monthlyCost: number;
   monthlyCostByMonth: Record<string, number>;
+  avgDriverScore: number;
 }
 
 interface Notification {
@@ -317,16 +318,26 @@ export default function DashboardScreen() {
               }
             />
             <MetricCard
-              title="Total Cost"
-              value={d.monthlyCost > 0 ? `${d.monthlyCost.toFixed(0)}` : '—'}
-              unit={d.monthlyCost > 0 ? 'EGP' : ''}
-              icon="cash-outline"
-              trendLabel={d.monthlyCost > 0 ? `${d.fuel.totalLiters.toFixed(1)}L total` : 'No fuel logs'}
-              trendTone={d.monthlyCost > 500 ? 'danger' : d.monthlyCost > 200 ? 'warning' : 'success'}
+              title="Avg Driver Score"
+              value={d.avgDriverScore > 0 ? `${d.avgDriverScore}` : '—'}
+              unit={d.avgDriverScore > 0 ? '/100' : ''}
+              icon="speedometer-outline"
+              trendLabel={
+                d.avgDriverScore >= 80 ? 'Safe Driver' :
+                d.avgDriverScore >= 60 ? 'Normal'      : 'Needs Improvement'
+              }
+              trendTone={
+                d.avgDriverScore >= 80 ? 'success' :
+                d.avgDriverScore >= 60 ? 'warning' : 'danger'
+              }
               description={
-                d.monthlyCost === 0
-                  ? 'Log fuel entries to track cost.'
-                  : `Spent on ${d.fuel.totalLiters.toFixed(1)}L of fuel total.`
+                d.avgDriverScore === 0
+                  ? 'Complete trips to see your score.'
+                  : d.avgDriverScore >= 80
+                  ? 'Great driving habits!'
+                  : d.avgDriverScore >= 60
+                  ? 'Room for improvement.'
+                  : 'Consider safer driving habits.'
               }
             />
           </View>

@@ -24,4 +24,5 @@ export interface IDashboard {
   healthScore: number;
   monthlyCost: number;
   monthlyCostByMonth?: Record<string, number>;
+  avgDriverScore: number;
 }
