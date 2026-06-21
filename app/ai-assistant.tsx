@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -17,31 +17,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomNavbar } from "@/components/bottom-navbar";
-import { useUserProfile } from "@/context/user-profile-context";
-import { apiGet, apiPost, authHeaders } from "@/constants/api-client";
-import { BASE_URL } from "@/constants/api";
+import { apiGet, apiPost } from "@/constants/api-client";
+import { AppColors, useThemeColors } from "@/context/theme-context";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const CHATBOT_BASE_URL =
   process.env.EXPO_PUBLIC_CHATBOT_BASE_URL!;
-
-// ─── Theme ────────────────────────────────────────────────────────────────────
-const COLORS = {
-  background:  "#09182d",
-  surface:     "#13243a",
-  surfaceDark: "#102036",
-  border:      "rgba(255,255,255,0.08)",
-  divider:     "rgba(255,255,255,0.07)",
-  text:        "#f8fafc",
-  muted:       "#b8c3d6",
-  mutedDark:   "#8492a8",
-  primary:     "#3268f7",
-  primarySoft: "#4f8cff",
-  input:       "#0f1f34",
-  error:       "#f87171",
-  success:     "#34d399",
-  warning:     "#facc15",
-};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AssistantTab = "ai" | "support";
@@ -128,6 +109,8 @@ async function fetchChatbotReply(message: string, userId: string): Promise<strin
 export default function AIAssistantScreen() {
   const insets    = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+  const COLORS    = useThemeColors();
+  const styles    = useMemo(() => createStyles(COLORS), [COLORS]);
 
   const [activeTab,       setActiveTab]       = useState<AssistantTab>("ai");
   const [aiMessages,      setAiMessages]      = useState<ChatMessage[]>(INITIAL_AI_MESSAGES);
@@ -209,6 +192,17 @@ useEffect(() => {
   const handleSendAI = async (messageText = inputText) => {
     const trimmed = messageText.trim();
     if (!trimmed || loading) return;
+
+    const uid = await AsyncStorage.getItem("userId").then(v => v?.replace(/"/g, "") ?? "");
+    if (!uid) {
+      setAiMessages(prev => [...prev, {
+        id: makeId("error"), role: "error",
+        text: "⚠️ Please log in first.",
+        createdAtLabel: getCurrentTimeLabel(),
+      }]);
+      return;
+    }
+
     const userMsg: ChatMessage = {
       id: makeId("user"), role: "user", text: trimmed, createdAtLabel: getCurrentTimeLabel(),
     };
@@ -216,8 +210,9 @@ useEffect(() => {
     setInputText("");
     setLoading(true);
     scrollToBottom();
+
     try {
-      const replyText = await fetchChatbotReply(trimmed, userId);
+      const replyText = await fetchChatbotReply(trimmed, uid);
       setAiMessages(prev => [...prev, {
         id: makeId("assistant"), role: "assistant", text: replyText, createdAtLabel: getCurrentTimeLabel(),
       }]);
@@ -232,7 +227,6 @@ useEffect(() => {
       scrollToBottom();
     }
   };
-
   // ── User: send support message ──
   const handleSendSupport = async () => {
     const trimmed = inputText.trim();
@@ -522,6 +516,9 @@ function ChatBubble({ message, isAdminView }: {
   message: { id: string; role: ChatRole; text: string; createdAtLabel: string; username?: string }; 
   isAdminView?: boolean 
 }) {
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+
   const isUser    = message.role === "user";
   const isError   = message.role === "error";
   const isSupport = message.role === "support";
@@ -561,7 +558,7 @@ function ChatBubble({ message, isAdminView }: {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (COLORS: AppColors) => StyleSheet.create({
   container:           { flex: 1, backgroundColor: COLORS.background },
   header:              { paddingHorizontal: 22,paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title:               { color: COLORS.text, fontSize: 24, fontWeight: "800" },

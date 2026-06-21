@@ -11,13 +11,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, Stack, usePathname } from "expo-router";
 
 import { UserProfileProvider } from "@/context/user-profile-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import {
+  AppThemeProvider,
+  useAppTheme,
+} from "@/context/theme-context";
 import SplashScreen from "./splash";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function RootNavigator() {
   const pathname = usePathname();
   const [showSplash, setShowSplash] = useState(true);
+  const { isDark } = useAppTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,7 +64,7 @@ export default function RootLayout() {
 
   return (
     <UserProfileProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -105,8 +108,16 @@ export default function RootLayout() {
           />
         </Stack>
 
-        <StatusBar style="light" />
+        <StatusBar style={isDark ? "light" : "dark"} />
       </ThemeProvider>
     </UserProfileProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootNavigator />
+    </AppThemeProvider>
   );
 }

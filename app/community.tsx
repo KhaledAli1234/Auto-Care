@@ -21,26 +21,7 @@ import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 import { NotificationBell } from "@/components/notification-bell";
-
-/* ════════════════════════════════════════
-   COLORS
-════════════════════════════════════════ */
-const COLORS = {
-  background:   "#09182d",
-  surface:      "#13243a",
-  surfaceLight: "#172b44",
-  border:       "rgba(255,255,255,0.07)",
-  divider:      "rgba(255,255,255,0.06)",
-  text:         "#f8fafc",
-  muted:        "#aebbd0",
-  mutedDark:    "#74849a",
-  primary:      "#3268f7",
-  primarySoft:  "#1e4fd6",
-  input:        "#0f1f34",
-  danger:       "#ef4444",
-  star:         "#f59e0b",
-  starEmpty:    "rgba(245,158,11,0.25)",
-};
+import { useThemeColors, AppColors } from "@/context/theme-context";
 
 /* ════════════════════════════════════════
    TYPES
@@ -171,6 +152,8 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string, followedAut
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
   const { profile } = useUserProfile();
   const [myUserId, setMyUserId] = useState("");
   const [activeFilter, setActiveFilter] = useState<BrandFilter>("All");
@@ -653,6 +636,8 @@ function StarRating({
   rating: PostRating; postId: string; isMyPost: boolean; isPending: boolean;
   onRate: (value: number) => void;
 }) {
+  const COLORS = useThemeColors();
+  const starStyles = useMemo(() => createStarStyles(COLORS), [COLORS]);
   const canRate = !isMyPost && !isPending;
 
   return (
@@ -700,7 +685,8 @@ function StarRating({
   );
 }
 
-const starStyles = StyleSheet.create({
+const createStarStyles = (COLORS: AppColors) =>
+  StyleSheet.create({
   wrap:        { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 4 },
   starsRow:    { flexDirection: "row", alignItems: "center", gap: 3 },
   star:        { padding: 2 },
@@ -735,6 +721,8 @@ function CommunityPostCard({
   onMounted: () => void;
   onRate: (value: number) => void;
 }) {
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [commentText,     setCommentText]     = useState("");
   const [showOptions,     setShowOptions]     = useState(false);
@@ -893,6 +881,8 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
   onEdit: (t: string) => void; onDelete: () => void;
   onAddReply: (t: string) => void; onEditReply: (rId: string, t: string) => void; onDeleteReply: (rId: string) => void;
 }) {
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
   const [repliesVisible, setRepliesVisible] = useState(false);
   const [replyText,      setReplyText]      = useState("");
   const [editing,        setEditing]        = useState(false);
@@ -987,6 +977,8 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
 function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
   reply: CommunityReply; myUserId: string; onEdit: (t: string) => void; onDelete: () => void;
 }) {
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
   const [editing,       setEditing]       = useState(false);
   const [editText,      setEditText]      = useState(reply.text);
   const [showOptions,   setShowOptions]   = useState(false);
@@ -1060,7 +1052,8 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
 /* ════════════════════════════════════════
    STYLES
 ════════════════════════════════════════ */
-const styles = StyleSheet.create({
+const createStyles = (COLORS: AppColors) =>
+  StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
   header:       { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title:        { color: COLORS.text, fontSize: 24, fontWeight: "800" },

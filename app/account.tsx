@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -9,6 +9,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -19,8 +20,10 @@ import { BottomNavbar } from '@/components/bottom-navbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 
+import { useAppTheme } from "@/context/theme-context";
 
-const COLORS = {
+
+const DARK_COLORS = {
   background:   '#09182d',
   surface:      '#13243a',
   surfaceLight: '#172b44',
@@ -36,6 +39,23 @@ const COLORS = {
   starEmpty:    'rgba(245,158,11,0.25)',
 };
 
+const LIGHT_COLORS = {
+  background:   '#f5f7fb',
+  surface:      '#ffffff',
+  surfaceLight: '#edf2f7',
+  border:       'rgba(15,23,42,0.10)',
+  divider:      'rgba(15,23,42,0.08)',
+  text:         '#0f172a',
+  muted:        '#475569',
+  mutedDark:    '#64748b',
+  primary:      '#3268f7',
+  input:        '#eef2f7',
+  danger:       '#ef4444',
+  star:         '#f59e0b',
+  starEmpty:    'rgba(245,158,11,0.25)',
+};
+
+type AppColors = typeof DARK_COLORS;
 
 type AllowComments = 'allow' | 'disable';
 type Availability  = 'public' | 'friends' | 'onlyMe';
@@ -182,7 +202,7 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string): AccountPos
   };
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, styles }: { label: string; value: string; styles: any }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.label}>{label}</Text>
@@ -197,10 +217,14 @@ function StarRating({
   
   isMyPost = true,
   onRate,
+  COLORS,
+  starStyles,
 }: {
   rating: PostRating;
   isMyPost?: boolean;
   onRate: (value: number) => void;
+  COLORS: AppColors;
+  starStyles: any;
 }) {
  
   const canRate = !isMyPost;
@@ -245,7 +269,7 @@ function StarRating({
   );
 }
 
-const starStyles = StyleSheet.create({
+const createStarStyles = (COLORS: AppColors) => StyleSheet.create({
   wrap:       { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 4 },
   starsRow:   { flexDirection: 'row', alignItems: 'center', gap: 3 },
   star:       { padding: 2 },
@@ -259,6 +283,10 @@ const starStyles = StyleSheet.create({
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { profile, updateProfile } = useUserProfile();
+  const { isDark, toggleTheme } = useAppTheme();
+  const COLORS = isDark ? DARK_COLORS : LIGHT_COLORS;
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const starStyles = useMemo(() => createStarStyles(COLORS), [COLORS]);
 
   const [myUserId,          setMyUserId]          = useState('');
   const [posts,             setPosts]             = useState<AccountPost[]>([]);
@@ -587,6 +615,33 @@ const handleLogout = async () => {
           )}
         </View>
 
+        {/* THEME TOGGLE */}
+        <View style={styles.themeToggleCard}>
+          <View style={styles.themeToggleLeft}>
+            <View style={styles.themeIconBox}>
+              <Ionicons
+                name={isDark ? 'moon-outline' : 'sunny-outline'}
+                size={22}
+                color={COLORS.primary}
+              />
+            </View>
+
+            <View style={styles.themeTextBox}>
+              <Text style={styles.themeTitle}>App Theme</Text>
+              <Text style={styles.themeSub}>Switch between dark mode and white mode</Text>
+            </View>
+          </View>
+
+          <Text style={styles.themeModeText}>{isDark ? 'Dark' : 'Light'}</Text>
+
+          <Switch
+            value={isDark}
+            onValueChange={toggleTheme}
+            thumbColor={Platform.OS === 'android' ? COLORS.primary : undefined}
+            trackColor={{ false: COLORS.surfaceLight, true: `${COLORS.primary}66` }}
+          />
+        </View>
+
         {/* STATS */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Stats</Text>
@@ -609,17 +664,17 @@ const handleLogout = async () => {
         {/* VEHICLE */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Vehicle Information</Text>
-          <InfoRow label="Brand & Model"  value={valueOrFallback(myVehicle)} />
-          <InfoRow label="Year"           value={valueOrFallback(profile?.vehicle?.year)} />
-          <InfoRow label="Body Type"      value={valueOrFallback((profile?.vehicle as any)?.bodyType)} />
-          <InfoRow label="Engine"         value={valueOrFallback(profile?.vehicle?.engineCapacity ? `${profile.vehicle.engineCapacity} CC` : '')} />
-          <InfoRow label="Engine Power"   value={valueOrFallback((profile?.vehicle as any)?.enginePowerHp ? `${(profile?.vehicle as any).enginePowerHp} HP` : '')} />
-          <InfoRow label="Transmission"   value={valueOrFallback(profile?.vehicle?.transmission)} />
-          <InfoRow label="Fuel Type"      value={valueOrFallback(profile?.vehicle?.fuelType)} />
-          <InfoRow label="Fuel Economy"   value={valueOrFallback((profile?.vehicle as any)?.fuelCombined ? `${(profile?.vehicle as any).fuelCombined} L/100km` : '')} />
-          <InfoRow label="Tank Capacity"  value={valueOrFallback(profile?.vehicle?.tankCapacity ? `${profile.vehicle.tankCapacity} L` : '')} />
-          <InfoRow label="Weight"         value={valueOrFallback((profile?.vehicle as any)?.weightKg ? `${(profile?.vehicle as any).weightKg} kg` : '')} />
-          <InfoRow label="Mileage"        value={valueOrFallback(profile?.vehicle?.mileage ? `${profile.vehicle.mileage} km` : '')} />
+          <InfoRow styles={styles} label="Brand & Model"  value={valueOrFallback(myVehicle)} />
+          <InfoRow styles={styles} label="Year"           value={valueOrFallback(profile?.vehicle?.year)} />
+          <InfoRow styles={styles} label="Body Type"      value={valueOrFallback((profile?.vehicle as any)?.bodyType)} />
+          <InfoRow styles={styles} label="Engine"         value={valueOrFallback(profile?.vehicle?.engineCapacity ? `${profile.vehicle.engineCapacity} CC` : '')} />
+          <InfoRow styles={styles} label="Engine Power"   value={valueOrFallback((profile?.vehicle as any)?.enginePowerHp ? `${(profile?.vehicle as any).enginePowerHp} HP` : '')} />
+          <InfoRow styles={styles} label="Transmission"   value={valueOrFallback(profile?.vehicle?.transmission)} />
+          <InfoRow styles={styles} label="Fuel Type"      value={valueOrFallback(profile?.vehicle?.fuelType)} />
+          <InfoRow styles={styles} label="Fuel Economy"   value={valueOrFallback((profile?.vehicle as any)?.fuelCombined ? `${(profile?.vehicle as any).fuelCombined} L/100km` : '')} />
+          <InfoRow styles={styles} label="Tank Capacity"  value={valueOrFallback(profile?.vehicle?.tankCapacity ? `${profile.vehicle.tankCapacity} L` : '')} />
+          <InfoRow styles={styles} label="Weight"         value={valueOrFallback((profile?.vehicle as any)?.weightKg ? `${(profile?.vehicle as any).weightKg} kg` : '')} />
+          <InfoRow styles={styles} label="Mileage"        value={valueOrFallback(profile?.vehicle?.mileage ? `${profile.vehicle.mileage} km` : '')} />
         </View>
 
         {/* POSTS */}
@@ -629,6 +684,9 @@ const handleLogout = async () => {
         ) : posts.length > 0 ? (
           posts.map(post => (
             <AccountPostCard
+              styles={styles}
+              COLORS={COLORS}
+              starStyles={starStyles}
               key={post.id}
               post={post}
               myUserId={myUserId}
@@ -722,12 +780,14 @@ const handleLogout = async () => {
    POST CARD
 ════════════════════════════════════════ */
 function AccountPostCard({
+  styles, COLORS, starStyles,
   post, myUserId, myName, myVehicle,
   onToggleLike, onEdit, onDelete,
   onAddComment, onEditComment, onDeleteComment,
   onAddReply, onEditReply, onDeleteReply,
   onMounted, onRate,
 }: {
+  styles: any; COLORS: AppColors; starStyles: any;
   post: AccountPost; myUserId: string; myName: string; myVehicle: string;
   onToggleLike: () => void; onEdit: () => void; onDelete: () => void;
   onAddComment:    (t: string) => void;
@@ -798,6 +858,8 @@ function AccountPostCard({
 
       {/* ★ STAR RATING — display-only on account screen (owner can't rate own posts) */}
       <StarRating
+        COLORS={COLORS}
+        starStyles={starStyles}
         rating={post.rating}
         isMyPost={true}   // always true on account screen
         onRate={onRate}
@@ -840,6 +902,8 @@ function AccountPostCard({
             <View style={styles.commentsWrap}>
               {post.comments.map(comment => (
                 <CommentItem
+                  styles={styles}
+                  COLORS={COLORS}
                   key={comment.id}
                   comment={comment}
                   myUserId={myUserId}
@@ -914,7 +978,8 @@ function AccountPostCard({
 /* ════════════════════════════════════════
    COMMENT ITEM
 ════════════════════════════════════════ */
-function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditReply, onDeleteReply }: {
+function CommentItem({ styles, COLORS, comment, myUserId, onEdit, onDelete, onAddReply, onEditReply, onDeleteReply }: {
+  styles: any; COLORS: AppColors;
   comment: PostComment; myUserId: string;
   onEdit: (t: string) => void; onDelete: () => void;
   onAddReply: (t: string) => void;
@@ -968,7 +1033,7 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
       {repliesVisible && (
         <View style={styles.repliesWrap}>
           {comment.replies.map(reply => (
-            <ReplyItem key={reply.id} reply={reply} myUserId={myUserId}
+            <ReplyItem key={reply.id} styles={styles} COLORS={COLORS} reply={reply} myUserId={myUserId}
               onEdit={t => onEditReply(reply.id, t)}
               onDelete={() => onDeleteReply(reply.id)}
             />
@@ -1026,7 +1091,8 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
 /* ════════════════════════════════════════
    REPLY ITEM
 ════════════════════════════════════════ */
-function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
+function ReplyItem({ styles, COLORS, reply, myUserId, onEdit, onDelete }: {
+  styles: any; COLORS: AppColors;
   reply: PostReply; myUserId: string;
   onEdit: (t: string) => void; onDelete: () => void;
 }) {
@@ -1102,10 +1168,8 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
   );
 }
 
-/* ════════════════════════════════════════
-   STYLES
-════════════════════════════════════════ */
-const styles = StyleSheet.create({
+
+const createStyles = (COLORS: AppColors) => StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
   header:       { paddingHorizontal: 16, paddingVertical: 8 },
   backButton:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -1199,5 +1263,12 @@ const styles = StyleSheet.create({
   logoutText:    { color: COLORS.danger, fontSize: 14, fontWeight: '600' },
   logoutOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
   logoutBox:     { width: '80%', backgroundColor: COLORS.surface, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
+  themeToggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 14, marginBottom: 14 },
+  themeToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  themeIconBox: { width: 44, height: 44, borderRadius: 12, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+  themeTextBox: { flex: 1 },
+  themeTitle: { color: COLORS.text, fontSize: 16, fontWeight: '700' },
+  themeSub: { color: COLORS.mutedDark, fontSize: 12, marginTop: 3 },
+  themeModeText: { color: COLORS.primary, fontSize: 13, fontWeight: '700', marginRight: 8 },
   modalBtn:      { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
 });

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -16,22 +16,8 @@ import { authHeaders, apiGet} from '@/constants/api-client';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
 import { NotificationBell } from '@/components/notification-bell';
+import { AppColors, useThemeColors } from '@/context/theme-context';
 
-const COLORS = {
-  background:  '#09182d',
-  surface:     '#13243a',
-  surfaceLight:'#172b44',
-  border:      'rgba(255,255,255,0.07)',
-  divider:     'rgba(255,255,255,0.06)',
-  text:        '#f8fafc',
-  muted:       '#aebbd0',
-  mutedDark:   '#74849a',
-  primary:     '#3268f7',
-  input:       '#0f1f34',
-  danger:      '#ef4444',
-  green:       '#22c55e',
-  yellow:      '#f59e0b',
-};
 
 export interface ApiTrip {
   _id: string;
@@ -90,7 +76,7 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function scoreLabel(score?: number): { text: string; color: string } {
+function scoreLabel(score: number | undefined, COLORS: AppColors): { text: string; color: string } {
   if (!score) return { text: 'N/A', color: COLORS.mutedDark };
   if (score >= 90) return { text: 'Excellent', color: COLORS.green };
   if (score >= 75) return { text: 'Good',      color: COLORS.green };
@@ -100,6 +86,8 @@ function scoreLabel(score?: number): { text: string; color: string } {
 
 export default function TripsScreen() {
   const insets = useSafeAreaInsets();
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
 
   const [trips,       setTrips]       = useState<ApiTrip[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -187,12 +175,15 @@ export default function TripsScreen() {
 }
 
 function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void }) {
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+
   const [showOptions,   setShowOptions]   = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting,      setDeleting]      = useState(false);
 
   const score    = trip.driving_behavior?.driver_score;
-  const scoreMeta = scoreLabel(score);
+  const scoreMeta = scoreLabel(score, COLORS);
   const distance = trip.trip_summary?.distance_km;
   const duration = trip.trip_summary?.duration_min;
   const avgSpeed = trip.trip_summary?.avg_speed;
@@ -354,7 +345,8 @@ function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void })
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (COLORS: AppColors) =>
+  StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16 },
   title:        { color: COLORS.text, fontSize: 24, fontWeight: '800' },

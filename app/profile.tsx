@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -18,24 +18,7 @@ import { BottomNavbar } from '@/components/bottom-navbar';
 import { NotificationBell } from '@/components/notification-bell';
 import { PressableScale } from '@/components/pressable-scale';
 import { apiGet } from '@/constants/api-client';
-
-const COLORS = {
-  background:   '#09182d',
-  card:         '#102440',
-  cardSoft:     '#0f223b',
-  surface:      '#13243a',
-  surfaceLight: '#172b44',
-  border:       'rgba(125,167,255,0.15)',
-  divider:      'rgba(255,255,255,0.06)',
-  text:         '#e8f1ff',
-  muted:        '#9ab2d4',
-  mutedDark:    '#74849a',
-  primary:      '#3268f7',
-  blue:         '#4a90ff',
-  success:      '#33d17a',
-  warning:      '#f5c84c',
-  danger:       '#ff5f7a',
-};
+import { useThemeColors, AppColors } from '@/context/theme-context';
 
 interface DashboardData {
   totalTrips: number;
@@ -82,7 +65,7 @@ function healthTone(score: number): 'success' | 'warning' | 'danger' {
   return 'danger';
 }
 
-function toneColor(tone: string) {
+function toneColor(tone: string, COLORS: AppColors) {
   if (tone === 'success') return COLORS.success;
   if (tone === 'warning') return COLORS.warning;
   if (tone === 'danger')  return COLORS.danger;
@@ -162,7 +145,10 @@ function buildNotifications(d: DashboardData): Notification[] {
 }
 
 function TrendRow({ label, tone }: { label: string; tone: 'success' | 'warning' | 'danger' }) {
-  const color = toneColor(tone);
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const color = toneColor(tone, COLORS);
+
   return (
     <View style={styles.trendRow}>
       <Ionicons name={trendIcon(tone)} size={15} color={color} />
@@ -180,6 +166,9 @@ function MetricCard({
   description: string;
   onPress?: () => void;
 }) {
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+
   return (
     <PressableScale style={styles.metricCard} onPress={onPress}>
       <View style={styles.metricHeader}>
@@ -197,6 +186,8 @@ function MetricCard({
 }
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
+  const COLORS = useThemeColors();
+  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
 
   const [dashboard,      setDashboard]      = useState<DashboardData | null>(null);
   const [loading,        setLoading]        = useState(true);
@@ -273,7 +264,7 @@ export default function DashboardScreen() {
             </View>
             <Text style={styles.alertBody}>
               {d.maintenance.upcomingCount} upcoming maintenance task{d.maintenance.upcomingCount > 1 ? 's' : ''}.
-              Risk level is <Text style={{ color: toneColor(riskTone(d.maintenance.riskLevel)), fontWeight: '700' }}>
+              Risk level is <Text style={{ color: toneColor(riskTone(d.maintenance.riskLevel), COLORS), fontWeight: '700' }}>
                 {d.maintenance.riskLevel.toUpperCase()}
               </Text>. Schedule service soon.
             </Text>
@@ -441,11 +432,11 @@ export default function DashboardScreen() {
                   key={n.id}
                   style={[
                     styles.notifItem,
-                    { borderLeftColor: toneColor(n.tone) },
+                    { borderLeftColor: toneColor(n.tone, COLORS) },
                   ]}
                 >
-                  <View style={[styles.notifIconWrap, { backgroundColor: `${toneColor(n.tone)}18` }]}>
-                    <Ionicons name={n.icon as any} size={20} color={toneColor(n.tone)} />
+                  <View style={[styles.notifIconWrap, { backgroundColor: `${toneColor(n.tone, COLORS)}18` }]}>
+                    <Ionicons name={n.icon as any} size={20} color={toneColor(n.tone, COLORS)} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.notifItemTitle}>{n.title}</Text>
@@ -466,7 +457,7 @@ export default function DashboardScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const createStyles = (COLORS: AppColors) => StyleSheet.create({
   container:  { flex: 1, backgroundColor: COLORS.background },
   scroll:     { flex: 1 },
   content:    { paddingHorizontal: 20,paddingTop: 14, gap: 14 },
@@ -479,8 +470,8 @@ const styles = StyleSheet.create({
 
   alertCard:     { backgroundColor: 'rgba(245,200,76,0.07)', borderWidth: 1, borderColor: 'rgba(245,200,76,0.22)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14 },
   alertTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  alertTitle:    { color: '#f8cf5f', fontSize: 17, fontWeight: '700' },
-  alertBody:     { color: '#e6e1d2', lineHeight: 20, fontSize: 14 },
+  alertTitle:    { color: COLORS.warning, fontSize: 17, fontWeight: '700' },
+  alertBody:     { color: COLORS.muted, lineHeight: 20, fontSize: 14 },
 
   metricsGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   metricCard:     { width: '48%',flexGrow: 1, backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: COLORS.border, padding: 12, minHeight: 168 },
@@ -491,18 +482,18 @@ const styles = StyleSheet.create({
   metricUnit:     { color: COLORS.muted, fontSize: 15, marginBottom: 5, fontWeight: '600' },
   trendRow:       { marginTop: 4, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6 },
   trendText:      { fontSize: 15, fontWeight: '700' },
-  metricDescription: { color: '#d2def2', fontSize: 13, lineHeight: 18 },
+  metricDescription: { color: COLORS.muted, fontSize: 13, lineHeight: 18 },
 
   streakCard:      { borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.cardSoft, padding: 16 },
   streakTopRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   streakLabel:     { color: COLORS.muted, fontSize: 14, marginBottom: 4 },
   streakValue:     { color: COLORS.text, fontSize: 44, fontWeight: '700' },
-  streakUnit:      { color: '#d8e6ff', fontSize: 18, fontWeight: '500' },
+  streakUnit:      { color: COLORS.muted, fontSize: 18, fontWeight: '500' },
   streakIconWrap:  { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(51,209,122,0.12)' },
-  streakBarTrack:  { height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
+  streakBarTrack:  { height: 8, backgroundColor: COLORS.divider, borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
   streakBarFill:   { height: '100%', backgroundColor: COLORS.success, borderRadius: 4 },
   streakBottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  streakDescription:{ color: '#d2def2', fontSize: 14, lineHeight: 20, flex: 1, marginRight: 8 },
+  streakDescription:{ color: COLORS.muted, fontSize: 14, lineHeight: 20, flex: 1, marginRight: 8 },
   badgesChip:      { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(245,200,76,0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
   badgesChipText:  { color: COLORS.warning, fontSize: 12, fontWeight: '700' },
 
@@ -510,7 +501,7 @@ const styles = StyleSheet.create({
   bottomStatCard: { flex: 1, borderRadius: 12, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, paddingVertical: 12, paddingHorizontal: 10 },
   bottomStatTitle:{ color: COLORS.muted, fontSize: 12, marginBottom: 4 },
   bottomStatValue:{ color: COLORS.text, fontSize: 28, fontWeight: '800' },
-  bottomStatUnit: { color: '#cad9f2', fontSize: 12, marginTop: 2 },
+  bottomStatUnit: { color: COLORS.muted, fontSize: 12, marginTop: 2 },
 
   emptyCard:  { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 32, alignItems: 'center', gap: 10 },
   emptyTitle: { color: COLORS.text, fontSize: 18, fontWeight: '800' },
@@ -521,7 +512,7 @@ const styles = StyleSheet.create({
   sheetHandle:   { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 16, opacity: 0.5 },
   notifHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   notifTitle:    { color: COLORS.text, fontSize: 20, fontWeight: '800' },
-  closeBtn:      { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
+  closeBtn:      { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
   notifItem:     { flexDirection: 'row', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.divider, borderLeftWidth: 3, paddingLeft: 12, marginBottom: 2 },
   notifIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   notifItemTitle:{ color: COLORS.text, fontSize: 14, fontWeight: '700', marginBottom: 3 },

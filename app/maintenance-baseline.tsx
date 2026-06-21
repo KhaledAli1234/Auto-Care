@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -16,23 +16,34 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUserProfile } from '@/context/user-profile-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
+import { AppColors, useThemeColors } from '@/context/theme-context';
 
-const APP_COLORS = {
-  background: '#0d1117',
-  surface: '#161b22',
-  surfaceAlt: '#1c2333',
-  border: '#30363d',
-  borderFocus: '#3b82f6',
-  text: '#e6edf3',
-  textMuted: '#8b949e',
-  textSubtle: '#6e7681',
-  primary: '#3b82f6',
-  primaryDark: '#2563eb',
-  accent: '#f59e0b',
-  green: '#22c55e',
-  error: '#f85149',
-  cardBorder: '#21262d',
+type MaintenanceColors = AppColors & {
+  surfaceAlt: string;
+  borderFocus: string;
+  textMuted: string;
+  textSubtle: string;
+  primaryDark: string;
+  accent: string;
+  green: string;
+  cardBorder: string;
+  maintenanceIconBg: string;
 };
+
+function createMaintenanceColors(colors: AppColors): MaintenanceColors {
+  return {
+    ...colors,
+    surfaceAlt: colors.surfaceDark,
+    borderFocus: colors.primary,
+    textMuted: colors.mutedDark,
+    textSubtle: colors.mutedDark,
+    primaryDark: colors.primarySoft,
+    accent: colors.star,
+    green: colors.success,
+    cardBorder: colors.divider,
+    maintenanceIconBg: colors.success + '22',
+  };
+}
 
 // Generate year options from 2000 to current year
 const currentYear = new Date().getFullYear();
@@ -42,7 +53,9 @@ const YEAR_OPTIONS = Array.from({ length: currentYear - 1999 }, (_, i) =>
 
 export default function MaintenanceBaselineScreen() {
   const insets = useSafeAreaInsets();
-  const C = APP_COLORS;
+  const baseColors = useThemeColors();
+  const C = useMemo(() => createMaintenanceColors(baseColors), [baseColors]);
+  const styles = useMemo(() => createStyles(C), [C]);
   const { updateProfile } = useUserProfile();
 
   const [lastOilChange, setLastOilChange] = useState('42000');
@@ -216,9 +229,7 @@ export default function MaintenanceBaselineScreen() {
   );
 }
 
-const C = APP_COLORS;
-
-const styles = StyleSheet.create({
+const createStyles = (C: MaintenanceColors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: C.background,
@@ -303,7 +314,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#052e16',
+    backgroundColor: C.maintenanceIconBg,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -9,21 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { NotificationBell } from '@/components/notification-bell';
 
-const COLORS = {
-  background: '#09182d',
-  backgroundSoft: '#122745',
-  border: 'rgba(255,255,255,0.08)',
-  surfaceLight: '#172b44',
-  text: '#f8fafc',
-  muted: '#b8c3d6',
-  primary: '#2f6dff',
-  primarySoft: 'rgba(47,109,255,0.20)',
-  green: '#00d56f',
-  greenSoft: 'rgba(0, 213, 111, 0.16)',
-  red: '#ff5d6c',
-  redSoft: 'rgba(255, 93, 108, 0.18)',
-  yellow: '#ffd400',
-};
+import { useAppTheme, useThemeColors, AppColors } from '@/context/theme-context';
 
 function toRadians(v: number) { return (v * Math.PI) / 180; }
 
@@ -48,6 +34,9 @@ function formatDistance(km: number) {
 
 export default function TrackLiveScreen() {
   const insets = useSafeAreaInsets();
+  const COLORS = useThemeColors();
+  const { isDark } = useAppTheme();
+  const styles = useMemo(() => createStyles(COLORS, isDark), [COLORS, isDark]);
   const [speedKmh,       setSpeedKmh]       = useState(0);
   const [distanceKm,     setDistanceKm]     = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -177,7 +166,8 @@ export default function TrackLiveScreen() {
     </View>
   );
 }
-const styles = StyleSheet.create({
+const createStyles = (COLORS: AppColors, isDark: boolean) =>
+  StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
   header:       { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title:        { color: COLORS.text, fontSize: 24, fontWeight: '700' },
@@ -186,18 +176,18 @@ const styles = StyleSheet.create({
   divider:      { height: 1, backgroundColor: COLORS.border },
   scrollContent:{ flexGrow: 1, paddingHorizontal: 26, paddingBottom: 26, paddingTop: 28 },
   speedGlow:    { position: 'absolute', top: 120, alignSelf: 'center', width: 320, height: 320, borderRadius: 160, backgroundColor: COLORS.primarySoft, opacity: 0.8, transform: [{ scale: 1.4 }] },
-  speedCircle:  { alignSelf: 'center', width: 320, height: 320, borderRadius: 160, borderWidth: 5, borderColor: COLORS.primary, backgroundColor: 'rgba(9,24,45,0.56)', alignItems: 'center', justifyContent: 'center', marginTop: 76 },
+  speedCircle:  { alignSelf: 'center', width: 320, height: 320, borderRadius: 160, borderWidth: 5, borderColor: COLORS.primary, backgroundColor: isDark ? 'rgba(9,24,45,0.56)' : 'rgba(255,255,255,0.72)', alignItems: 'center', justifyContent: 'center', marginTop: 76 },
   speedValue:   { color: COLORS.text, fontSize: 84, fontWeight: '800', lineHeight: 90 },
   speedUnit:    { color: COLORS.muted, fontSize: 26, fontWeight: '400', marginTop: 6 },
-  statusPill:   { marginTop: 32, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 999, backgroundColor: COLORS.greenSoft, borderWidth: 1, borderColor: 'rgba(0,213,111,0.28)', paddingHorizontal: 20, paddingVertical: 14 },
+  statusPill:   { marginTop: 32, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 999, backgroundColor: COLORS.greenSoft, borderWidth: 1, borderColor: isDark ? 'rgba(0,213,111,0.28)' : 'rgba(22,163,74,0.25)', paddingHorizontal: 20, paddingVertical: 14 },
   statusDot:    { width: 16, height: 16, borderRadius: 8, backgroundColor: COLORS.green },
   statusDotError:{ backgroundColor: COLORS.red },
-  statusText:   { color: '#d3ffdd', fontSize: 17, fontWeight: '700' },
-  errorText:    { color: '#ffb3bc', fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 14, paddingHorizontal: 10 },
+  statusText:   { color: isDark ? '#d3ffdd' : COLORS.success, fontSize: 17, fontWeight: '700' },
+  errorText:    { color: isDark ? '#ffb3bc' : COLORS.danger, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 14, paddingHorizontal: 10 },
   statsRow:     { flexDirection: 'row', gap: 14, marginTop: 28 },
-  statCard:     { flex: 1, borderRadius: 22, paddingVertical: 22, paddingHorizontal: 10, backgroundColor: 'rgba(18,39,69,0.84)', borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', minHeight: 130 },
+  statCard:     { flex: 1, borderRadius: 22, paddingVertical: 22, paddingHorizontal: 10, backgroundColor: isDark ? 'rgba(18,39,69,0.84)' : COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', minHeight: 130 },
   statValue:    { color: COLORS.text, fontSize: 22, fontWeight: '800', marginTop: 12 },
   statLabel:    { color: COLORS.muted, fontSize: 16, marginTop: 8 },
-  stopButton:   { marginTop: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,93,108,0.45)', backgroundColor: COLORS.redSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 22 },
+  stopButton:   { marginTop: 40, borderRadius: 20, borderWidth: 1, borderColor: isDark ? 'rgba(255,93,108,0.45)' : 'rgba(239,68,68,0.35)', backgroundColor: COLORS.redSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 22 },
   stopButtonText:{ color: COLORS.red, fontSize: 20, fontWeight: '700' },
 });
