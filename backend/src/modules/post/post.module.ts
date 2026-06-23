@@ -6,8 +6,6 @@ import {
   CommentRepository,
   FollowModel,
   FollowRepository,
-  NotificationModel,
-  NotificationRepository,
   PostModel,
   PostRepository,
   RatingModel,
@@ -15,7 +13,7 @@ import {
   UserModel,
   UserRepository,
 } from 'src/DB';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
@@ -23,8 +21,8 @@ import { NotificationService } from '../notification/notification.service';
     PostModel,
     FollowModel,
     CommentModel,
-    NotificationModel,
     RatingModel,
+    NotificationModule,
   ],
   controllers: [PostController],
   providers: [
@@ -33,8 +31,6 @@ import { NotificationService } from '../notification/notification.service';
     PostRepository,
     FollowRepository,
     CommentRepository,
-    NotificationService,
-    NotificationRepository,
     RatingRepository,
   ],
 })

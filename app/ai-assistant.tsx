@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getSocket, useSocket } from "@/hooks/useSocket";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -21,8 +22,7 @@ import { apiGet, apiPost } from "@/constants/api-client";
 import { AppColors, useThemeColors } from "@/context/theme-context";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const CHATBOT_BASE_URL =
-  process.env.EXPO_PUBLIC_CHATBOT_BASE_URL!;
+const CHATBOT_BASE_URL = process.env.EXPO_PUBLIC_CHATBOT_BASE_URL!;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AssistantTab = "ai" | "support";
@@ -36,10 +36,9 @@ type ChatMessage = {
   username?:      string;
 };
 
-// Support ticket types
 type SupportMessage = {
   _id:       string;
-  sender:    string; // userId
+  sender:    string;
   role:      "user" | "admin";
   message:   string;
   createdAt: string;
@@ -92,12 +91,16 @@ function getRole(token: string): string {
 }
 
 // ─── Chatbot API ──────────────────────────────────────────────────────────────
-
-async function fetchChatbotReply(message: string, userId: string): Promise<string> {
+// ✅ FIX: بتاخد history وتبعتها للـ backend
+async function fetchChatbotReply(
+  message: string,
+  userId: string,
+  history: { role: string; content: string }[]
+): Promise<string> {
   const response = await fetch(`${CHATBOT_BASE_URL}/chat`, {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ user_id: userId, message }),
+    body:    JSON.stringify({ user_id: userId, message, history }),
   });
   if (!response.ok) throw new Error(`Server error: ${response.status}`);
   const data = await response.json();
@@ -118,18 +121,17 @@ export default function AIAssistantScreen() {
   const [loading,         setLoading]         = useState(false);
   const [userRole,        setUserRole]        = useState<"user" | "admin">("user");
   const [userId,          setUserId]          = useState("");
+  const [messagesLoaded,  setMessagesLoaded]  = useState(false);
 
-  // User support state
   const [myTicket,        setMyTicket]        = useState<SupportTicket | null>(null);
   const [ticketLoading,   setTicketLoading]   = useState(false);
 
-  // Admin support state
   const [tickets,         setTickets]         = useState<SupportTicket[]>([]);
   const [selectedTicket,  setSelectedTicket]  = useState<SupportTicket | null>(null);
   const [adminLoading,    setAdminLoading]    = useState(false);
   const [refreshing,      setRefreshing]      = useState(false);
 
-  // ── Init: get role & userId ──
+  // ── Init ──
   useEffect(() => {
     (async () => {
       const raw   = await AsyncStorage.getItem("access_token");
@@ -137,26 +139,102 @@ export default function AIAssistantScreen() {
       const uid   = await AsyncStorage.getItem("userId").then(v => v?.replace(/"/g, "") ?? "");
       setUserId(uid);
       if (token) setUserRole(getRole(token) as "user" | "admin");
+
+      if (uid) {
+        try {
+          const storedMsgs = await AsyncStorage.getItem(`chatbot_messages_${uid}`);
+          if (storedMsgs) {
+            const parsed = JSON.parse(storedMsgs);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAiMessages(parsed);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load stored messages", e);
+        }
+      }
+      setMessagesLoaded(true);
     })();
   }, []);
 
-  // ── Fetch my ticket (user) ──
+  // ── Save messages ──
+  useEffect(() => {
+    if (!userId || !messagesLoaded) return;
+    (async () => {
+      const msgsToSave = aiMessages.filter(m => m.role !== "error");
+      const sliced = msgsToSave.slice(-20);
+      await AsyncStorage.setItem(`chatbot_messages_${userId}`, JSON.stringify(sliced));
+    })();
+  }, [aiMessages, userId, messagesLoaded]);
+
+  useSocket(userId || undefined, () => {});
+  const [socket, setSocket] = useState<any>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    const interval = setInterval(() => {
+      const s = getSocket();
+      if (s && s.connected) {
+        setSocket(s);
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [userId]);
+
+  useEffect(() => {
+    if (!socket || !userId) return;
+
+    const conversationId =
+      userRole === "admin" ? selectedTicket?._id : myTicket?._id;
+
+    if (!conversationId) return;
+
+    socket.emit("support:join", { conversationId });
+
+    const handleSupportMessage = (data: any) => {
+      const msg = data.message || data;
+      const targetConvId = data.conversationId || conversationId;
+
+      if (userRole === "user") {
+        setMyTicket(prev => {
+          if (!prev || prev._id !== targetConvId) return prev;
+          if (prev.messages.some(m => m._id === msg._id || (m.createdAt === msg.createdAt && m.message === msg.message))) return prev;
+          return { ...prev, messages: [...prev.messages, msg] };
+        });
+      } else if (userRole === "admin") {
+        setTickets(prev =>
+          prev.map(t => {
+            if (t._id !== targetConvId) return t;
+            if (t.messages.some(m => m._id === msg._id || (m.createdAt === msg.createdAt && m.message === msg.message))) return t;
+            return { ...t, messages: [...t.messages, msg] };
+          })
+        );
+        setSelectedTicket(prev => {
+          if (!prev || prev._id !== targetConvId) return prev;
+          if (prev.messages.some(m => m._id === msg._id || (m.createdAt === msg.createdAt && m.message === msg.message))) return prev;
+          return { ...prev, messages: [...prev.messages, msg] };
+        });
+      }
+      scrollToBottom();
+    };
+
+    socket.on("support:message", handleSupportMessage);
+    return () => { socket.off("support:message", handleSupportMessage); };
+  }, [socket, userId, userRole, selectedTicket?._id, myTicket?._id]);
 
   const fetchMyTicket = useCallback(async () => {
-    if (userRole !== "user") return;
-    if (!userId) return;  
+    if (userRole !== "user" || !userId) return;
     setTicketLoading(true);
     try {
       const res = await apiGet("/support/my-ticket");
       if (res?.data?.ticket) setMyTicket(res.data.ticket);
     } catch {}
     finally { setTicketLoading(false); }
-  }, [userRole, userId]);  
+  }, [userRole, userId]);
 
-  // ── Fetch all tickets (admin) ──
   const fetchAllTickets = useCallback(async (isRefresh = false) => {
-    if (userRole !== "admin") return;
-    if (!userId) return;  
+    if (userRole !== "admin" || !userId) return;
     isRefresh ? setRefreshing(true) : setAdminLoading(true);
     try {
       const res = await apiGet("/support/tickets");
@@ -165,15 +243,13 @@ export default function AIAssistantScreen() {
     finally { setAdminLoading(false); setRefreshing(false); }
   }, [userRole, userId]);
 
-useEffect(() => {
-  if (activeTab === "support") {
-    if (userRole === "user")  fetchMyTicket();
-    if (userRole === "admin") fetchAllTickets();
-  }
-}, [activeTab, userRole]);
+  useEffect(() => {
+    if (activeTab === "support") {
+      if (userRole === "user")  fetchMyTicket();
+      if (userRole === "admin") fetchAllTickets();
+    }
+  }, [activeTab, userRole]);
 
-
-  // ── Reload selected ticket ──
   const reloadSelectedTicket = async (ticketId: string) => {
     try {
       const res = await apiGet(`/support/tickets/${ticketId}`);
@@ -212,7 +288,17 @@ useEffect(() => {
     scrollToBottom();
 
     try {
-      const replyText = await fetchChatbotReply(trimmed, uid);
+      // ✅ FIX: بنبني الـ history من الـ aiMessages الحالية
+      const currentMessages = [...aiMessages, userMsg];
+      const history = currentMessages
+        .filter(m => m.role === "user" || m.role === "assistant")
+        .slice(-10)  // آخر 10 رسايل بس
+        .map(m => ({
+          role:    m.role === "user" ? "user" : "assistant",
+          content: m.text,
+        }));
+
+      const replyText = await fetchChatbotReply(trimmed, uid, history);
       setAiMessages(prev => [...prev, {
         id: makeId("assistant"), role: "assistant", text: replyText, createdAtLabel: getCurrentTimeLabel(),
       }]);
@@ -227,7 +313,7 @@ useEffect(() => {
       scrollToBottom();
     }
   };
-  // ── User: send support message ──
+
   const handleSendSupport = async () => {
     const trimmed = inputText.trim();
     if (!trimmed || loading) return;
@@ -240,7 +326,6 @@ useEffect(() => {
     finally { setLoading(false); scrollToBottom(); }
   };
 
-  // ── Admin: reply to ticket ──
   const handleAdminReply = async () => {
     if (!selectedTicket) return;
     const trimmed = inputText.trim();
@@ -260,7 +345,6 @@ useEffect(() => {
     if (activeTab === "support" && userRole === "admin" && selectedTicket) return handleAdminReply();
   };
 
-  // ── Render: Admin ticket list ──
   if (activeTab === "support" && userRole === "admin" && !selectedTicket) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -292,8 +376,8 @@ useEffect(() => {
             }
             renderItem={({ item }) => (
               <Pressable style={styles.ticketCard} onPress={async () => {
-                setSelectedTicket(item); 
-                await reloadSelectedTicket(item._id); 
+                setSelectedTicket(item);
+                await reloadSelectedTicket(item._id);
               }}>
                 <View style={styles.ticketCardTop}>
                   <View style={styles.ticketAvatar}>
@@ -303,7 +387,7 @@ useEffect(() => {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ticketUser}>
-                      {item.user?.firstName 
+                      {item.user?.firstName
                         ? `${item.user.firstName} ${item.user.lastName ?? ''}`.trim()
                         : item.user?.email ?? "User"}
                     </Text>
@@ -327,18 +411,17 @@ useEffect(() => {
     );
   }
 
-  // ── Render: Admin chat with selected ticket ──
   const chatMessages: { id: string; role: ChatRole; text: string; createdAtLabel: string; username?: string }[] =
     activeTab === "support" && userRole === "admin" && selectedTicket
       ? selectedTicket.messages.map((m, index) => ({
           id:             m._id ?? `msg-${index}`,
           role:           m.role === "admin" ? "admin" : "user",
           text:           m.message,
-          username: m.role === "user" 
-          ? (selectedTicket.user?.firstName 
-            ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim()
-            : selectedTicket.user?.email ?? "User") 
-          : undefined,
+          username: m.role === "user"
+            ? (selectedTicket.user?.firstName
+              ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim()
+              : selectedTicket.user?.email ?? "User")
+            : undefined,
           createdAtLabel: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         }))
       : activeTab === "support" && userRole === "user"
@@ -357,16 +440,15 @@ useEffect(() => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
       <View style={styles.header}>
         {activeTab === "support" && userRole === "admin" && selectedTicket ? (
           <Pressable onPress={() => setSelectedTicket(null)} style={styles.backBtn} hitSlop={10}>
             <Ionicons name="arrow-back-outline" size={22} color={COLORS.text} />
-              <Text style={styles.backBtnText}>
-                {selectedTicket.user?.firstName 
-                  ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim()
-                  : selectedTicket.user?.email ?? "User"}
-              </Text>
+            <Text style={styles.backBtnText}>
+              {selectedTicket.user?.firstName
+                ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim()
+                : selectedTicket.user?.email ?? "User"}
+            </Text>
           </Pressable>
         ) : (
           <Text style={styles.title}>AI Assistant</Text>
@@ -384,8 +466,6 @@ useEffect(() => {
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
         <View style={styles.content}>
-
-          {/* Tabs — hide when admin is in a ticket chat */}
           {!(activeTab === "support" && userRole === "admin" && selectedTicket) && (
             <View style={styles.segmentWrap}>
               <Pressable
@@ -407,7 +487,6 @@ useEffect(() => {
             </View>
           )}
 
-          {/* Support status bar (user only) */}
           {activeTab === "support" && userRole === "user" && (
             <View style={styles.supportStatusRow}>
               <View style={styles.supportStatusDot} />
@@ -415,13 +494,11 @@ useEffect(() => {
             </View>
           )}
 
-          {/* Loading state for support */}
           {activeTab === "support" && (ticketLoading || adminLoading) ? (
             <View style={styles.centered}>
               <ActivityIndicator color={COLORS.primary} />
             </View>
           ) : (
-            /* Messages */
             <ScrollView
               ref={scrollRef}
               style={styles.messagesScroll}
@@ -438,9 +515,9 @@ useEffect(() => {
               )}
 
               {chatMessages.map(msg => (
-                <ChatBubble 
-                  key={msg.id} 
-                  message={msg} 
+                <ChatBubble
+                  key={msg.id}
+                  message={msg}
                   isAdminView={userRole === "admin" && activeTab === "support"}
                 />
               ))}
@@ -456,7 +533,6 @@ useEffect(() => {
             </ScrollView>
           )}
 
-          {/* Quick Questions (AI tab only) */}
           {activeTab === "ai" && (
             <View style={styles.quickQuestionsWrap}>
               <Text style={styles.quickQuestionsTitle}>Quick questions:</Text>
@@ -475,7 +551,6 @@ useEffect(() => {
             </View>
           )}
 
-          {/* Input */}
           {showInput && (
             <View style={[styles.inputRow, { marginBottom: Math.max(insets.bottom, 10) }]}>
               <TextInput
@@ -502,7 +577,6 @@ useEffect(() => {
               </Pressable>
             </View>
           )}
-
         </View>
       </KeyboardAvoidingView>
 
@@ -512,9 +586,9 @@ useEffect(() => {
 }
 
 // ─── Chat Bubble ──────────────────────────────────────────────────────────────
-function ChatBubble({ message, isAdminView }: { 
-  message: { id: string; role: ChatRole; text: string; createdAtLabel: string; username?: string }; 
-  isAdminView?: boolean 
+function ChatBubble({ message, isAdminView }: {
+  message: { id: string; role: ChatRole; text: string; createdAtLabel: string; username?: string };
+  isAdminView?: boolean
 }) {
   const COLORS = useThemeColors();
   const styles = useMemo(() => createStyles(COLORS), [COLORS]);
@@ -523,21 +597,19 @@ function ChatBubble({ message, isAdminView }: {
   const isError   = message.role === "error";
   const isSupport = message.role === "support";
   const isAdmin   = message.role === "admin";
-  // In admin view, admin messages are "ours" (right side)
-  const isRight = isAdminView ? isAdmin : isUser;
+  const isRight   = isAdminView ? isAdmin : isUser;
+
   const label = isRight
     ? (isAdminView ? "You (Admin)" : "You")
-    : isSupport || isAdmin
-    ? "Support Team"
-    : isError
-    ? "System"
-    : message.username ?? "AI Assistant";;
+    : isSupport || isAdmin ? "Support Team"
+    : isError ? "System"
+    : message.username ?? "AI Assistant";
 
   const iconName: keyof typeof Ionicons.glyphMap =
-    isRight     ? "person-outline"    :
+    isRight              ? "person-outline"  :
     isSupport || isAdmin ? "headset-outline" :
-    isError     ? "warning-outline"   :
-                  "sparkles-outline";
+    isError              ? "warning-outline" :
+                           "sparkles-outline";
 
   return (
     <View style={[
@@ -560,38 +632,32 @@ function ChatBubble({ message, isAdminView }: {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const createStyles = (COLORS: AppColors) => StyleSheet.create({
   container:           { flex: 1, backgroundColor: COLORS.background },
-  header:              { paddingHorizontal: 22,paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  header:              { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title:               { color: COLORS.text, fontSize: 24, fontWeight: "800" },
   headerActions:       { flexDirection: "row", alignItems: "center", gap: 16 },
-  headerIcon:          { width: 40, height: 40, borderRadius: 20,borderWidth: 1, borderColor: COLORS.border,backgroundColor: COLORS.surfaceDark,alignItems: 'center', justifyContent: 'center' },
+  headerIcon:          { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceDark, alignItems: "center", justifyContent: "center" },
   divider:             { height: 1, backgroundColor: COLORS.divider },
   keyboardArea:        { flex: 1 },
   content:             { flex: 1, paddingHorizontal: 22, paddingTop: 20 },
   centered:            { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 60 },
   backBtn:             { flexDirection: "row", alignItems: "center", gap: 8 },
   backBtnText:         { color: COLORS.text, fontSize: 18, fontWeight: "700" },
-
   segmentWrap:         { height: 56, borderRadius: 18, backgroundColor: COLORS.surfaceDark, borderWidth: 1, borderColor: COLORS.border, flexDirection: "row", padding: 5, gap: 5, marginBottom: 18 },
   segmentButton:       { flex: 1, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
   segmentButtonActive: { backgroundColor: COLORS.primary },
   segmentText:         { color: COLORS.muted, fontSize: 15, fontWeight: "700" },
   segmentTextActive:   { color: COLORS.text },
-
   supportStatusRow:    { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
   supportStatusDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.warning },
   supportStatusText:   { color: COLORS.muted, fontSize: 14 },
-
   messagesScroll:      { flex: 1 },
   messagesContent:     { paddingBottom: 18, gap: 12 },
   typingIndicator:     { flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 4, paddingTop: 4 },
   typingText:          { color: COLORS.mutedDark, fontSize: 15 },
-
   emptySupport:        { alignItems: "center", paddingTop: 60, gap: 12 },
   emptySupportTitle:   { color: COLORS.text, fontSize: 18, fontWeight: "700" },
   emptySupportText:    { color: COLORS.muted, fontSize: 15, textAlign: "center", lineHeight: 22 },
   emptyText:           { color: COLORS.muted, fontSize: 16, marginTop: 8 },
-
-  // Ticket list
   ticketCard:          { backgroundColor: COLORS.surface, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 8 },
   ticketCardTop:       { flexDirection: "row", alignItems: "center", gap: 12 },
   ticketAvatar:        { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
@@ -602,8 +668,6 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   ticketBadgeOpen:     { backgroundColor: "rgba(52,211,153,0.15)" },
   ticketBadgeText:     { color: COLORS.success, fontSize: 12, fontWeight: "700" },
   ticketTime:          { color: COLORS.mutedDark, fontSize: 12 },
-
-  // Messages
   messageBubble:       { width: "86%", alignSelf: "flex-start", backgroundColor: COLORS.surface, borderRadius: 18, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 18, paddingVertical: 16 },
   userMessageBubble:   { alignSelf: "flex-end", backgroundColor: COLORS.primary, borderColor: COLORS.primary, paddingVertical: 14 },
   errorMessageBubble:  { borderColor: "rgba(248,113,113,0.3)", backgroundColor: "rgba(248,113,113,0.08)" },
@@ -614,15 +678,11 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   userMessageText:     { color: COLORS.text },
   messageTime:         { color: COLORS.mutedDark, fontSize: 13, marginTop: 10 },
   userMessageTime:     { color: "rgba(255,255,255,0.7)" },
-
-  // Quick questions
   quickQuestionsWrap:  { paddingTop: 8, paddingBottom: 12 },
   quickQuestionsTitle: { color: COLORS.text, fontSize: 16, marginBottom: 10 },
   quickQuestionsGrid:  { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   quickQuestionButton: { width: "48%", minHeight: 52, borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.16)", backgroundColor: COLORS.surfaceDark, justifyContent: "center", paddingHorizontal: 14, paddingVertical: 10 },
   quickQuestionText:   { color: COLORS.text, fontSize: 14, lineHeight: 20, fontWeight: "700" },
-
-  // Input
   inputRow:            { minHeight: 58, borderRadius: 18, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", backgroundColor: COLORS.input, flexDirection: "row", alignItems: "center", paddingLeft: 18, paddingRight: 8, gap: 8 },
   messageInput:        { flex: 1, maxHeight: 100, color: COLORS.text, fontSize: 17, paddingVertical: 12 },
   sendButton:          { width: 46, height: 46, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },

@@ -67,7 +67,7 @@ interface CommunityPost {
   id: string; author: string; authorId: string; initials: string;
   vehicle: string; createdAtLabel: string; content: string; tags: string[];
   allowComments: AllowComments; availability: Availability; images: string[];
-  likes: number; comments: CommunityComment[]; shares: number;
+  likes: number; comments: CommunityComment[];
   likedByMe: boolean; followedAuthor: boolean; pending?: boolean;
   rating: PostRating;
 }
@@ -144,7 +144,7 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string, followedAut
     likes: Array.isArray(p.likes) ? p.likes.length : 0,
     likedByMe: Array.isArray(p.likes) ? p.likes.includes(myUserId) : false,
     comments: (p.comments ?? []).map(c => normalizeComment(c, myUserId, myName)),
-    shares: 0, followedAuthor: p.isFollowing ?? followedAuthorIds.has(authorId),
+    followedAuthor: p.isFollowing ?? followedAuthorIds.has(authorId),
     pending: false,
     rating: DEFAULT_RATING,
   };
@@ -302,11 +302,6 @@ export default function CommunityScreen() {
     }
   };
 
-  const handleShare = (id: string) => {
-    if (posts.find(p => p.id === id)?.pending) return;
-    setPosts(cur => cur.map(p => p.id !== id ? p : { ...p, shares: p.shares + 1 }));
-  };
-
   const handleDeletePost = async (postId: string) => {
     if (posts.find(p => p.id === postId)?.pending) return;
     setPosts(cur => cur.filter(p => p.id !== postId));
@@ -454,7 +449,7 @@ export default function CommunityScreen() {
       id: tempId, author, authorId: uid, initials: getInitials(author), vehicle: myVehicle,
       createdAtLabel: "Just now", content: trimmed, tags, allowComments: newPostAllowComments,
       availability: newPostAvailability, images: [], likes: 0, likedByMe: false, comments: [],
-      shares: 0, followedAuthor: false, pending: true, rating: DEFAULT_RATING,
+      followedAuthor: false, pending: true, rating: DEFAULT_RATING,
     };
     setPosts(cur => [optimistic, ...cur]);
     setNewPostText(""); setNewPostTags(""); setNewPostAllowComments("allow");
@@ -531,7 +526,6 @@ export default function CommunityScreen() {
                 onAddReply={(cId, t)       => handleAddReply(post.id, cId, t)}
                 onEditReply={(cId, rId, t) => handleEditReply(post.id, cId, rId, t)}
                 onDeleteReply={(cId, rId)  => handleDeleteReply(post.id, cId, rId)}
-                onShare={()                => handleShare(post.id)}
                 onEdit={()                 => handleOpenEditPost(post)}
                 onDelete={()               => handleDeletePost(post.id)}
                 onMounted={()              => fetchRating(post.id)}
@@ -706,7 +700,7 @@ function CommunityPostCard({
   onToggleLike, onToggleFollow,
   onAddComment, onEditComment, onDeleteComment,
   onAddReply, onEditReply, onDeleteReply,
-  onShare, onEdit, onDelete,
+  onEdit, onDelete,
   onMounted, onRate,
 }: {
   post: CommunityPost; myUserId: string;
@@ -717,7 +711,7 @@ function CommunityPostCard({
   onAddReply:    (cId: string, t: string) => void;
   onEditReply:   (cId: string, rId: string, t: string) => void;
   onDeleteReply: (cId: string, rId: string) => void;
-  onShare: () => void; onEdit: () => void; onDelete: () => void;
+  onEdit: () => void; onDelete: () => void;
   onMounted: () => void;
   onRate: (value: number) => void;
 }) {
@@ -802,10 +796,6 @@ function CommunityPostCard({
             <Text style={styles.actionText}>{post.comments.length}</Text>
           </Pressable>
         )}
-        <Pressable style={styles.shareButton} onPress={onShare} disabled={isPending}>
-          <Ionicons name="share-social-outline" size={24} color={COLORS.muted} />
-          {post.shares > 0 && <Text style={styles.shareCount}>{post.shares}</Text>}
-        </Pressable>
       </View>
 
       {post.allowComments === "allow" && !isPending && (
@@ -1096,8 +1086,6 @@ const createStyles = (COLORS: AppColors) =>
   actionButton:   { flexDirection: "row", alignItems: "center", gap: 8, marginRight: 26 },
   actionText:     { color: COLORS.muted, fontSize: 16 },
   actionTextActive:{ color: COLORS.primary, fontWeight: "700" },
-  shareButton:    { marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 5 },
-  shareCount:     { color: COLORS.muted, fontSize: 14 },
   commentsWrap:  { marginTop: 10, gap: 10 },
   commentItem:   { backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 10, gap: 6 },
   commentHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

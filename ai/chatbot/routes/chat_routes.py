@@ -13,9 +13,10 @@ def chat():
 
     user_id = data.get("user_id")
     message = data.get("message")
+    history = data.get("history", [])
 
     if not user_id or not message:
         return jsonify({"error": "user_id and message are required"}), 400
 
-    response = engine.handle_message(user_id, message)
+    response = engine.handle_message(user_id, message, history)
     return jsonify({"response": response})

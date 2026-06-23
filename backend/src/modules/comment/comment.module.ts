@@ -4,25 +4,21 @@ import { CommentController } from './comment.controller';
 import {
   CommentModel,
   CommentRepository,
-  NotificationModel,
-  NotificationRepository,
   PostModel,
   PostRepository,
   UserModel,
   UserRepository,
 } from 'src/DB';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [CommentModel, UserModel, PostModel , NotificationModel],
+  imports: [CommentModel, UserModel, PostModel, NotificationModule],
   controllers: [CommentController],
   providers: [
     CommentService,
     CommentRepository,
     UserRepository,
     PostRepository,
-    NotificationService,
-    NotificationRepository
   ],
 })
 export class CommentModule {}

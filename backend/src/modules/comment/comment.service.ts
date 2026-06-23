@@ -6,6 +6,7 @@ import {
 import { Types } from 'mongoose';
 import { CommentRepository, PostRepository, UserRepository } from 'src/DB';
 import { NotificationService } from '../notification/notification.service';
+import { NotificationsGateway } from '../notification/notifications.gateway';
 
 @Injectable()
 export class CommentService {
@@ -14,6 +15,7 @@ export class CommentService {
     private readonly postRepository: PostRepository,
     private readonly userRepository: UserRepository,
     private readonly notificationService: NotificationService,
+    private readonly gateway: NotificationsGateway,
   ) {}
 
   async validateTags(tags: string[], userId: string) {

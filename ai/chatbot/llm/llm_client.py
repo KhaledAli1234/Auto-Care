@@ -7,7 +7,7 @@ from config.settings import settings
 
 class LLMClient:
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, messages: list) -> str:
         try:
             res = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
@@ -16,10 +16,10 @@ class LLMClient:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": "llama-3.1-8b-instant",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500,
-                    "temperature": 0.7
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": messages,
+                    "max_tokens": 800,
+                    "temperature": 0.6
                 },
                 timeout=30,
                 verify=False

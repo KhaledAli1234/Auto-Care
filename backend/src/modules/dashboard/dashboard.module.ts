@@ -10,20 +10,37 @@ import {
   StreakRepository,
   TripModel,
   TripRepository,
+  UserModel,
+  UserRepository,
+  PostModel,
+  PostRepository,
+  CommentModel,
+  CommentRepository,
 } from 'src/DB';
-import { redisProvider } from 'src/common';
+import { NotificationModule } from '../notification/notification.module';
 import { AIAdvisorController } from './ai-advisor.controller';
 
 @Module({
-  imports: [TripModel, MaintenanceModel, FuelModel , StreakModel],
-  controllers: [DashboardController , AIAdvisorController],
+  imports: [
+    TripModel,
+    MaintenanceModel,
+    FuelModel,
+    StreakModel,
+    UserModel,
+    PostModel,
+    CommentModel,
+    NotificationModule,
+  ],
+  controllers: [DashboardController, AIAdvisorController],
   providers: [
     DashboardService,
     TripRepository,
     FuelRepository,
     MaintenanceRepository,
-    StreakRepository
-    // redisProvider
+    StreakRepository,
+    UserRepository,
+    PostRepository,
+    CommentRepository,
   ],
   exports: [DashboardService],
 })

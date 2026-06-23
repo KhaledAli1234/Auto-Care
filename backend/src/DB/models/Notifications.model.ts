@@ -8,6 +8,9 @@ export enum NotificationType {
   MENTION = 'mention',
   REPLY = 'reply',
   SYSTEM_ALERT = 'system_alert',
+  POST_PENDING_APPROVAL = 'POST_PENDING_APPROVAL',
+  POST_APPROVED = 'POST_APPROVED',
+  SUPPORT_MESSAGE = 'SUPPORT_MESSAGE',
 }
 
 @Schema({ timestamps: true })
@@ -56,6 +59,11 @@ export class Notification {
     required: true,
   })
   body: string;
+
+  @Prop({
+    required: false,
+  })
+  message?: string;
 
   @Prop({
     default: false,

@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSocket } from '@/hooks/useSocket';
 import {
   ActivityIndicator,
   Modal,
@@ -88,7 +90,20 @@ export function NotificationBell({
     loading,
     fetchNotifications,
     markAllAsRead,
+    addRealtimeNotification,
   } = useNotifications();
+
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    AsyncStorage.getItem('userId').then((stored) => {
+      const id = stored?.replace(/"/g, '').trim() ?? '';
+      if (id) {
+        setUserId(id);
+      }
+    });
+  }, []);
+  useSocket(userId, addRealtimeNotification);
 
   const [visible, setVisible] = useState(false);
 

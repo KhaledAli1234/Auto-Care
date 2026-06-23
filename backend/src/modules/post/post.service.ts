@@ -17,6 +17,7 @@ import {
   PostAvailabilityEnum,
 } from './dto/post.dto';
 import { NotificationService } from '../notification/notification.service';
+import { NotificationsGateway } from '../notification/notifications.gateway';
 import { RoleEnum } from 'src/common';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class PostService {
     private readonly commentRepository: CommentRepository,
     private readonly ratingRepository: RatingRepository,
     private readonly notificationService: NotificationService,
+    private readonly gateway: NotificationsGateway,
   ) {
     console.log('JWT_SECRET:', process.env.JWT_SECRET?.slice(0, 5));
   }
@@ -52,7 +54,7 @@ export class PostService {
   async createPost(body: any, userId: string) {
     const [user] = await this.userRepository.find({
       filter: { _id: new Types.ObjectId(userId) },
-      select: 'role',
+      select: 'role firstName lastName username',
     });
     const isAdmin = user?.role === RoleEnum.admin;
     const [post] = await this.postRepository.create({
@@ -71,6 +73,29 @@ export class PostService {
     if (!post) {
       throw new BadRequestException('fail to create post');
     }
+
+    if (!isAdmin) {
+      try {
+        const admins = await this.userRepository.find({
+          filter: { role: RoleEnum.admin },
+        });
+        const senderName = user
+          ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.username || 'Someone'
+          : 'Someone';
+
+        for (const admin of admins) {
+          await this.notificationService.createPostPendingApprovalNotification(
+            userId,
+            admin._id.toString(),
+            senderName,
+            post._id.toString(),
+          );
+        }
+      } catch (err) {
+        console.error('Error creating post pending approval notification:', err);
+      }
+    }
+
     return post;
   }
 
@@ -138,6 +163,8 @@ export class PostService {
         }
       }
     }
+
+    await this.broadcastPostUpdate(postId);
   }
 
   async postList(user: any, page: number, size: number) {
@@ -229,6 +256,15 @@ export class PostService {
         $set: { status },
       },
     });
+
+    if (status === 'approved') {
+      try {
+        const recipientId = (post.createdBy as Types.ObjectId).toHexString();
+        await this.notificationService.createPostApprovedNotification(recipientId, postId);
+      } catch (err) {
+        console.error('Error creating post approved notification:', err);
+      }
+    }
   }
 
   async deletePost(postId: string, userId: string) {
@@ -242,8 +278,6 @@ export class PostService {
     if (!post) {
       throw new NotFoundException('post not found');
     }
-
-    // 🔥 delete all comments + replies
     await this.commentRepository.deleteMany({
       filter: {
         postId: new Types.ObjectId(postId),
@@ -322,5 +356,61 @@ export class PostService {
         },
       ],
     });
+  }
+
+  async getPostByIdPopulated(postId: string) {
+    const post = await this.postRepository.findOne({
+      filter: { _id: new Types.ObjectId(postId) },
+      options: {
+        populate: [
+          {
+            path: 'createdBy',
+            select: 'firstName lastName username vehicleId',
+            populate: {
+              path: 'vehicleId',
+              select: 'brand model year',
+            },
+          },
+          {
+            path: 'comments',
+            populate: [
+              {
+                path: 'createdBy',
+                select: 'firstName lastName username',
+              },
+              {
+                path: 'tags',
+                select: 'firstName lastName username',
+              },
+              {
+                path: 'replies',
+                populate: [
+                  {
+                    path: 'createdBy',
+                    select: 'firstName lastName username',
+                  },
+                  {
+                    path: 'tags',
+                    select: 'firstName lastName username',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    return post;
+  }
+
+  async broadcastPostUpdate(postId: string) {
+    try {
+      const post = await this.getPostByIdPopulated(postId);
+      if (post) {
+        this.gateway.server.emit('post:update', post.toObject ? post.toObject() : post);
+      }
+    } catch (err) {
+      console.error('Error broadcasting post update:', err);
+    }
   }
 }

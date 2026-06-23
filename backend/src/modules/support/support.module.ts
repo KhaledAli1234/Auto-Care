@@ -1,11 +1,17 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SupportService } from './support.service';
 import { SupportController } from './support.controller';
-import { SupportTicketModel, SupportTicketRepository } from 'src/DB';
+import { SupportTicketModel, SupportTicketRepository, UserModel, UserRepository } from 'src/DB';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [SupportTicketModel],
+  imports: [
+    SupportTicketModel,
+    UserModel,
+    forwardRef(() => NotificationModule),
+  ],
   controllers: [SupportController],
-  providers: [SupportService, SupportTicketRepository],
+  providers: [SupportService, SupportTicketRepository, UserRepository],
+  exports: [SupportService],
 })
 export class SupportModule {}

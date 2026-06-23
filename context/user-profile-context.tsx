@@ -10,7 +10,6 @@ export type Post = {
   content: string;
   likes: number;
   comments: any[];
-  shares: number;
   likedByMe: boolean;
   createdAtLabel: string;
 };
@@ -48,6 +47,9 @@ export type UserProfileData = {
   };
 
   posts: Post[];
+  lastOilChange?: string;
+  lastTireChange?: string;
+  lastBatteryYear?: string;
 };
 
 /* ---------------- INITIAL STATE ---------------- */
@@ -86,7 +88,6 @@ const INITIAL_PROFILE: UserProfileData = {
       content: "First trip 🚗🔥",
       likes: 10,
       comments: [],
-      shares: 0,
       likedByMe: false,
       createdAtLabel: "2h ago",
     },

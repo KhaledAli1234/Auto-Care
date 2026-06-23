@@ -1,11 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { SupportTicketRepository } from 'src/DB';
+import { SupportTicketRepository, UserRepository } from 'src/DB';
+import { NotificationsGateway } from '../notification/notifications.gateway';
+import { NotificationService } from '../notification/notification.service';
+import { RoleEnum } from 'src/common/enums';
 
 @Injectable()
 export class SupportService {
   constructor(
     private readonly supportTicketRepository: SupportTicketRepository,
+    @Inject(forwardRef(() => NotificationsGateway))
+    private readonly gateway: NotificationsGateway,
+    @Inject(forwardRef(() => NotificationService))
+    private readonly notificationService: NotificationService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async sendMessage(userId: string, message: string) {
@@ -21,7 +29,7 @@ export class SupportService {
     };
 
     if (!ticket) {
-      const ticket = await this.supportTicketRepository.create({
+      const createdTickets = await this.supportTicketRepository.create({
         data: [
           {
             user: new Types.ObjectId(userId),
@@ -30,9 +38,41 @@ export class SupportService {
           },
         ],
       });
+      ticket = createdTickets[0];
     } else {
       ticket.messages.push(newMessage as any);
       await ticket.save();
+    }
+
+    const savedMsg = ticket.messages[ticket.messages.length - 1];
+    const savedMsgObj = typeof (savedMsg as any).toObject === 'function'
+      ? (savedMsg as any).toObject()
+      : savedMsg;
+
+    const conversationId = ticket._id.toString();
+    this.gateway.emitToRoom(conversationId, 'support:message', savedMsgObj);
+
+    try {
+      const admins = await this.userRepository.find({
+        filter: { role: RoleEnum.admin },
+      });
+      const sender = await this.userRepository.findById({
+        id: new Types.ObjectId(userId),
+      });
+      const senderName = sender
+        ? `${sender.firstName ?? ''} ${sender.lastName ?? ''}`.trim() || sender.username || 'User'
+        : 'User';
+
+      for (const admin of admins) {
+        await this.notificationService.createSupportMessageNotification(
+          userId,
+          admin._id.toString(),
+          senderName,
+          message,
+        );
+      }
+    } catch (err) {
+      console.error('Error sending support notification to admins:', err);
     }
 
     return ticket;
@@ -86,14 +126,42 @@ export class SupportService {
 
     if (!ticket) throw new NotFoundException('Ticket not found');
 
-    ticket.messages.push({
+    const newMessage = {
       sender: new Types.ObjectId(adminId),
       role: 'admin',
       message,
       createdAt: new Date(),
-    } as any);
+    };
 
+    ticket.messages.push(newMessage as any);
     await ticket.save();
+
+    const savedMsg = ticket.messages[ticket.messages.length - 1];
+    const savedMsgObj = typeof (savedMsg as any).toObject === 'function'
+      ? (savedMsg as any).toObject()
+      : savedMsg;
+
+    const conversationId = ticket._id.toString();
+    this.gateway.emitToRoom(conversationId, 'support:message', savedMsgObj);
+
+    try {
+      const recipientId = ticket.user.toString();
+      const admin = await this.userRepository.findById({
+        id: new Types.ObjectId(adminId),
+      });
+      const adminName = admin
+        ? `${admin.firstName ?? ''} ${admin.lastName ?? ''}`.trim() || admin.username || 'Support'
+        : 'Support';
+
+      await this.notificationService.createSupportMessageNotification(
+        adminId,
+        recipientId,
+        adminName,
+        message,
+      );
+    } catch (err) {
+      console.error('Error sending support notification to user:', err);
+    }
 
     return ticket;
   }

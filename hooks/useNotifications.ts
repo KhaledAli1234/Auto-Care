@@ -17,7 +17,6 @@ export interface ApiNotification {
   };
 }
 
-
 export function useNotifications() {
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [unreadCount,   setUnreadCount]   = useState(0);
@@ -55,7 +54,22 @@ export function useNotifications() {
     }
   }, []);
 
+  const addRealtimeNotification = useCallback((notification: ApiNotification) => {
+    setNotifications(cur => {
+      if (cur.some(n => n._id === notification._id)) return cur;
+      return [notification, ...cur];
+    });
+    setUnreadCount(c => c + 1);
+  }, []);
+
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  return { notifications, unreadCount, loading, fetchNotifications, markAllAsRead };
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    fetchNotifications,
+    markAllAsRead,
+    addRealtimeNotification,  
+  };
 }

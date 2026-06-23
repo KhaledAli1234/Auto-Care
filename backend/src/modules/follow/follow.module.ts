@@ -4,22 +4,18 @@ import { FollowController } from './follow.controller';
 import {
   FollowModel,
   FollowRepository,
-  NotificationModel,
-  NotificationRepository,
   UserModel,
   UserRepository,
 } from 'src/DB';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [FollowModel, UserModel, NotificationModel],
+  imports: [FollowModel, UserModel, NotificationModule],
   controllers: [FollowController],
   providers: [
     FollowService,
     FollowRepository,
     UserRepository,
-    NotificationService,
-    NotificationRepository,
   ],
 })
 export class FollowModule {}

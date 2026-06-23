@@ -44,19 +44,18 @@ Feel like texting a knowledgeable car-loving friend — not reading an AI report
 """
 
     TASK_MAP = {
-        "greeting": "Respond with a short, warm, and slightly fun greeting. Keep it 1-2 lines max.",
-        "latest_trip": "Give a fun, honest recap of the latest trip. Highlight the driving score with energy. Mention speed or harsh events only if notable.",
-        "fuel_analysis": "Talk about fuel like a friend. Is it good or could be better? Give one simple tip to improve.",
+        "greeting":       "Respond with a short, warm, and slightly fun greeting. Keep it 1-2 lines max.",
+        "latest_trip":    "Give a fun, honest recap of the latest trip. Highlight the driving score with energy. Mention speed or harsh events only if notable.",
+        "fuel_analysis":  "Talk about fuel like a friend. Is it good or could be better? Give one simple tip to improve.",
         "vehicle_health": "Give a quick health check vibe. Mention what's good and what needs attention. Be reassuring unless urgent.",
         "driving_advice": "Give 2-3 practical tips that feel personal and actionable.",
-        "safe_driving": "Assess the user's driving safety honestly based ONLY on the data provided. If no data is available, say so clearly — do not invent scores.",
-        "weekly_report": "Summarize the week like a coach giving a pep talk. Mention total trips, distance, score, and fuel if available.",
+        "safe_driving":   "Assess the user's driving safety honestly based ONLY on the data provided. If no data is available, say so clearly — do not invent scores.",
+        "weekly_report":  "Summarize the week like a coach giving a pep talk. Mention total trips, distance, score, and fuel if available.",
         "general_question": "Answer naturally and helpfully based on the available data. Sound like a real person, not a manual.",
     }
 
-    # ✅ FIX: Greeting task instructions per language (used inside build() directly)
     GREETING_TASK = {
-        "arabic": "رد بتحية قصيرة ودودة وخفيفة. جملة أو اتنين بالأكتر. بالعربي فقط.",
+        "arabic":  "رد بتحية قصيرة ودودة وخفيفة. جملة أو اتنين بالأكتر. بالعربي فقط.",
         "english": "Respond with a short, warm, and slightly fun greeting. Keep it 1-2 lines max. English only.",
     }
 
@@ -83,9 +82,8 @@ Feel like texting a knowledgeable car-loving friend — not reading an AI report
 
     def _extract_context(self, data: dict) -> str:
         if not data:
-            return "NO_DATA"  # ✅ FIX: explicit marker instead of empty string
+            return "NO_DATA"
 
-        # Weekly Report
         if "total_trips" in data:
             return f"""
 Weekly Report:
@@ -97,15 +95,14 @@ Weekly Report:
 
         data = serialize_mongo(data)
 
-        trip = data.get("trip_summary", {})
+        trip     = data.get("trip_summary", {})
         behavior = data.get("driving_behavior", {})
-        health = data.get("vehicle_health", {})
-        fuel = data.get("fuel_efficiency", {})
-        vehicle = data.get("vehicle_info", {})
+        health   = data.get("vehicle_health", {})
+        fuel     = data.get("fuel_efficiency", {})
+        vehicle  = data.get("vehicle_info", {})
         user_raw = data.get("user", {}) or data.get("user_info", {}) or {}
-        user = user_raw if isinstance(user_raw, dict) else {}
+        user     = user_raw if isinstance(user_raw, dict) else {}
 
-        # ✅ FIX: if no meaningful fields, return NO_DATA
         if not trip and not behavior and not health and not fuel:
             return "NO_DATA"
 
@@ -151,55 +148,57 @@ Vehicle Info:
         if detected_language == "arabic":
             return """
 CRITICAL LANGUAGE LOCK:
-- The user's current message is Arabic.
-- Reply ONLY in casual Egyptian Arabic.
-- Use Arabic letters only.
-- NEVER use English.
-- NEVER use Franco/Arabizi.
+- The user's current message is in Arabic.
+- Reply ONLY in casual Egyptian Arabic (عامية مصرية).
+- Use Arabic script (Arabic letters) only.
+- Do NOT write in Franco-Arabic/Arabizi.
+- Do NOT use formal Arabic (الفصحى). Speak like a close friend.
 - Bad examples you must avoid: "Enta", "ana", "mashy", "3ayez", "el", "ya".
 - Good style example: "أيوه يا صاحبي، أنت عملت 3 رحلات."
 """
         return """
 CRITICAL LANGUAGE LOCK:
-- The user's current message is English.
+- The user's current message is in English.
 - Reply ONLY in natural conversational English.
-- NEVER use Arabic words.
-- NEVER use Franco/Arabizi.
+- Do NOT use Arabic words or Franco-Arabic.
 """
 
-    def build(self, intent: str, user_message: str, data: dict) -> str:
-        detected_language = self.detect_language(user_message)
-        language_lock = self._build_language_lock(detected_language)
+    def _sanitize_history(self, history: list) -> list:
+        """بيتأكد إن الـ history فيها role و content بس ومش فيها حاجة غريبة"""
+        sanitized = []
+        for msg in history:
+            role    = msg.get("role", "")
+            content = msg.get("content", "")
+            if role in ("user", "assistant") and content:
+                sanitized.append({"role": role, "content": str(content)})
+        return sanitized
 
-        # ✅ FIX: Greeting now builds a real prompt instead of returning a raw string
+    def build(self, intent: str, user_message: str, data: dict, history: list = []) -> list:
+        detected_language = self.detect_language(user_message)
+        language_lock     = self._build_language_lock(detected_language)
+        system_prompt     = f"{self.SYSTEM}\n\n{language_lock}"
+
+        # آخر 10 رسايل بس علشان ما نعداش الـ context window
+        recent_history = self._sanitize_history(history[-10:])
+
         if self.is_greeting(user_message):
             task = self.GREETING_TASK[detected_language]
-            return f"""{self.SYSTEM}
+            return [
+                {"role": "system",  "content": system_prompt},
+                *recent_history,
+                {"role": "user",    "content": f"User Question:\n{user_message}\n\nTask:\n{task}"}
+            ]
 
-{language_lock}
-
-User Question:
-{user_message}
-
-Task:
-{task}
-
-Answer:
-"""
-
-        task = self.TASK_MAP.get(intent, self.TASK_MAP["general_question"])
+        task    = self.TASK_MAP.get(intent, self.TASK_MAP["general_question"])
         context = self._extract_context(data)
 
-        # ✅ FIX: explicit NO_DATA instruction so LLM doesn't hallucinate
-        data_section = ""
         if context == "NO_DATA":
             data_section = """
 Data:
 No trip data is available for this user yet.
 
 IMPORTANT: Since there is no real data, do NOT invent any numbers, scores, or driving stats.
-Tell the user clearly (in the locked language) that you don't have their data yet.
-"""
+Tell the user clearly (in the locked language) that you don't have their data yet."""
         else:
             data_section = f"""
 Data:
@@ -213,20 +212,10 @@ Final Answer Rules:
 - If the user asks how many trips they made, use Total Trips if available.
 - If Total Trips is not available, say you can't see the total trips right now.
 - Do not repeat the user's question.
-- Do not output explanations about language detection.
-"""
+- Do not output explanations about language detection."""
 
-        return f"""{self.SYSTEM}
-
-{language_lock}
-
-User Question:
-{user_message}
-
-Task:
-{task}
-
-{data_section}
-
-Answer:
-"""
+        return [
+            {"role": "system",  "content": system_prompt},
+            *recent_history,
+            {"role": "user",    "content": f"User Question:\n{user_message}\n\nTask:\n{task}\n\n{data_section}"}
+        ]

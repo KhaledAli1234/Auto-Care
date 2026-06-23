@@ -19,6 +19,7 @@ import { useUserProfile } from '@/context/user-profile-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
+import { disconnectSocket } from '@/hooks/useSocket';
 
 import { useAppTheme } from "@/context/theme-context";
 
@@ -121,7 +122,6 @@ interface AccountPost {
   likes: number;
   likedByMe: boolean;
   comments: PostComment[];
-  shares: number;
   pending?: boolean;
   rating: PostRating;   
 }
@@ -197,7 +197,6 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string): AccountPos
     likes:          Array.isArray(p.likes) ? p.likes.length : 0,
     likedByMe:      Array.isArray(p.likes) ? p.likes.includes(myUserId) : false,
     comments:       (p.comments ?? []).map(c => normalizeComment(c, myUserId, myName)),
-    shares:         0,
     rating:         DEFAULT_RATING,  // populated lazily via fetchRating
   };
 }
@@ -529,6 +528,7 @@ export default function AccountScreen() {
 
 
 const handleLogout = async () => {
+  disconnectSocket();
   await AsyncStorage.multiRemove([
     'access_token',
     'refresh_token',

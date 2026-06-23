@@ -5,6 +5,9 @@ import {
   MaintenanceRepository,
   StreakRepository,
   TripRepository,
+  UserRepository,
+  PostRepository,
+  CommentRepository,
 } from 'src/DB';
 import {
   IDashboard,
@@ -13,6 +16,9 @@ import {
   IMaintenance,
   ITrip,
 } from 'src/common';
+import { RoleEnum } from 'src/common/enums';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationsGateway } from '../notification/notifications.gateway';
 
 @Injectable()
 export class DashboardService {
@@ -21,6 +27,11 @@ export class DashboardService {
     private readonly fuelRepository: FuelRepository,
     private readonly maintenanceRepository: MaintenanceRepository,
     private readonly streakRepository: StreakRepository,
+    private readonly userRepository: UserRepository,
+    private readonly postRepository: PostRepository,
+    private readonly commentRepository: CommentRepository,
+    private readonly notificationService: NotificationService,
+    private readonly gateway: NotificationsGateway,
   ) {}
 
   async getDashboard(userId: string): Promise<IDashboard> {
@@ -147,6 +158,153 @@ export class DashboardService {
       upcomingMaintenance: dashboard.maintenance.upcomingCount,
       riskLevel: dashboard.maintenance.riskLevel,
       healthScore: dashboard.healthScore,
+    };
+  }
+
+  async getMetricsForPeriod(days: number) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const newUsers = await this.userRepository.count({
+      filter: { createdAt: { $gte: startDate } },
+    });
+
+    const posts = await this.postRepository.find({
+      filter: { createdAt: { $gte: startDate } },
+    });
+    const postsCount = posts.length;
+    const likesCount = posts.reduce((sum, p) => sum + (p.likes?.length ?? 0), 0);
+
+    const commentsCount = await this.commentRepository.count({
+      filter: { createdAt: { $gte: startDate } },
+    });
+
+    const postAuthors = posts.map((p) => p.createdBy.toString());
+
+    const comments = await this.commentRepository.find({
+      filter: { createdAt: { $gte: startDate } },
+    });
+    const commentAuthors = comments.map((c) => c.createdBy.toString());
+
+    const activeUsersSet = new Set([...postAuthors, ...commentAuthors]);
+
+    const updatedUsers = await this.userRepository.find({
+      filter: { updatedAt: { $gte: startDate } },
+    });
+    updatedUsers.forEach((u) => activeUsersSet.add(u._id.toString()));
+
+    const activeUsers = activeUsersSet.size;
+
+    return {
+      activeUsers,
+      newUsers,
+      postsCount,
+      likesCount,
+      commentsCount,
+    };
+  }
+
+  async checkSpikesAndDrops() {
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+    const currentPosts = await this.postRepository.count({
+      filter: { createdAt: { $gte: oneDayAgo, $lte: now } },
+    });
+    const prevPosts = await this.postRepository.count({
+      filter: { createdAt: { $gte: twoDaysAgo, $lt: oneDayAgo } },
+    });
+
+    const currentNewUsers = await this.userRepository.count({
+      filter: { createdAt: { $gte: oneDayAgo, $lte: now } },
+    });
+    const prevNewUsers = await this.userRepository.count({
+      filter: { createdAt: { $gte: twoDaysAgo, $lt: oneDayAgo } },
+    });
+
+    const currentPostsDocs = await this.postRepository.find({
+      filter: { createdAt: { $gte: oneDayAgo, $lte: now } },
+    });
+    const currentLikes = currentPostsDocs.reduce(
+      (sum, p) => sum + (p.likes?.length ?? 0),
+      0,
+    );
+
+    const prevPostsDocs = await this.postRepository.find({
+      filter: { createdAt: { $gte: twoDaysAgo, $lt: oneDayAgo } },
+    });
+    const prevLikes = prevPostsDocs.reduce(
+      (sum, p) => sum + (p.likes?.length ?? 0),
+      0,
+    );
+
+    const alertsToTrigger: string[] = [];
+
+    const checkMetric = (name: string, current: number, previous: number) => {
+      if (current < 5 && previous < 5) return;
+
+      const pctChange =
+        previous === 0
+          ? current >= 5
+            ? 100
+            : 0
+          : ((current - previous) / previous) * 100;
+
+      if (pctChange >= 100) {
+        alertsToTrigger.push(
+          `Unusual spike in ${name}: ${current} in last 24h compared to ${previous} in previous 24h (+${Math.round(pctChange)}%)`,
+        );
+      } else if (pctChange <= -50) {
+        alertsToTrigger.push(
+          `Unusual drop in ${name}: ${current} in last 24h compared to ${previous} in previous 24h (${Math.round(pctChange)}%)`,
+        );
+      }
+    };
+
+    checkMetric('posts', currentPosts, prevPosts);
+    checkMetric('new users', currentNewUsers, prevNewUsers);
+    checkMetric('likes', currentLikes, prevLikes);
+
+    if (alertsToTrigger.length > 0) {
+      try {
+        const admins = await this.userRepository.find({
+          filter: { role: RoleEnum.admin },
+        });
+
+        for (const alertMsg of alertsToTrigger) {
+          for (const admin of admins) {
+            const adminId = admin._id.toString();
+            const notification =
+              await this.notificationService.createSystemAlertNotification(
+                adminId,
+                'System Alert - Activity Anomaly',
+                alertMsg,
+              );
+
+            this.gateway.server.to(adminId).emit('system:alert', {
+              type: 'system:alert',
+              title: 'System Alert - Activity Anomaly',
+              body: alertMsg,
+              notification,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error saving or emitting system alerts:', err);
+      }
+    }
+  }
+
+  async getAdminReports() {
+    await this.checkSpikesAndDrops();
+
+    const weekly = await this.getMetricsForPeriod(7);
+    const monthly = await this.getMetricsForPeriod(30);
+
+    return {
+      weekly,
+      monthly,
     };
   }
 }
