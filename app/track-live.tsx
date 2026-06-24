@@ -4,11 +4,10 @@ import * as Location from 'expo-location';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { LocationObject, LocationSubscription } from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { NotificationBell } from '@/components/notification-bell';
-
 import { useAppTheme, useThemeColors, AppColors } from '@/context/theme-context';
 
 function toRadians(v: number) { return (v * Math.PI) / 180; }
@@ -37,6 +36,8 @@ export default function TrackLiveScreen() {
   const COLORS = useThemeColors();
   const { isDark } = useAppTheme();
   const styles = useMemo(() => createStyles(COLORS, isDark), [COLORS, isDark]);
+  const isDarkGradient = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
   const [speedKmh,       setSpeedKmh]       = useState(0);
   const [distanceKm,     setDistanceKm]     = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -44,10 +45,10 @@ export default function TrackLiveScreen() {
   const [trackingActive, setTrackingActive] = useState(false);
   const [errorMessage,   setErrorMessage]   = useState<string | null>(null);
 
-  const watchRef    = useRef<LocationSubscription | null>(null);
-  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const watchRef     = useRef<LocationSubscription | null>(null);
+  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
-  const prevLocRef  = useRef<LocationObject | null>(null);
+  const prevLocRef   = useRef<LocationObject | null>(null);
 
   const statusText = useMemo(() => {
     if (errorMessage)   return 'GPS Permission Needed';
@@ -59,60 +60,47 @@ export default function TrackLiveScreen() {
   useEffect(() => {
     const start = async () => {
       try {
-        setIsStarting(true);
-        setErrorMessage(null);
+        setIsStarting(true); setErrorMessage(null);
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') { setErrorMessage('Location permission was denied.'); Alert.alert('Permission required', 'Please allow location access.'); return; }
         const ok = await Location.hasServicesEnabledAsync();
         if (!ok) { setErrorMessage('Please turn on GPS.'); Alert.alert('Location off', 'Turn on GPS then reopen.'); return; }
         if (Platform.OS === 'android') { try { await Location.enableNetworkProviderAsync(); } catch {} }
-
         const cur = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation });
         prevLocRef.current = cur;
         startTimeRef.current = Date.now();
         setSpeedKmh(Math.max(0, Math.round((cur.coords.speed ?? 0) * 3.6)));
         setDistanceKm(0); setElapsedSeconds(0); setTrackingActive(true);
-
         timerRef.current = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - startTimeRef.current) / 1000)), 1000);
-
         watchRef.current = await Location.watchPositionAsync(
           { accuracy: Location.Accuracy.BestForNavigation, timeInterval: 2000, distanceInterval: 1, mayShowUserSettingsDialog: true },
           (next) => {
             const prev = prevLocRef.current;
-            if (prev) {
-              const d = calculateDistanceInKm(prev, next);
-              if (Number.isFinite(d) && d > 0.0005) setDistanceKm(cur => cur + d);
-            }
+            if (prev) { const d = calculateDistanceInKm(prev, next); if (Number.isFinite(d) && d > 0.0005) setDistanceKm(cur => cur + d); }
             let spd = (next.coords.speed ?? 0) > 0 ? next.coords.speed! * 3.6 : 0;
-            if (spd === 0 && prev) {
-              const dt = (new Date(next.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
-              if (dt > 0) spd = (calculateDistanceInKm(prev, next) / dt) * 3600;
-            }
-            setSpeedKmh(Math.max(0, Math.round(spd)));
-            prevLocRef.current = next;
+            if (spd === 0 && prev) { const dt = (new Date(next.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000; if (dt > 0) spd = (calculateDistanceInKm(prev, next) / dt) * 3600; }
+            setSpeedKmh(Math.max(0, Math.round(spd))); prevLocRef.current = next;
           }
         );
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Unable to start GPS.';
-        setErrorMessage(msg); Alert.alert('Tracking error', msg);
-      } finally { setIsStarting(false); }
+      } catch (e) { const msg = e instanceof Error ? e.message : 'Unable to start GPS.'; setErrorMessage(msg); Alert.alert('Tracking error', msg); }
+      finally { setIsStarting(false); }
     };
     void start();
-    return () => {
-      watchRef.current?.remove(); watchRef.current = null;
-      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    };
+    return () => { watchRef.current?.remove(); watchRef.current = null; if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
   }, []);
 
   const handleStop = () => {
     watchRef.current?.remove(); watchRef.current = null;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    setTrackingActive(false);
-    router.replace('/track');
+    setTrackingActive(false); router.replace('/track');
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {isDarkGradient && (
+        <LinearGradient colors={['#0f2040', '#0d1a35', '#0a1225', '#080A0F']} locations={[0, 0.25, 0.55, 1]} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+      )}
+
       <View style={styles.header}>
         <Text style={styles.title}>Live Tracking</Text>
         <View style={styles.headerActions}>
@@ -140,12 +128,12 @@ export default function TrackLiveScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Ionicons name="time-outline" size={28} color={COLORS.primary} />
+            <Ionicons name="time-outline" size={28} color="#60A5FA" />
             <Text style={styles.statValue}>{formatDuration(elapsedSeconds)}</Text>
             <Text style={styles.statLabel}>Duration</Text>
           </View>
           <View style={styles.statCard}>
-            <Ionicons name="location-outline" size={28} color={COLORS.primary} />
+            <Ionicons name="location-outline" size={28} color="#60A5FA" />
             <Text style={styles.statValue}>{formatDistance(distanceKm)}</Text>
             <Text style={styles.statLabel}>Distance</Text>
           </View>
@@ -166,28 +154,28 @@ export default function TrackLiveScreen() {
     </View>
   );
 }
-const createStyles = (COLORS: AppColors, isDark: boolean) =>
-  StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.background },
-  header:       { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title:        { color: COLORS.text, fontSize: 24, fontWeight: '700' },
-  headerActions:{ flexDirection: 'row', alignItems: 'center', gap: 16 },
-  headerIcon:   { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: COLORS.surfaceLight, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-  divider:      { height: 1, backgroundColor: COLORS.border },
-  scrollContent:{ flexGrow: 1, paddingHorizontal: 26, paddingBottom: 26, paddingTop: 28 },
-  speedGlow:    { position: 'absolute', top: 120, alignSelf: 'center', width: 320, height: 320, borderRadius: 160, backgroundColor: COLORS.primarySoft, opacity: 0.8, transform: [{ scale: 1.4 }] },
-  speedCircle:  { alignSelf: 'center', width: 320, height: 320, borderRadius: 160, borderWidth: 5, borderColor: COLORS.primary, backgroundColor: isDark ? 'rgba(9,24,45,0.56)' : 'rgba(255,255,255,0.72)', alignItems: 'center', justifyContent: 'center', marginTop: 76 },
-  speedValue:   { color: COLORS.text, fontSize: 84, fontWeight: '800', lineHeight: 90 },
-  speedUnit:    { color: COLORS.muted, fontSize: 26, fontWeight: '400', marginTop: 6 },
-  statusPill:   { marginTop: 32, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 999, backgroundColor: COLORS.greenSoft, borderWidth: 1, borderColor: isDark ? 'rgba(0,213,111,0.28)' : 'rgba(22,163,74,0.25)', paddingHorizontal: 20, paddingVertical: 14 },
-  statusDot:    { width: 16, height: 16, borderRadius: 8, backgroundColor: COLORS.green },
-  statusDotError:{ backgroundColor: COLORS.red },
-  statusText:   { color: isDark ? '#d3ffdd' : COLORS.success, fontSize: 17, fontWeight: '700' },
-  errorText:    { color: isDark ? '#ffb3bc' : COLORS.danger, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 14, paddingHorizontal: 10 },
-  statsRow:     { flexDirection: 'row', gap: 14, marginTop: 28 },
-  statCard:     { flex: 1, borderRadius: 22, paddingVertical: 22, paddingHorizontal: 10, backgroundColor: isDark ? 'rgba(18,39,69,0.84)' : COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', minHeight: 130 },
-  statValue:    { color: COLORS.text, fontSize: 22, fontWeight: '800', marginTop: 12 },
-  statLabel:    { color: COLORS.muted, fontSize: 16, marginTop: 8 },
-  stopButton:   { marginTop: 40, borderRadius: 20, borderWidth: 1, borderColor: isDark ? 'rgba(255,93,108,0.45)' : 'rgba(239,68,68,0.35)', backgroundColor: COLORS.redSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 22 },
-  stopButtonText:{ color: COLORS.red, fontSize: 20, fontWeight: '700' },
+
+const createStyles = (COLORS: AppColors, isDark: boolean) => StyleSheet.create({
+  container:      { flex: 1, backgroundColor: COLORS.background },
+  header:         { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  title:          { color: COLORS.text, fontSize: 24, fontWeight: '700' },
+  headerActions:  { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  headerIcon:     { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: COLORS.surfaceLight, borderColor: 'rgba(96,165,250,0.25)', alignItems: 'center', justifyContent: 'center' },
+  divider:        { height: 1, backgroundColor: 'rgba(96,165,250,0.15)' },
+  scrollContent:  { flexGrow: 1, paddingHorizontal: 26, paddingBottom: 26, paddingTop: 28 },
+  speedGlow:      { position: 'absolute', top: 120, alignSelf: 'center', width: 320, height: 320, borderRadius: 160, backgroundColor: COLORS.primarySoft, opacity: 0.8, transform: [{ scale: 1.4 }] },
+  speedCircle:    { alignSelf: 'center', width: 320, height: 320, borderRadius: 160, borderWidth: 5, borderColor: '#2563EB', backgroundColor: isDark ? 'rgba(9,24,45,0.56)' : 'rgba(255,255,255,0.72)', alignItems: 'center', justifyContent: 'center', marginTop: 76 },
+  speedValue:     { color: COLORS.text, fontSize: 84, fontWeight: '800', lineHeight: 90 },
+  speedUnit:      { color: COLORS.muted, fontSize: 26, fontWeight: '400', marginTop: 6 },
+  statusPill:     { marginTop: 32, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 999, backgroundColor: COLORS.greenSoft, borderWidth: 1, borderColor: isDark ? 'rgba(0,213,111,0.28)' : 'rgba(22,163,74,0.25)', paddingHorizontal: 20, paddingVertical: 14 },
+  statusDot:      { width: 16, height: 16, borderRadius: 8, backgroundColor: COLORS.green },
+  statusDotError: { backgroundColor: COLORS.red },
+  statusText:     { color: isDark ? '#d3ffdd' : COLORS.success, fontSize: 17, fontWeight: '700' },
+  errorText:      { color: isDark ? '#ffb3bc' : COLORS.danger, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 14, paddingHorizontal: 10 },
+  statsRow:       { flexDirection: 'row', gap: 14, marginTop: 28 },
+  statCard:       { flex: 1, borderRadius: 22, paddingVertical: 22, paddingHorizontal: 10, backgroundColor: isDark ? 'rgba(18,39,69,0.84)' : COLORS.surface, borderWidth: 1, borderColor: 'rgba(96,165,250,0.15)', alignItems: 'center', justifyContent: 'center', minHeight: 130 },
+  statValue:      { color: COLORS.text, fontSize: 22, fontWeight: '800', marginTop: 12 },
+  statLabel:      { color: COLORS.muted, fontSize: 16, marginTop: 8 },
+  stopButton:     { marginTop: 40, borderRadius: 20, borderWidth: 1, borderColor: isDark ? 'rgba(255,93,108,0.45)' : 'rgba(239,68,68,0.35)', backgroundColor: COLORS.redSoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 22 },
+  stopButtonText: { color: COLORS.red, fontSize: 20, fontWeight: '700' },
 });

@@ -17,11 +17,11 @@ import {
   FlatList,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { apiGet, apiPost } from "@/constants/api-client";
-import { AppColors, useThemeColors } from "@/context/theme-context";
+import { AppColors, useAppTheme, useThemeColors } from "@/context/theme-context";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
 const CHATBOT_BASE_URL = process.env.EXPO_PUBLIC_CHATBOT_BASE_URL!;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -91,7 +91,6 @@ function getRole(token: string): string {
 }
 
 // ─── Chatbot API ──────────────────────────────────────────────────────────────
-// ✅ FIX: بتاخد history وتبعتها للـ backend
 async function fetchChatbotReply(
   message: string,
   userId: string,
@@ -114,6 +113,7 @@ export default function AIAssistantScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const COLORS    = useThemeColors();
   const styles    = useMemo(() => createStyles(COLORS), [COLORS]);
+  const { isDark } = useAppTheme();
 
   const [activeTab,       setActiveTab]       = useState<AssistantTab>("ai");
   const [aiMessages,      setAiMessages]      = useState<ChatMessage[]>(INITIAL_AI_MESSAGES);
@@ -145,25 +145,19 @@ export default function AIAssistantScreen() {
           const storedMsgs = await AsyncStorage.getItem(`chatbot_messages_${uid}`);
           if (storedMsgs) {
             const parsed = JSON.parse(storedMsgs);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setAiMessages(parsed);
-            }
+            if (Array.isArray(parsed) && parsed.length > 0) setAiMessages(parsed);
           }
-        } catch (e) {
-          console.error("Failed to load stored messages", e);
-        }
+        } catch (e) { console.error("Failed to load stored messages", e); }
       }
       setMessagesLoaded(true);
     })();
   }, []);
 
-  // ── Save messages ──
   useEffect(() => {
     if (!userId || !messagesLoaded) return;
     (async () => {
       const msgsToSave = aiMessages.filter(m => m.role !== "error");
-      const sliced = msgsToSave.slice(-20);
-      await AsyncStorage.setItem(`chatbot_messages_${userId}`, JSON.stringify(sliced));
+      await AsyncStorage.setItem(`chatbot_messages_${userId}`, JSON.stringify(msgsToSave.slice(-20)));
     })();
   }, [aiMessages, userId, messagesLoaded]);
 
@@ -174,28 +168,20 @@ export default function AIAssistantScreen() {
     if (!userId) return;
     const interval = setInterval(() => {
       const s = getSocket();
-      if (s && s.connected) {
-        setSocket(s);
-        clearInterval(interval);
-      }
+      if (s && s.connected) { setSocket(s); clearInterval(interval); }
     }, 500);
     return () => clearInterval(interval);
   }, [userId]);
 
   useEffect(() => {
     if (!socket || !userId) return;
-
-    const conversationId =
-      userRole === "admin" ? selectedTicket?._id : myTicket?._id;
-
+    const conversationId = userRole === "admin" ? selectedTicket?._id : myTicket?._id;
     if (!conversationId) return;
-
     socket.emit("support:join", { conversationId });
 
     const handleSupportMessage = (data: any) => {
       const msg = data.message || data;
       const targetConvId = data.conversationId || conversationId;
-
       if (userRole === "user") {
         setMyTicket(prev => {
           if (!prev || prev._id !== targetConvId) return prev;
@@ -203,13 +189,11 @@ export default function AIAssistantScreen() {
           return { ...prev, messages: [...prev.messages, msg] };
         });
       } else if (userRole === "admin") {
-        setTickets(prev =>
-          prev.map(t => {
-            if (t._id !== targetConvId) return t;
-            if (t.messages.some(m => m._id === msg._id || (m.createdAt === msg.createdAt && m.message === msg.message))) return t;
-            return { ...t, messages: [...t.messages, msg] };
-          })
-        );
+        setTickets(prev => prev.map(t => {
+          if (t._id !== targetConvId) return t;
+          if (t.messages.some(m => m._id === msg._id || (m.createdAt === msg.createdAt && m.message === msg.message))) return t;
+          return { ...t, messages: [...t.messages, msg] };
+        }));
         setSelectedTicket(prev => {
           if (!prev || prev._id !== targetConvId) return prev;
           if (prev.messages.some(m => m._id === msg._id || (m.createdAt === msg.createdAt && m.message === msg.message))) return prev;
@@ -271,43 +255,27 @@ export default function AIAssistantScreen() {
 
     const uid = await AsyncStorage.getItem("userId").then(v => v?.replace(/"/g, "") ?? "");
     if (!uid) {
-      setAiMessages(prev => [...prev, {
-        id: makeId("error"), role: "error",
-        text: "⚠️ Please log in first.",
-        createdAtLabel: getCurrentTimeLabel(),
-      }]);
+      setAiMessages(prev => [...prev, { id: makeId("error"), role: "error", text: "⚠️ Please log in first.", createdAtLabel: getCurrentTimeLabel() }]);
       return;
     }
 
-    const userMsg: ChatMessage = {
-      id: makeId("user"), role: "user", text: trimmed, createdAtLabel: getCurrentTimeLabel(),
-    };
+    const userMsg: ChatMessage = { id: makeId("user"), role: "user", text: trimmed, createdAtLabel: getCurrentTimeLabel() };
     setAiMessages(prev => [...prev, userMsg]);
     setInputText("");
     setLoading(true);
     scrollToBottom();
 
     try {
-      // ✅ FIX: بنبني الـ history من الـ aiMessages الحالية
       const currentMessages = [...aiMessages, userMsg];
       const history = currentMessages
         .filter(m => m.role === "user" || m.role === "assistant")
-        .slice(-10)  // آخر 10 رسايل بس
-        .map(m => ({
-          role:    m.role === "user" ? "user" : "assistant",
-          content: m.text,
-        }));
+        .slice(-10)
+        .map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }));
 
       const replyText = await fetchChatbotReply(trimmed, uid, history);
-      setAiMessages(prev => [...prev, {
-        id: makeId("assistant"), role: "assistant", text: replyText, createdAtLabel: getCurrentTimeLabel(),
-      }]);
+      setAiMessages(prev => [...prev, { id: makeId("assistant"), role: "assistant", text: replyText, createdAtLabel: getCurrentTimeLabel() }]);
     } catch {
-      setAiMessages(prev => [...prev, {
-        id: makeId("error"), role: "error",
-        text: "⚠️ Couldn't reach the server. Check your connection and try again.",
-        createdAtLabel: getCurrentTimeLabel(),
-      }]);
+      setAiMessages(prev => [...prev, { id: makeId("error"), role: "error", text: "⚠️ Couldn't reach the server. Check your connection and try again.", createdAtLabel: getCurrentTimeLabel() }]);
     } finally {
       setLoading(false);
       scrollToBottom();
@@ -317,8 +285,7 @@ export default function AIAssistantScreen() {
   const handleSendSupport = async () => {
     const trimmed = inputText.trim();
     if (!trimmed || loading) return;
-    setLoading(true);
-    setInputText("");
+    setLoading(true); setInputText("");
     try {
       const res = await apiPost("/support/message", { message: trimmed });
       if (res?.data?.ticket) setMyTicket(res.data.ticket);
@@ -330,8 +297,7 @@ export default function AIAssistantScreen() {
     if (!selectedTicket) return;
     const trimmed = inputText.trim();
     if (!trimmed || loading) return;
-    setLoading(true);
-    setInputText("");
+    setLoading(true); setInputText("");
     try {
       await apiPost(`/support/tickets/${selectedTicket._id}/reply`, { message: trimmed });
       await reloadSelectedTicket(selectedTicket._id);
@@ -345,16 +311,32 @@ export default function AIAssistantScreen() {
     if (activeTab === "support" && userRole === "admin" && selectedTicket) return handleAdminReply();
   };
 
+  // ── Admin inbox view ──
   if (activeTab === "support" && userRole === "admin" && !selectedTicket) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
+        {isDark && (
+          <LinearGradient
+            colors={['#0f2040', '#0d1a35', '#0a1225', '#080A0F']}
+            locations={[0, 0.25, 0.55, 1]}
+            style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
+          />
+        )}
         <View style={styles.header}>
-          <Text style={styles.title}>Support Inbox</Text>
+          <Pressable onPress={() => setActiveTab("ai")} style={styles.backBtn} hitSlop={10}>
+            <Ionicons name="arrow-back-outline" size={22} color={COLORS.text} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Auto<Text style={styles.headerAccent}>Care</Text></Text>
           <Pressable style={styles.headerIcon} onPress={() => router.push("/account")} hitSlop={10}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
         </View>
         <View style={styles.divider} />
+        <View style={styles.inboxLabel}>
+          <Ionicons name="headset-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.inboxLabelText}>Support Inbox</Text>
+        </View>
 
         {adminLoading ? (
           <View style={styles.centered}>
@@ -364,36 +346,23 @@ export default function AIAssistantScreen() {
           <FlatList
             data={tickets}
             keyExtractor={t => t._id}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={() => fetchAllTickets(true)} tintColor={COLORS.primary} />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchAllTickets(true)} tintColor={COLORS.primary} />}
             contentContainerStyle={{ padding: 18, gap: 12, paddingBottom: 120 }}
             ListEmptyComponent={
               <View style={styles.centered}>
-                <Ionicons name="chatbubbles-outline" size={44} color={COLORS.muted} />
+                <Ionicons name="chatbubbles-outline" size={44} color={COLORS.mutedDark} />
                 <Text style={styles.emptyText}>No support tickets yet</Text>
               </View>
             }
             renderItem={({ item }) => (
-              <Pressable style={styles.ticketCard} onPress={async () => {
-                setSelectedTicket(item);
-                await reloadSelectedTicket(item._id);
-              }}>
+              <Pressable style={styles.ticketCard} onPress={async () => { setSelectedTicket(item); await reloadSelectedTicket(item._id); }}>
                 <View style={styles.ticketCardTop}>
                   <View style={styles.ticketAvatar}>
-                    <Text style={styles.ticketAvatarText}>
-                      {(item.user?.firstName ?? item.user?.email ?? "U")[0].toUpperCase()}
-                    </Text>
+                    <Text style={styles.ticketAvatarText}>{(item.user?.firstName ?? item.user?.email ?? "U")[0].toUpperCase()}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.ticketUser}>
-                      {item.user?.firstName
-                        ? `${item.user.firstName} ${item.user.lastName ?? ''}`.trim()
-                        : item.user?.email ?? "User"}
-                    </Text>
-                    <Text style={styles.ticketPreview} numberOfLines={1}>
-                      {item.messages.at(-1)?.message ?? "No messages yet"}
-                    </Text>
+                    <Text style={styles.ticketUser}>{item.user?.firstName ? `${item.user.firstName} ${item.user.lastName ?? ''}`.trim() : item.user?.email ?? "User"}</Text>
+                    <Text style={styles.ticketPreview} numberOfLines={1}>{item.messages.at(-1)?.message ?? "No messages yet"}</Text>
                   </View>
                   <View style={[styles.ticketBadge, item.status === "open" && styles.ticketBadgeOpen]}>
                     <Text style={styles.ticketBadgeText}>{item.status}</Text>
@@ -411,27 +380,20 @@ export default function AIAssistantScreen() {
     );
   }
 
-  const chatMessages: { id: string; role: ChatRole; text: string; createdAtLabel: string; username?: string }[] =
-    activeTab === "support" && userRole === "admin" && selectedTicket
-      ? selectedTicket.messages.map((m, index) => ({
-          id:             m._id ?? `msg-${index}`,
-          role:           m.role === "admin" ? "admin" : "user",
-          text:           m.message,
-          username: m.role === "user"
-            ? (selectedTicket.user?.firstName
-              ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim()
-              : selectedTicket.user?.email ?? "User")
-            : undefined,
-          createdAtLabel: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }))
-      : activeTab === "support" && userRole === "user"
-      ? (myTicket?.messages ?? []).map((m, index) => ({
-          id:             m._id ?? `msg-${index}`,
-          role:           m.role === "admin" ? "support" : "user",
-          text:           m.message,
-          createdAtLabel: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        }))
-      : aiMessages;
+  const chatMessages = activeTab === "support" && userRole === "admin" && selectedTicket
+    ? selectedTicket.messages.map((m, i) => ({
+        id: m._id ?? `msg-${i}`, role: m.role === "admin" ? "admin" : "user" as ChatRole,
+        text: m.message,
+        username: m.role === "user" ? (selectedTicket.user?.firstName ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim() : selectedTicket.user?.email ?? "User") : undefined,
+        createdAtLabel: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }))
+    : activeTab === "support" && userRole === "user"
+    ? (myTicket?.messages ?? []).map((m, i) => ({
+        id: m._id ?? `msg-${i}`, role: m.role === "admin" ? "support" : "user" as ChatRole,
+        text: m.message,
+        createdAtLabel: new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      }))
+    : aiMessages;
 
   const showInput =
     activeTab === "ai" ||
@@ -440,18 +402,25 @@ export default function AIAssistantScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {isDark && (
+        <LinearGradient
+          colors={['#0f2040', '#0d1a35', '#0a1225', '#080A0F']}
+          locations={[0, 0.25, 0.55, 1]}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+
       <View style={styles.header}>
         {activeTab === "support" && userRole === "admin" && selectedTicket ? (
           <Pressable onPress={() => setSelectedTicket(null)} style={styles.backBtn} hitSlop={10}>
             <Ionicons name="arrow-back-outline" size={22} color={COLORS.text} />
             <Text style={styles.backBtnText}>
-              {selectedTicket.user?.firstName
-                ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim()
-                : selectedTicket.user?.email ?? "User"}
+              {selectedTicket.user?.firstName ? `${selectedTicket.user.firstName} ${selectedTicket.user.lastName ?? ''}`.trim() : selectedTicket.user?.email ?? "User"}
             </Text>
           </Pressable>
         ) : (
-          <Text style={styles.title}>AI Assistant</Text>
+          <Text style={styles.headerTitle}>Auto<Text style={styles.headerAccent}>Care</Text></Text>
         )}
         <Pressable style={styles.headerIcon} onPress={() => router.push("/account")} hitSlop={10}>
           <Ionicons name="person-outline" size={20} color={COLORS.text} />
@@ -460,26 +429,17 @@ export default function AIAssistantScreen() {
 
       <View style={styles.divider} />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardArea}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
-      >
+      <KeyboardAvoidingView style={styles.keyboardArea} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
         <View style={styles.content}>
+
           {!(activeTab === "support" && userRole === "admin" && selectedTicket) && (
             <View style={styles.segmentWrap}>
-              <Pressable
-                style={[styles.segmentButton, activeTab === "ai" && styles.segmentButtonActive]}
-                onPress={() => setActiveTab("ai")}
-              >
-                <Ionicons name="sparkles-outline" size={20} color={activeTab === "ai" ? COLORS.text : COLORS.muted} />
+              <Pressable style={[styles.segmentButton, activeTab === "ai" && styles.segmentButtonActive]} onPress={() => setActiveTab("ai")}>
+                <Ionicons name="sparkles-outline" size={18} color={activeTab === "ai" ? COLORS.text : COLORS.muted} />
                 <Text style={[styles.segmentText, activeTab === "ai" && styles.segmentTextActive]}>AI Assistant</Text>
               </Pressable>
-              <Pressable
-                style={[styles.segmentButton, activeTab === "support" && styles.segmentButtonActive]}
-                onPress={() => setActiveTab("support")}
-              >
-                <Ionicons name="headset-outline" size={20} color={activeTab === "support" ? COLORS.text : COLORS.muted} />
+              <Pressable style={[styles.segmentButton, activeTab === "support" && styles.segmentButtonActive]} onPress={() => setActiveTab("support")}>
+                <Ionicons name="headset-outline" size={18} color={activeTab === "support" ? COLORS.text : COLORS.muted} />
                 <Text style={[styles.segmentText, activeTab === "support" && styles.segmentTextActive]}>
                   {userRole === "admin" ? "Support Inbox" : "Customer Support"}
                 </Text>
@@ -495,39 +455,25 @@ export default function AIAssistantScreen() {
           )}
 
           {activeTab === "support" && (ticketLoading || adminLoading) ? (
-            <View style={styles.centered}>
-              <ActivityIndicator color={COLORS.primary} />
-            </View>
+            <View style={styles.centered}><ActivityIndicator color={COLORS.primary} /></View>
           ) : (
-            <ScrollView
-              ref={scrollRef}
-              style={styles.messagesScroll}
-              contentContainerStyle={styles.messagesContent}
-              showsVerticalScrollIndicator={false}
-              onContentSizeChange={scrollToBottom}
-            >
+            <ScrollView ref={scrollRef} style={styles.messagesScroll} contentContainerStyle={styles.messagesContent} showsVerticalScrollIndicator={false} onContentSizeChange={scrollToBottom}>
               {chatMessages.length === 0 && activeTab === "support" && userRole === "user" && (
                 <View style={styles.emptySupport}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={40} color={COLORS.muted} />
+                  <Ionicons name="chatbubble-ellipses-outline" size={40} color={COLORS.mutedDark} />
                   <Text style={styles.emptySupportTitle}>Start a conversation</Text>
                   <Text style={styles.emptySupportText}>Send a message and our support team will get back to you.</Text>
                 </View>
               )}
 
               {chatMessages.map(msg => (
-                <ChatBubble
-                  key={msg.id}
-                  message={msg}
-                  isAdminView={userRole === "admin" && activeTab === "support"}
-                />
+                <ChatBubble key={msg.id} message={msg} isAdminView={userRole === "admin" && activeTab === "support"} />
               ))}
 
               {loading && (
                 <View style={styles.typingIndicator}>
-                  <ActivityIndicator size="small" color={COLORS.primarySoft} />
-                  <Text style={styles.typingText}>
-                    {activeTab === "ai" ? "Thinking..." : "Sending..."}
-                  </Text>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={styles.typingText}>{activeTab === "ai" ? "Thinking..." : "Sending..."}</Text>
                 </View>
               )}
             </ScrollView>
@@ -538,12 +484,7 @@ export default function AIAssistantScreen() {
               <Text style={styles.quickQuestionsTitle}>Quick questions:</Text>
               <View style={styles.quickQuestionsGrid}>
                 {QUICK_QUESTIONS.map(q => (
-                  <Pressable
-                    key={q}
-                    style={styles.quickQuestionButton}
-                    onPress={() => handleSendAI(q)}
-                    disabled={loading}
-                  >
+                  <Pressable key={q} style={styles.quickQuestionButton} onPress={() => handleSendAI(q)} disabled={loading}>
                     <Text style={styles.quickQuestionText}>{q}</Text>
                   </Pressable>
                 ))}
@@ -565,15 +506,8 @@ export default function AIAssistantScreen() {
                 onSubmitEditing={handleSend}
                 editable={!loading}
               />
-              <Pressable
-                style={[styles.sendButton, (!inputText.trim() || loading) && styles.sendButtonDisabled]}
-                onPress={handleSend}
-                disabled={!inputText.trim() || loading}
-              >
-                {loading
-                  ? <ActivityIndicator size="small" color={COLORS.muted} />
-                  : <Ionicons name="paper-plane-outline" size={22} color={COLORS.text} />
-                }
+              <Pressable style={[styles.sendButton, (!inputText.trim() || loading) && styles.sendButtonDisabled]} onPress={handleSend} disabled={!inputText.trim() || loading}>
+                {loading ? <ActivityIndicator size="small" color={COLORS.muted} /> : <Ionicons name="paper-plane-outline" size={22} color={COLORS.text} />}
               </Pressable>
             </View>
           )}
@@ -588,11 +522,10 @@ export default function AIAssistantScreen() {
 // ─── Chat Bubble ──────────────────────────────────────────────────────────────
 function ChatBubble({ message, isAdminView }: {
   message: { id: string; role: ChatRole; text: string; createdAtLabel: string; username?: string };
-  isAdminView?: boolean
+  isAdminView?: boolean;
 }) {
   const COLORS = useThemeColors();
   const styles = useMemo(() => createStyles(COLORS), [COLORS]);
-
   const isUser    = message.role === "user";
   const isError   = message.role === "error";
   const isSupport = message.role === "support";
@@ -612,14 +545,10 @@ function ChatBubble({ message, isAdminView }: {
                            "sparkles-outline";
 
   return (
-    <View style={[
-      styles.messageBubble,
-      isRight && styles.userMessageBubble,
-      isError && styles.errorMessageBubble,
-    ]}>
+    <View style={[styles.messageBubble, isRight && styles.userMessageBubble, isError && styles.errorMessageBubble]}>
       {!isRight && (
         <View style={styles.messageLabelRow}>
-          <Ionicons name={iconName} size={18} color={isError ? COLORS.error : COLORS.primarySoft} />
+          <Ionicons name={iconName} size={16} color={isError ? COLORS.danger : COLORS.primary} />
           <Text style={[styles.messageLabel, isError && styles.errorLabel]}>{label}</Text>
         </View>
       )}
@@ -631,60 +560,79 @@ function ChatBubble({ message, isAdminView }: {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const createStyles = (COLORS: AppColors) => StyleSheet.create({
-  container:           { flex: 1, backgroundColor: COLORS.background },
-  header:              { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title:               { color: COLORS.text, fontSize: 24, fontWeight: "800" },
-  headerActions:       { flexDirection: "row", alignItems: "center", gap: 16 },
-  headerIcon:          { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceDark, alignItems: "center", justifyContent: "center" },
-  divider:             { height: 1, backgroundColor: COLORS.divider },
-  keyboardArea:        { flex: 1 },
-  content:             { flex: 1, paddingHorizontal: 22, paddingTop: 20 },
-  centered:            { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 60 },
-  backBtn:             { flexDirection: "row", alignItems: "center", gap: 8 },
-  backBtnText:         { color: COLORS.text, fontSize: 18, fontWeight: "700" },
-  segmentWrap:         { height: 56, borderRadius: 18, backgroundColor: COLORS.surfaceDark, borderWidth: 1, borderColor: COLORS.border, flexDirection: "row", padding: 5, gap: 5, marginBottom: 18 },
-  segmentButton:       { flex: 1, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
+  container:    { flex: 1, backgroundColor: COLORS.background },
+
+  // Header — sign-in style
+  header:       { paddingHorizontal: 20, paddingVertical: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle:  { fontSize: 22, fontWeight: '800', color: COLORS.text, letterSpacing: 0.5 },
+  headerAccent: { color: COLORS.primary },
+  headerIcon:   { width: 36, height: 36, borderRadius: 18, borderWidth: 1, backgroundColor: COLORS.surfaceLight, borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
+  divider:      { height: 1, backgroundColor: COLORS.divider },
+
+  inboxLabel:     { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 14 },
+  inboxLabelText: { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+
+  keyboardArea:   { flex: 1 },
+  content:        { flex: 1, paddingHorizontal: 20, paddingTop: 18 },
+  centered:       { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 60 },
+  backBtn:        { flexDirection: "row", alignItems: "center", gap: 8 },
+  backBtnText:    { color: COLORS.text, fontSize: 17, fontWeight: "700" },
+
+  // Segment — matches sign-in input style
+  segmentWrap:         { height: 54, borderRadius: 16, backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border, flexDirection: "row", padding: 4, gap: 4, marginBottom: 16 },
+  segmentButton:       { flex: 1, borderRadius: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   segmentButtonActive: { backgroundColor: COLORS.primary },
-  segmentText:         { color: COLORS.muted, fontSize: 15, fontWeight: "700" },
+  segmentText:         { color: COLORS.muted, fontSize: 14, fontWeight: "700" },
   segmentTextActive:   { color: COLORS.text },
-  supportStatusRow:    { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 14 },
-  supportStatusDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.warning },
-  supportStatusText:   { color: COLORS.muted, fontSize: 14 },
-  messagesScroll:      { flex: 1 },
-  messagesContent:     { paddingBottom: 18, gap: 12 },
-  typingIndicator:     { flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 4, paddingTop: 4 },
-  typingText:          { color: COLORS.mutedDark, fontSize: 15 },
-  emptySupport:        { alignItems: "center", paddingTop: 60, gap: 12 },
-  emptySupportTitle:   { color: COLORS.text, fontSize: 18, fontWeight: "700" },
-  emptySupportText:    { color: COLORS.muted, fontSize: 15, textAlign: "center", lineHeight: 22 },
-  emptyText:           { color: COLORS.muted, fontSize: 16, marginTop: 8 },
-  ticketCard:          { backgroundColor: COLORS.surface, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, padding: 16, gap: 8 },
-  ticketCardTop:       { flexDirection: "row", alignItems: "center", gap: 12 },
-  ticketAvatar:        { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
-  ticketAvatarText:    { color: COLORS.text, fontSize: 18, fontWeight: "800" },
-  ticketUser:          { color: COLORS.text, fontSize: 15, fontWeight: "700" },
-  ticketPreview:       { color: COLORS.muted, fontSize: 14, marginTop: 2 },
-  ticketBadge:         { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: COLORS.surfaceDark },
-  ticketBadgeOpen:     { backgroundColor: "rgba(52,211,153,0.15)" },
-  ticketBadgeText:     { color: COLORS.success, fontSize: 12, fontWeight: "700" },
-  ticketTime:          { color: COLORS.mutedDark, fontSize: 12 },
-  messageBubble:       { width: "86%", alignSelf: "flex-start", backgroundColor: COLORS.surface, borderRadius: 18, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 18, paddingVertical: 16 },
-  userMessageBubble:   { alignSelf: "flex-end", backgroundColor: COLORS.primary, borderColor: COLORS.primary, paddingVertical: 14 },
-  errorMessageBubble:  { borderColor: "rgba(248,113,113,0.3)", backgroundColor: "rgba(248,113,113,0.08)" },
-  messageLabelRow:     { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  messageLabel:        { color: COLORS.primarySoft, fontSize: 14, fontWeight: "700" },
-  errorLabel:          { color: COLORS.error },
-  messageText:         { color: COLORS.muted, fontSize: 16, lineHeight: 26 },
-  userMessageText:     { color: COLORS.text },
-  messageTime:         { color: COLORS.mutedDark, fontSize: 13, marginTop: 10 },
-  userMessageTime:     { color: "rgba(255,255,255,0.7)" },
-  quickQuestionsWrap:  { paddingTop: 8, paddingBottom: 12 },
-  quickQuestionsTitle: { color: COLORS.text, fontSize: 16, marginBottom: 10 },
-  quickQuestionsGrid:  { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  quickQuestionButton: { width: "48%", minHeight: 52, borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.16)", backgroundColor: COLORS.surfaceDark, justifyContent: "center", paddingHorizontal: 14, paddingVertical: 10 },
-  quickQuestionText:   { color: COLORS.text, fontSize: 14, lineHeight: 20, fontWeight: "700" },
-  inputRow:            { minHeight: 58, borderRadius: 18, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", backgroundColor: COLORS.input, flexDirection: "row", alignItems: "center", paddingLeft: 18, paddingRight: 8, gap: 8 },
-  messageInput:        { flex: 1, maxHeight: 100, color: COLORS.text, fontSize: 17, paddingVertical: 12 },
-  sendButton:          { width: 46, height: 46, borderRadius: 13, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
-  sendButtonDisabled:  { opacity: 0.4 },
+
+  supportStatusRow:  { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  supportStatusDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.yellow },
+  supportStatusText: { color: COLORS.muted, fontSize: 13 },
+
+  messagesScroll:   { flex: 1 },
+  messagesContent:  { paddingBottom: 18, gap: 12 },
+  typingIndicator:  { flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 4, paddingTop: 4 },
+  typingText:       { color: COLORS.mutedDark, fontSize: 14 },
+
+  emptySupport:      { alignItems: "center", paddingTop: 60, gap: 12 },
+  emptySupportTitle: { color: COLORS.text, fontSize: 17, fontWeight: "700" },
+  emptySupportText:  { color: COLORS.muted, fontSize: 14, textAlign: "center", lineHeight: 22 },
+  emptyText:         { color: COLORS.muted, fontSize: 15, marginTop: 8 },
+
+  // Ticket cards — same surface as sign-in
+  ticketCard:      { backgroundColor: COLORS.surface, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 14, gap: 8 },
+  ticketCardTop:   { flexDirection: "row", alignItems: "center", gap: 12 },
+  ticketAvatar:    { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
+  ticketAvatarText:{ color: COLORS.text, fontSize: 16, fontWeight: "800" },
+  ticketUser:      { color: COLORS.text, fontSize: 14, fontWeight: "700" },
+  ticketPreview:   { color: COLORS.muted, fontSize: 13, marginTop: 2 },
+  ticketBadge:     { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border },
+  ticketBadgeOpen: { backgroundColor: "rgba(5,150,105,0.12)", borderColor: "rgba(5,150,105,0.3)" },
+  ticketBadgeText: { color: COLORS.green, fontSize: 12, fontWeight: "700" },
+  ticketTime:      { color: COLORS.mutedDark, fontSize: 11 },
+
+  // Chat bubbles
+  messageBubble:      { width: "86%", alignSelf: "flex-start", backgroundColor: COLORS.surface, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 16, paddingVertical: 14 },
+  userMessageBubble:  { alignSelf: "flex-end", backgroundColor: COLORS.primary, borderColor: COLORS.primary, paddingVertical: 12 },
+  errorMessageBubble: { borderColor: `${COLORS.danger}4D`, backgroundColor: `${COLORS.danger}14` },
+  messageLabelRow:    { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 8 },
+  messageLabel:       { color: COLORS.primary, fontSize: 13, fontWeight: "700" },
+  errorLabel:         { color: COLORS.danger },
+  messageText:        { color: COLORS.muted, fontSize: 15, lineHeight: 24 },
+  userMessageText:    { color: COLORS.text },
+  messageTime:        { color: COLORS.mutedDark, fontSize: 12, marginTop: 8 },
+  userMessageTime:    { color: "rgba(255,255,255,0.75)" },
+
+  // Quick questions — sign-in input style
+  quickQuestionsWrap:  { paddingTop: 6, paddingBottom: 10 },
+  quickQuestionsTitle: { color: COLORS.muted, fontSize: 13, fontWeight: '600', marginBottom: 10 },
+  quickQuestionsGrid:  { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  quickQuestionButton: { width: "48%", minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceLight, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 10 },
+  quickQuestionText:   { color: COLORS.text, fontSize: 13, lineHeight: 18, fontWeight: "600" },
+
+  // Input — exactly like sign-in TextInput
+  inputRow:           { minHeight: 54, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceLight, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 8, gap: 8 },
+  messageInput:       { flex: 1, maxHeight: 100, color: COLORS.text, fontSize: 15, paddingVertical: 10 },
+  sendButton:         { width: 42, height: 42, borderRadius: 12, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
+  sendButtonDisabled: { opacity: 0.4 },
 });

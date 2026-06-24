@@ -15,146 +15,93 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useUserProfile } from '@/context/user-profile-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 import { disconnectSocket } from '@/hooks/useSocket';
+import { useAppTheme, useThemeColors } from "@/context/theme-context";
 
-import { useAppTheme } from "@/context/theme-context";
+/* ════════════════════════════════════════
+   THEME COLORS
+════════════════════════════════════════ */
+type ThemeColors = ReturnType<typeof useThemeColors>;
 
-
-const DARK_COLORS = {
-  background:   '#09182d',
-  surface:      '#13243a',
-  surfaceLight: '#172b44',
-  border:       'rgba(255,255,255,0.07)',
-  divider:      'rgba(255,255,255,0.06)',
-  text:         '#f8fafc',
-  muted:        '#aebbd0',
-  mutedDark:    '#74849a',
-  primary:      '#3268f7',
-  input:        '#0f1f34',
-  danger:       '#ef4444',
-  star:         '#f59e0b',
-  starEmpty:    'rgba(245,158,11,0.25)',
+type AccountColors = ThemeColors & {
+  bg: string;
+  primaryGlow: string;
+  star: string;
+  starEmpty: string;
 };
 
-const LIGHT_COLORS = {
-  background:   '#f5f7fb',
-  surface:      '#ffffff',
-  surfaceLight: '#edf2f7',
-  border:       'rgba(15,23,42,0.10)',
-  divider:      'rgba(15,23,42,0.08)',
-  text:         '#0f172a',
-  muted:        '#475569',
-  mutedDark:    '#64748b',
-  primary:      '#3268f7',
-  input:        '#eef2f7',
-  danger:       '#ef4444',
-  star:         '#f59e0b',
-  starEmpty:    'rgba(245,158,11,0.25)',
-};
-
-type AppColors = typeof DARK_COLORS;
+function getAccountColors(COLORS: ThemeColors): AccountColors {
+  return {
+    ...COLORS,
+    bg: COLORS.background,
+    primaryGlow: COLORS.primary,
+    star: '#F59E0B',
+    starEmpty: COLORS.mutedDark,
+  };
+}
 
 type AllowComments = 'allow' | 'disable';
 type Availability  = 'public' | 'friends' | 'onlyMe';
 
-interface PostRating {
-  average:  number;  
-  count:    number;
-  myRating: number;  
-}
-
+interface PostRating { average: number; count: number; myRating: number; }
 const DEFAULT_RATING: PostRating = { average: 0, count: 0, myRating: 0 };
 
 interface ApiReply {
-  _id: string;
-  id?: string;
+  _id: string; id?: string;
   createdBy: string | { _id: string; firstName?: string; lastName?: string; username?: string } | null;
-  content: string;
-  createdAt?: string;
+  content: string; createdAt?: string;
 }
-
 interface ApiComment {
-  _id: string;
-  id?: string;
+  _id: string; id?: string;
   createdBy: string | { _id: string; firstName?: string; lastName?: string; username?: string } | null;
-  content: string;
-  createdAt?: string;
-  replies?: ApiReply[];
+  content: string; createdAt?: string; replies?: ApiReply[];
 }
-
 interface ApiPost {
-  _id?: string;
-  id: string;
-  createdBy: string;
-  content: string;
-  status: string;
-  attachments: string[];
-  tags: string[];
-  likes: string[];
-  availability: Availability;
-  allowComments: AllowComments;
-  createdAt: string;
-  updatedAt: string;
-  comments?: ApiComment[];
+  _id?: string; id: string; createdBy: string; content: string; status: string;
+  attachments: string[]; tags: string[]; likes: string[];
+  availability: Availability; allowComments: AllowComments;
+  createdAt: string; updatedAt: string; comments?: ApiComment[];
 }
-
 interface PostComment {
   id: string; author: string; authorId: string;
   text: string; createdAtLabel: string; replies: PostReply[]; pending?: boolean;
 }
-
 interface PostReply {
   id: string; author: string; authorId: string;
   text: string; createdAtLabel: string; pending?: boolean;
 }
-
 interface AccountPost {
-  id: string;
-  content: string;
-  tags: string[];
-  allowComments: AllowComments;
-  availability: Availability;
-  createdAtLabel: string;
-  likes: number;
-  likedByMe: boolean;
-  comments: PostComment[];
-  pending?: boolean;
-  rating: PostRating;   
+  id: string; content: string; tags: string[];
+  allowComments: AllowComments; availability: Availability;
+  createdAtLabel: string; likes: number; likedByMe: boolean;
+  comments: PostComment[]; pending?: boolean; rating: PostRating;
 }
 
-
+/* ─── Helpers ─── */
 function toInitials(fullName?: string | null) {
-  const name = (fullName ?? '').trim();
-  if (!name) return 'U';
+  const name = (fullName ?? '').trim(); if (!name) return 'U';
   const parts = name.split(/\s+/);
   return `${parts[0][0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
 }
-
 function valueOrFallback(value: string | number | null | undefined, fallback = 'Not set') {
   const text = value === null || value === undefined ? '' : String(value).trim();
   return text ? text : fallback;
 }
-
 function formatCreatedAt(dateStr?: string) {
   if (!dateStr) return '';
   const date = new Date(dateStr), now = new Date();
   const m = Math.floor((now.getTime() - date.getTime()) / 60000);
-  if (m < 1)  return 'Just now';
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return 'Just now'; if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
-
-function resolveAuthorName(
-  createdBy: ApiComment['createdBy'] | null,
-  myUserId: string,
-  myName: string,
-): string {
+function resolveAuthorName(createdBy: ApiComment['createdBy'] | null, myUserId: string, myName: string): string {
   if (!createdBy) return 'Deleted User';
   if (typeof createdBy === 'string') return createdBy === myUserId ? myName : 'User';
   if (createdBy.username) return createdBy.username;
@@ -162,104 +109,73 @@ function resolveAuthorName(
   if (full) return full;
   return createdBy._id === myUserId ? myName : 'User';
 }
-
 function resolveAuthorId(createdBy: ApiComment['createdBy'] | null): string {
   if (!createdBy) return '';
   if (typeof createdBy === 'string') return createdBy;
   return createdBy._id ?? '';
 }
-
 function normalizeComment(c: ApiComment, myUserId: string, myName: string): PostComment {
   return {
-    id:             c._id ?? c.id ?? '',
-    author:         resolveAuthorName(c.createdBy, myUserId, myName),
-    authorId:       resolveAuthorId(c.createdBy),
-    text:           c.content ?? '',
+    id: c._id ?? c.id ?? '', author: resolveAuthorName(c.createdBy, myUserId, myName),
+    authorId: resolveAuthorId(c.createdBy), text: c.content ?? '',
     createdAtLabel: formatCreatedAt(c.createdAt),
     replies: (c.replies ?? []).map(r => ({
-      id:             r._id ?? r.id ?? '',
-      author:         resolveAuthorName(r.createdBy, myUserId, myName),
-      authorId:       resolveAuthorId(r.createdBy),
-      text:           r.content ?? '',
+      id: r._id ?? r.id ?? '', author: resolveAuthorName(r.createdBy, myUserId, myName),
+      authorId: resolveAuthorId(r.createdBy), text: r.content ?? '',
       createdAtLabel: formatCreatedAt(r.createdAt),
     })),
   };
 }
-
 function normalizePost(p: ApiPost, myUserId: string, myName: string): AccountPost {
   return {
-    id:             p._id ?? p.id ?? '',
-    content:        p.content ?? '',
-    tags:           p.tags ?? [],
-    allowComments:  p.allowComments ?? 'allow',
-    availability:   p.availability ?? 'public',
+    id: p._id ?? p.id ?? '', content: p.content ?? '', tags: p.tags ?? [],
+    allowComments: p.allowComments ?? 'allow', availability: p.availability ?? 'public',
     createdAtLabel: formatCreatedAt(p.createdAt),
-    likes:          Array.isArray(p.likes) ? p.likes.length : 0,
-    likedByMe:      Array.isArray(p.likes) ? p.likes.includes(myUserId) : false,
-    comments:       (p.comments ?? []).map(c => normalizeComment(c, myUserId, myName)),
-    rating:         DEFAULT_RATING,  // populated lazily via fetchRating
+    likes: Array.isArray(p.likes) ? p.likes.length : 0,
+    likedByMe: Array.isArray(p.likes) ? p.likes.includes(myUserId) : false,
+    comments: (p.comments ?? []).map(c => normalizeComment(c, myUserId, myName)),
+    rating: DEFAULT_RATING,
   };
 }
 
-function InfoRow({ label, value, styles }: { label: string; value: string; styles: any }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
+  const themeColors = useThemeColors();
+  const C = useMemo(() => getAccountColors(themeColors), [themeColors]);
+  const styles = useMemo(() => createStyles(C), [C]);
+
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
     </View>
   );
 }
 
+/* ─── Star Rating ─── */
+function StarRating({ rating, isMyPost = true, onRate }: { rating: PostRating; isMyPost?: boolean; onRate: (v: number) => void }) {
+  const themeColors = useThemeColors();
+  const C = useMemo(() => getAccountColors(themeColors), [themeColors]);
+  const starStyles = useMemo(() => createStarStyles(C), [C]);
 
-function StarRating({
-  rating,
-  
-  isMyPost = true,
-  onRate,
-  COLORS,
-  starStyles,
-}: {
-  rating: PostRating;
-  isMyPost?: boolean;
-  onRate: (value: number) => void;
-  COLORS: AppColors;
-  starStyles: any;
-}) {
- 
   const canRate = !isMyPost;
-
   return (
     <View style={starStyles.wrap}>
       <View style={starStyles.starsRow}>
         {[1, 2, 3, 4, 5].map(star => {
-          const myR    = rating.myRating;
-          const isMine = myR > 0 && star <= myR;
-          const isAvg  = myR === 0 && star <= Math.round(rating.average);
+          const myR = rating.myRating, isMine = myR > 0 && star <= myR;
+          const isAvg = myR === 0 && star <= Math.round(rating.average);
           const filled = isMine || isAvg;
           return (
-            <Pressable
-              key={star}
-              onPress={() => canRate && onRate(star)}
-              hitSlop={4}
-              style={({ pressed }) => [starStyles.star, pressed && canRate && { opacity: 0.6 }]}
-              disabled={!canRate}
-            >
-              <Ionicons
-                name={filled ? 'star' : 'star-outline'}
-                size={18}
-                color={isMine ? COLORS.star : filled ? `${COLORS.star}99` : COLORS.starEmpty}
-              />
+            <Pressable key={star} onPress={() => canRate && onRate(star)} hitSlop={4} disabled={!canRate}
+              style={({ pressed }) => [starStyles.star, pressed && canRate && { opacity: 0.6 }]}>
+              <Ionicons name={filled ? 'star' : 'star-outline'} size={18} color={isMine ? C.star : filled ? `${C.star}99` : C.starEmpty} />
             </Pressable>
           );
         })}
       </View>
-
       <View style={starStyles.info}>
         {rating.count > 0 ? (
-          <>
-            <Text style={starStyles.avg}>{rating.average.toFixed(1)}</Text>
-            <Text style={starStyles.count}>({rating.count} {rating.count === 1 ? 'rating' : 'ratings'})</Text>
-          </>
+          <><Text style={starStyles.avg}>{rating.average.toFixed(1)}</Text><Text style={starStyles.count}>({rating.count} {rating.count === 1 ? 'rating' : 'ratings'})</Text></>
         ) : (
           <Text style={starStyles.noRating}>No ratings yet</Text>
         )}
@@ -267,56 +183,52 @@ function StarRating({
     </View>
   );
 }
-
-const createStarStyles = (COLORS: AppColors) => StyleSheet.create({
-  wrap:       { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, marginBottom: 4 },
-  starsRow:   { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  star:       { padding: 2 },
-  info:       { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  avg:        { color: COLORS.star, fontSize: 14, fontWeight: '700' },
-  count:      { color: COLORS.mutedDark, fontSize: 13 },
-  noRating:   { color: COLORS.mutedDark, fontSize: 12 },
+const createStarStyles = (C: AccountColors) => StyleSheet.create({
+  wrap:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 4 },
+  starsRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  star:     { padding: 2 },
+  info:     { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  avg:      { color: C.star, fontSize: 14, fontWeight: '700' },
+  count:    { color: C.mutedDark, fontSize: 13 },
+  noRating: { color: C.mutedDark, fontSize: 12 },
 });
 
-
+/* ════════════════════════════════════════
+   MAIN SCREEN
+════════════════════════════════════════ */
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { profile, updateProfile } = useUserProfile();
   const { isDark, toggleTheme } = useAppTheme();
-  const COLORS = isDark ? DARK_COLORS : LIGHT_COLORS;
-  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
-  const starStyles = useMemo(() => createStarStyles(COLORS), [COLORS]);
+  const themeColors = useThemeColors();
+  const C = useMemo(() => getAccountColors(themeColors), [themeColors]);
+  const styles = useMemo(() => createStyles(C), [C]);
 
   const [myUserId,          setMyUserId]          = useState('');
   const [posts,             setPosts]             = useState<AccountPost[]>([]);
   const [loading,           setLoading]           = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  // edit post
-  const [editPostId,   setEditPostId]   = useState<string | null>(null);
-  const [editPostText, setEditPostText] = useState('');
-  const [editPostTags, setEditPostTags] = useState('');
-  const [saving,       setSaving]       = useState(false);
+  const [editPostId,        setEditPostId]        = useState<string | null>(null);
+  const [editPostText,      setEditPostText]      = useState('');
+  const [editPostTags,      setEditPostTags]      = useState('');
+  const [saving,            setSaving]            = useState(false);
 
   const myName    = `${profile?.user?.firstName ?? ''} ${profile?.user?.lastName ?? ''}`.trim() || 'You';
-  const myVehicle = profile?.vehicle
-    ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ')
-    : '';
+  const myVehicle = profile?.vehicle ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(' ') : '';
 
   const [myRole, setMyRole] = useState<'user' | 'admin'>('user');
   useEffect(() => {
     AsyncStorage.getItem('access_token').then(raw => {
       try {
-        const token   = raw?.replace(/"/g, '') ?? '';
+        const token = raw?.replace(/"/g, '') ?? '';
         const payload = JSON.parse(atob(token.split('.')[1]));
         setMyRole(payload.role === 'admin' ? 'admin' : 'user');
       } catch { setMyRole('user'); }
     });
   }, []);
 
-
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       try {
         setLoading(true);
         const uid = (await AsyncStorage.getItem('userId'))?.replace(/"/g, '') ?? '';
@@ -325,265 +237,145 @@ export default function AccountScreen() {
         const { user, vehicle, stats, posts: apiPosts } = data?.data ?? {};
         updateProfile({ user, vehicle, stats, posts: apiPosts ?? [] });
         const name = `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim();
-        const normalized = (apiPosts ?? []).map((p: ApiPost) => normalizePost(p, uid, name));
-        setPosts(normalized);
-      } catch (err) {
-        console.log('Profile load error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+        setPosts((apiPosts ?? []).map((p: ApiPost) => normalizePost(p, uid, name)));
+      } catch (err) { console.log('Profile load error:', err); }
+      finally { setLoading(false); }
+    })();
   }, []);
-
 
   const fetchRating = useCallback(async (postId: string) => {
     try {
       const data = await apiGet(`/posts/${postId}/rating`);
       const r: PostRating = data?.data ?? DEFAULT_RATING;
       setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, rating: r }));
-    } catch { /* silent */ }
+    } catch {}
   }, []);
 
-  
   const handleRate = useCallback(async (_postId: string, _value: number) => {}, []);
 
-
   const handleToggleLike = async (postId: string, likedByMe: boolean) => {
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, likedByMe: !likedByMe,
-      likes: !likedByMe ? p.likes + 1 : Math.max(0, p.likes - 1),
-    }));
-    try {
-      await apiPatch(`/posts/${postId}/like?action=${likedByMe ? 'unlike' : 'like'}`);
-    } catch {
-      setPosts(cur => cur.map(p => p.id !== postId ? p : {
-        ...p, likedByMe,
-        likes: likedByMe ? p.likes + 1 : Math.max(0, p.likes - 1),
-      }));
-    }
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, likedByMe: !likedByMe, likes: !likedByMe ? p.likes + 1 : Math.max(0, p.likes - 1) }));
+    try { await apiPatch(`/posts/${postId}/like?action=${likedByMe ? 'unlike' : 'like'}`); }
+    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, likedByMe, likes: likedByMe ? p.likes + 1 : Math.max(0, p.likes - 1) })); }
   };
 
   const handleDeletePost = async (postId: string) => {
     setPosts(cur => cur.filter(p => p.id !== postId));
-    try {
-      await apiDelete(`/posts/${postId}`);
-    } catch {
-      const uid  = myUserId;
-      const data = await apiGet(`/user/${uid}`);
-      const name = myName;
-      setPosts((data?.data?.posts ?? []).map((p: ApiPost) => normalizePost(p, uid, name)));
+    try { await apiDelete(`/posts/${postId}`); }
+    catch {
+      const uid = myUserId, data = await apiGet(`/user/${uid}`);
+      setPosts((data?.data?.posts ?? []).map((p: ApiPost) => normalizePost(p, uid, myName)));
     }
   };
 
-
   const handleOpenEdit = (post: AccountPost) => {
-    setEditPostId(post.id);
-    setEditPostText(post.content);
-    setEditPostTags(post.tags.join(', '));
+    setEditPostId(post.id); setEditPostText(post.content); setEditPostTags(post.tags.join(', '));
   };
 
   const handleSaveEdit = async () => {
     if (!editPostId || !editPostText.trim()) return;
     setSaving(true);
-    const cur     = posts.find(p => p.id === editPostId);
+    const cur = posts.find(p => p.id === editPostId);
     const newTags = editPostTags.split(',').map(t => t.trim()).filter(Boolean);
-    const prevContent = cur?.content ?? '';
-    const prevTags    = cur?.tags ?? [];
+    const prevContent = cur?.content ?? '', prevTags = cur?.tags ?? [];
     setPosts(ps => ps.map(p => p.id !== editPostId ? p : { ...p, content: editPostText.trim(), tags: newTags }));
     try {
-      await apiPatch(`/posts/${editPostId}`, {
-        content:       editPostText.trim(),
-        tags:          newTags,
-        allowComments: cur?.allowComments ?? 'allow',
-        availability:  cur?.availability  ?? 'public',
-      });
+      await apiPatch(`/posts/${editPostId}`, { content: editPostText.trim(), tags: newTags, allowComments: cur?.allowComments ?? 'allow', availability: cur?.availability ?? 'public' });
       setEditPostId(null); setEditPostText(''); setEditPostTags('');
-    } catch {
-      setPosts(ps => ps.map(p => p.id !== editPostId ? p : { ...p, content: prevContent, tags: prevTags }));
-    } finally {
-      setSaving(false);
-    }
+    } catch { setPosts(ps => ps.map(p => p.id !== editPostId ? p : { ...p, content: prevContent, tags: prevTags })); }
+    finally { setSaving(false); }
   };
 
   const handleAddComment = async (postId: string, text: string) => {
     if (!text.trim()) return;
     const tempId = `temp-c-${Date.now()}`;
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: [...p.comments, {
-        id: tempId, author: myName, authorId: myUserId,
-        text: text.trim(), createdAtLabel: 'Just now', replies: [], pending: true,
-      }],
-    }));
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: [...p.comments, { id: tempId, author: myName, authorId: myUserId, text: text.trim(), createdAtLabel: 'Just now', replies: [], pending: true }] }));
     try {
       const data = await apiPost(`/comments/${postId}`, { content: text.trim() });
       const saved: ApiComment | null = data?.data?.comment ?? data?.data?.result ?? data?.data ?? null;
       if (saved && (saved._id || saved.id)) {
-        setPosts(cur => cur.map(p => p.id !== postId ? p : {
-          ...p, comments: p.comments.map(c => c.id !== tempId ? c : normalizeComment(saved, myUserId, myName)),
-        }));
+        setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== tempId ? c : normalizeComment(saved, myUserId, myName)) }));
       } else {
-        setPosts(cur => cur.map(p => p.id !== postId ? p : {
-          ...p, comments: p.comments.map(c => c.id !== tempId ? c : { ...c, pending: false }),
-        }));
+        setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== tempId ? c : { ...c, pending: false }) }));
       }
-    } catch {
-      setPosts(cur => cur.map(p => p.id !== postId ? p : {
-        ...p, comments: p.comments.filter(c => c.id !== tempId),
-      }));
-    }
+    } catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.filter(c => c.id !== tempId) })); }
   };
 
   const handleEditComment = async (postId: string, commentId: string, text: string) => {
     const prev = posts.find(p => p.id === postId)?.comments.find(c => c.id === commentId)?.text ?? '';
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, text }),
-    }));
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, text }) }));
     try { await apiPatch(`/comments/${commentId}`, { content: text }); }
-    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, text: prev }),
-    })); }
+    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, text: prev }) })); }
   };
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
     const prev = posts.find(p => p.id === postId)?.comments ?? [];
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.filter(c => c.id !== commentId),
-    }));
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.filter(c => c.id !== commentId) }));
     try { await apiDelete(`/comments/${commentId}`); }
     catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: prev })); }
   };
 
-
   const handleAddReply = async (postId: string, commentId: string, text: string) => {
     if (!text.trim()) return;
     const tempId = `temp-r-${Date.now()}`;
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-        ...c, replies: [...c.replies, {
-          id: tempId, author: myName, authorId: myUserId,
-          text: text.trim(), createdAtLabel: 'Just now', pending: true,
-        }],
-      }),
-    }));
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: [...c.replies, { id: tempId, author: myName, authorId: myUserId, text: text.trim(), createdAtLabel: 'Just now', pending: true }] }) }));
     try {
       const data = await apiPost(`/comments/${postId}/${commentId}/reply`, { content: text.trim() });
       const saved: ApiReply | null = data?.data?.reply ?? data?.data?.comment ?? data?.data ?? null;
       if (saved && (saved._id || saved.id)) {
-        setPosts(cur => cur.map(p => p.id !== postId ? p : {
-          ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-            ...c, replies: c.replies.map(r => r.id !== tempId ? r : {
-              id: saved._id ?? saved.id ?? tempId,
-              author: resolveAuthorName(saved.createdBy, myUserId, myName),
-              authorId: resolveAuthorId(saved.createdBy),
-              text: saved.content ?? text,
-              createdAtLabel: formatCreatedAt(saved.createdAt),
-              pending: false,
-            }),
-          }),
-        }));
+        setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: c.replies.map(r => r.id !== tempId ? r : { id: saved._id ?? saved.id ?? tempId, author: resolveAuthorName(saved.createdBy, myUserId, myName), authorId: resolveAuthorId(saved.createdBy), text: saved.content ?? text, createdAtLabel: formatCreatedAt(saved.createdAt), pending: false }) }) }));
       } else {
-        setPosts(cur => cur.map(p => p.id !== postId ? p : {
-          ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-            ...c, replies: c.replies.map(r => r.id !== tempId ? r : { ...r, pending: false }),
-          }),
-        }));
+        setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: c.replies.map(r => r.id !== tempId ? r : { ...r, pending: false }) }) }));
       }
-    } catch {
-      setPosts(cur => cur.map(p => p.id !== postId ? p : {
-        ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-          ...c, replies: c.replies.filter(r => r.id !== tempId),
-        }),
-      }));
-    }
+    } catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: c.replies.filter(r => r.id !== tempId) }) })); }
   };
 
   const handleEditReply = async (postId: string, commentId: string, replyId: string, text: string) => {
     const prev = posts.find(p => p.id === postId)?.comments.find(c => c.id === commentId)?.replies.find(r => r.id === replyId)?.text ?? '';
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-        ...c, replies: c.replies.map(r => r.id !== replyId ? r : { ...r, text }),
-      }),
-    }));
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: c.replies.map(r => r.id !== replyId ? r : { ...r, text }) }) }));
     try { await apiPatch(`/comments/${commentId}/replies/${replyId}`, { content: text }); }
-    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-        ...c, replies: c.replies.map(r => r.id !== replyId ? r : { ...r, text: prev }),
-      }),
-    })); }
+    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: c.replies.map(r => r.id !== replyId ? r : { ...r, text: prev }) }) })); }
   };
 
   const handleDeleteReply = async (postId: string, commentId: string, replyId: string) => {
     const prev = posts.find(p => p.id === postId)?.comments.find(c => c.id === commentId)?.replies ?? [];
-    setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : {
-        ...c, replies: c.replies.filter(r => r.id !== replyId),
-      }),
-    }));
+    setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: c.replies.filter(r => r.id !== replyId) }) }));
     try { await apiDelete(`/comments/${commentId}/replies/${replyId}`); }
-    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : {
-      ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: prev }),
-    })); }
+    catch { setPosts(cur => cur.map(p => p.id !== postId ? p : { ...p, comments: p.comments.map(c => c.id !== commentId ? c : { ...c, replies: prev }) })); }
   };
 
-
-const handleLogout = async () => {
-  disconnectSocket();
-  await AsyncStorage.multiRemove([
-    'access_token',
-    'refresh_token',
-    'userId',
-    'needs_vehicle_setup',
-    'vehicle_setup_done',
-    'vehicle_profile',
-    'user_profile',
-  ]);
-
-  updateProfile({
-    user: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      drivingExperience: null,
-    },
-    vehicle: {
-      brand: '',
-      model: '',
-      year: 0,
-      engineCapacity: 0,
-      mileage: 0,
-      transmission: '',
-      fuelType: '',
-    },
-    stats: { followersCount: 0, followingCount: 0, postsCount: 0 },
-    posts: [],
-  });
-
-  setShowLogoutConfirm(false);
-
-  if (router.canDismiss()) {
-    router.dismissAll();
-  }
-
-  router.replace('/welcome');
-};
+  const handleLogout = async () => {
+    disconnectSocket();
+    await AsyncStorage.multiRemove(['access_token','refresh_token','userId','needs_vehicle_setup','vehicle_setup_done','vehicle_profile','user_profile']);
+    updateProfile({ user: { firstName:'',lastName:'',email:'',phone:'',drivingExperience:null }, vehicle: { brand:'',model:'',year:0,engineCapacity:0,mileage:0,transmission:'',fuelType:'' }, stats: { followersCount:0,followingCount:0,postsCount:0 }, posts: [] });
+    setShowLogoutConfirm(false);
+    if (router.canDismiss()) router.dismissAll();
+    router.replace('/welcome');
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {isDark && (
+        <LinearGradient
+          colors={['#0f2040', '#0d1a35', '#0a1225', '#080A0F']}
+          locations={[0, 0.25, 0.55, 1]}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+
+      {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-          <Text style={styles.backText}>Back</Text>
+          <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
+        <Text style={styles.headerTitle}>Auto<Text style={styles.headerAccent}>Care</Text></Text>
+        <View style={{ width: 36 }} />
       </View>
+      <View style={styles.divider} />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 110 }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>My Account</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 110 }]} showsVerticalScrollIndicator={false}>
+        <Text style={styles.pageTitle}>My Account</Text>
 
         {/* USER CARD */}
         <View style={styles.card}>
@@ -597,20 +389,16 @@ const handleLogout = async () => {
               <Text style={styles.meta}>{valueOrFallback(profile?.user?.phone)}</Text>
             </View>
             <Pressable onPress={() => setShowLogoutConfirm(true)} style={styles.logoutButton}>
-              <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
+              <Ionicons name="log-out-outline" size={18} color={C.danger} />
               <Text style={styles.logoutText}>Logout</Text>
             </Pressable>
           </View>
 
-          {/* Admin-only: Post Moderation button */}
           {myRole === 'admin' && (
-            <Pressable
-              style={styles.adminButton}
-              onPress={() => router.push('/admin-posts')}
-            >
-              <Ionicons name="shield-checkmark-outline" size={18} color="#fff" />
+            <Pressable style={styles.adminButton} onPress={() => router.push('/admin-posts')}>
+              <Ionicons name="shield-checkmark-outline" size={18} color={C.text} />
               <Text style={styles.adminButtonText}>Post Moderation</Text>
-              <Ionicons name="chevron-forward" size={16} color="#fff" style={{ marginLeft: 'auto' }} />
+              <Ionicons name="chevron-forward" size={16} color={C.text} style={{ marginLeft: 'auto' }} />
             </Pressable>
           )}
         </View>
@@ -619,27 +407,15 @@ const handleLogout = async () => {
         <View style={styles.themeToggleCard}>
           <View style={styles.themeToggleLeft}>
             <View style={styles.themeIconBox}>
-              <Ionicons
-                name={isDark ? 'moon-outline' : 'sunny-outline'}
-                size={22}
-                color={COLORS.primary}
-              />
+              <Ionicons name={isDark ? 'moon-outline' : 'sunny-outline'} size={22} color={C.primaryGlow} />
             </View>
-
             <View style={styles.themeTextBox}>
               <Text style={styles.themeTitle}>App Theme</Text>
-              <Text style={styles.themeSub}>Switch between dark mode and white mode</Text>
+              <Text style={styles.themeSub}>Switch between dark and light mode</Text>
             </View>
           </View>
-
           <Text style={styles.themeModeText}>{isDark ? 'Dark' : 'Light'}</Text>
-
-          <Switch
-            value={isDark}
-            onValueChange={toggleTheme}
-            thumbColor={Platform.OS === 'android' ? COLORS.primary : undefined}
-            trackColor={{ false: COLORS.surfaceLight, true: `${COLORS.primary}66` }}
-          />
+          <Switch value={isDark} onValueChange={toggleTheme} thumbColor={Platform.OS === 'android' ? C.primary : undefined} trackColor={{ false: C.surfaceLight, true: `${C.primary}66` }} />
         </View>
 
         {/* STATS */}
@@ -664,34 +440,27 @@ const handleLogout = async () => {
         {/* VEHICLE */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Vehicle Information</Text>
-          <InfoRow styles={styles} label="Brand & Model"  value={valueOrFallback(myVehicle)} />
-          <InfoRow styles={styles} label="Year"           value={valueOrFallback(profile?.vehicle?.year)} />
-          <InfoRow styles={styles} label="Body Type"      value={valueOrFallback((profile?.vehicle as any)?.bodyType)} />
-          <InfoRow styles={styles} label="Engine"         value={valueOrFallback(profile?.vehicle?.engineCapacity ? `${profile.vehicle.engineCapacity} CC` : '')} />
-          <InfoRow styles={styles} label="Engine Power"   value={valueOrFallback((profile?.vehicle as any)?.enginePowerHp ? `${(profile?.vehicle as any).enginePowerHp} HP` : '')} />
-          <InfoRow styles={styles} label="Transmission"   value={valueOrFallback(profile?.vehicle?.transmission)} />
-          <InfoRow styles={styles} label="Fuel Type"      value={valueOrFallback(profile?.vehicle?.fuelType)} />
-          <InfoRow styles={styles} label="Fuel Economy"   value={valueOrFallback((profile?.vehicle as any)?.fuelCombined ? `${(profile?.vehicle as any).fuelCombined} L/100km` : '')} />
-          <InfoRow styles={styles} label="Tank Capacity"  value={valueOrFallback(profile?.vehicle?.tankCapacity ? `${profile.vehicle.tankCapacity} L` : '')} />
-          <InfoRow styles={styles} label="Weight"         value={valueOrFallback((profile?.vehicle as any)?.weightKg ? `${(profile?.vehicle as any).weightKg} kg` : '')} />
-          <InfoRow styles={styles} label="Mileage"        value={valueOrFallback(profile?.vehicle?.mileage ? `${profile.vehicle.mileage} km` : '')} />
+          <InfoRow label="Brand & Model"  value={valueOrFallback(myVehicle)} />
+          <InfoRow label="Year"           value={valueOrFallback(profile?.vehicle?.year)} />
+          <InfoRow label="Body Type"      value={valueOrFallback((profile?.vehicle as any)?.bodyType)} />
+          <InfoRow label="Engine"         value={valueOrFallback(profile?.vehicle?.engineCapacity ? `${profile.vehicle.engineCapacity} CC` : '')} />
+          <InfoRow label="Engine Power"   value={valueOrFallback((profile?.vehicle as any)?.enginePowerHp ? `${(profile?.vehicle as any).enginePowerHp} HP` : '')} />
+          <InfoRow label="Transmission"   value={valueOrFallback(profile?.vehicle?.transmission)} />
+          <InfoRow label="Fuel Type"      value={valueOrFallback(profile?.vehicle?.fuelType)} />
+          <InfoRow label="Fuel Economy"   value={valueOrFallback((profile?.vehicle as any)?.fuelCombined ? `${(profile?.vehicle as any).fuelCombined} L/100km` : '')} />
+          <InfoRow label="Tank Capacity"  value={valueOrFallback(profile?.vehicle?.tankCapacity ? `${profile.vehicle.tankCapacity} L` : '')} />
+          <InfoRow label="Weight"         value={valueOrFallback((profile?.vehicle as any)?.weightKg ? `${(profile?.vehicle as any).weightKg} kg` : '')} />
+          <InfoRow label="Mileage"        value={valueOrFallback(profile?.vehicle?.mileage ? `${profile.vehicle.mileage} km` : '')} />
         </View>
 
         {/* POSTS */}
         <Text style={[styles.sectionTitle, { marginTop: 4, marginBottom: 12 }]}>My Posts</Text>
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} style={{ marginTop: 20 }} />
+          <ActivityIndicator color={C.primaryGlow} style={{ marginTop: 20 }} />
         ) : posts.length > 0 ? (
           posts.map(post => (
             <AccountPostCard
-              styles={styles}
-              COLORS={COLORS}
-              starStyles={starStyles}
-              key={post.id}
-              post={post}
-              myUserId={myUserId}
-              myName={myName}
-              myVehicle={myVehicle}
+              key={post.id} post={post} myUserId={myUserId} myName={myName} myVehicle={myVehicle}
               onToggleLike={()              => handleToggleLike(post.id, post.likedByMe)}
               onEdit={()                    => handleOpenEdit(post)}
               onDelete={()                  => handleDeletePost(post.id)}
@@ -717,38 +486,19 @@ const handleLogout = async () => {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setEditPostId(null)} />
           <View style={[styles.composerSheet, { paddingBottom: insets.bottom + 18 }]}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Edit Post</Text>
               <Pressable style={styles.closeButton} onPress={() => setEditPostId(null)} hitSlop={10}>
-                <Ionicons name="close" size={22} color={COLORS.text} />
+                <Ionicons name="close" size={22} color={C.text} />
               </Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <TextInput
-                style={styles.composerInput}
-                value={editPostText}
-                onChangeText={setEditPostText}
-                multiline textAlignVertical="top"
-                placeholderTextColor={COLORS.mutedDark}
-                placeholder="Edit your post..."
-              />
+              <TextInput style={styles.composerInput} value={editPostText} onChangeText={setEditPostText} multiline textAlignVertical="top" placeholderTextColor={C.mutedDark} placeholder="Edit your post..." />
               <Text style={styles.sheetLabel}>Tags (comma separated)</Text>
-              <TextInput
-                style={styles.tagsInput}
-                placeholder="e.g. oil, maintenance, tips"
-                placeholderTextColor={COLORS.mutedDark}
-                value={editPostTags}
-                onChangeText={setEditPostTags}
-              />
-              <Pressable
-                style={[styles.publishButton, (!editPostText.trim() || saving) && styles.publishButtonDisabled]}
-                onPress={handleSaveEdit}
-                disabled={!editPostText.trim() || saving}
-              >
-                {saving
-                  ? <ActivityIndicator color={COLORS.text} size="small" />
-                  : <Text style={styles.publishButtonText}>Save Changes</Text>
-                }
+              <TextInput style={styles.tagsInput} placeholder="e.g. oil, maintenance, tips" placeholderTextColor={C.mutedDark} value={editPostTags} onChangeText={setEditPostTags} />
+              <Pressable style={[styles.publishButton, (!editPostText.trim() || saving) && styles.publishButtonDisabled]} onPress={handleSaveEdit} disabled={!editPostText.trim() || saving}>
+                {saving ? <ActivityIndicator color={C.text} size="small" /> : <Text style={styles.publishButtonText}>Save Changes</Text>}
               </Pressable>
             </ScrollView>
           </View>
@@ -762,11 +512,11 @@ const handleLogout = async () => {
             <Text style={styles.sheetTitle}>Logout</Text>
             <Text style={[styles.meta, { marginBottom: 20, marginTop: 8 }]}>Are you sure you want to logout?</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <Pressable style={[styles.modalBtn, { backgroundColor: COLORS.surfaceLight }]} onPress={() => setShowLogoutConfirm(false)}>
-                <Text style={{ color: COLORS.text, fontWeight: '600' }}>Cancel</Text>
+              <Pressable style={[styles.modalBtn, { backgroundColor: C.surfaceLight, borderWidth: 1, borderColor: C.border }]} onPress={() => setShowLogoutConfirm(false)}>
+                <Text style={{ color: C.text, fontWeight: '600' }}>Cancel</Text>
               </Pressable>
-              <Pressable style={[styles.modalBtn, { backgroundColor: COLORS.danger }]} onPress={handleLogout}>
-                <Text style={{ color: COLORS.text, fontWeight: '700' }}>Logout</Text>
+              <Pressable style={[styles.modalBtn, { backgroundColor: C.danger }]} onPress={handleLogout}>
+                <Text style={{ color: C.text, fontWeight: '700' }}>Logout</Text>
               </Pressable>
             </View>
           </View>
@@ -780,138 +530,90 @@ const handleLogout = async () => {
    POST CARD
 ════════════════════════════════════════ */
 function AccountPostCard({
-  styles, COLORS, starStyles,
   post, myUserId, myName, myVehicle,
   onToggleLike, onEdit, onDelete,
   onAddComment, onEditComment, onDeleteComment,
   onAddReply, onEditReply, onDeleteReply,
   onMounted, onRate,
 }: {
-  styles: any; COLORS: AppColors; starStyles: any;
   post: AccountPost; myUserId: string; myName: string; myVehicle: string;
   onToggleLike: () => void; onEdit: () => void; onDelete: () => void;
-  onAddComment:    (t: string) => void;
-  onEditComment:   (cId: string, t: string) => void;
-  onDeleteComment: (cId: string) => void;
-  onAddReply:    (cId: string, t: string) => void;
-  onEditReply:   (cId: string, rId: string, t: string) => void;
-  onDeleteReply: (cId: string, rId: string) => void;
-  onMounted: () => void;
-  onRate: (value: number) => void;
+  onAddComment: (t: string) => void; onEditComment: (cId: string, t: string) => void; onDeleteComment: (cId: string) => void;
+  onAddReply: (cId: string, t: string) => void; onEditReply: (cId: string, rId: string, t: string) => void; onDeleteReply: (cId: string, rId: string) => void;
+  onMounted: () => void; onRate: (v: number) => void;
 }) {
+  const themeColors = useThemeColors();
+  const C = useMemo(() => getAccountColors(themeColors), [themeColors]);
+  const styles = useMemo(() => createStyles(C), [C]);
+
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [commentText,     setCommentText]     = useState('');
   const [showOptions,     setShowOptions]     = useState(false);
   const [confirmDelete,   setConfirmDelete]   = useState(false);
 
-  // Fetch rating once when this card first appears
   useEffect(() => { onMounted(); }, [post.id]);
 
-  const availIcon =
-    post.availability === 'public'  ? 'globe-outline'      :
-    post.availability === 'friends' ? 'people-outline'     :
-                                      'lock-closed-outline';
-
-  const handleSend = () => {
-    if (!commentText.trim()) return;
-    onAddComment(commentText);
-    setCommentText('');
-    setCommentsVisible(true);
-  };
-
+  const availIcon = post.availability === 'public' ? 'globe-outline' : post.availability === 'friends' ? 'people-outline' : 'lock-closed-outline';
+  const handleSend = () => { if (!commentText.trim()) return; onAddComment(commentText); setCommentText(''); setCommentsVisible(true); };
   const handleCloseOptions = () => { setShowOptions(false); setConfirmDelete(false); };
 
   return (
     <View style={styles.postCard}>
-      {/* Header */}
       <View style={styles.postHeader}>
-        <View style={styles.postAvatar}>
-          <Text style={styles.postAvatarText}>{myName.slice(0, 2).toUpperCase()}</Text>
-        </View>
+        <View style={styles.postAvatar}><Text style={styles.postAvatarText}>{myName.slice(0, 2).toUpperCase()}</Text></View>
         <View style={{ flex: 1 }}>
           <Text style={styles.postAuthor}>{myName}</Text>
           <View style={styles.postMetaRow}>
             {!!myVehicle && <><Text style={styles.postVehicle}>{myVehicle}</Text><Text style={styles.postDot}>•</Text></>}
             <Text style={styles.postTime}>{post.createdAtLabel}</Text>
             <Text style={styles.postDot}>•</Text>
-            <Ionicons name={availIcon as any} size={12} color={COLORS.mutedDark} />
+            <Ionicons name={availIcon as any} size={12} color={C.mutedDark} />
           </View>
         </View>
         <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={12} style={styles.dotsBtn}>
-          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.muted} />
+          <Ionicons name="ellipsis-horizontal" size={20} color={C.muted} />
         </Pressable>
       </View>
 
-      {/* Content */}
       <Text style={styles.postContent}>{post.content}</Text>
 
-      {/* Tags */}
       {post.tags.length > 0 && (
         <View style={styles.tagsRow}>
-          {post.tags.map(tag => (
-            <View key={tag} style={styles.tagPill}>
-              <Text style={styles.tagText}>#{tag}</Text>
-            </View>
-          ))}
+          {post.tags.map(tag => <View key={tag} style={styles.tagPill}><Text style={styles.tagText}>#{tag}</Text></View>)}
         </View>
       )}
 
-      {/* ★ STAR RATING — display-only on account screen (owner can't rate own posts) */}
-      <StarRating
-        COLORS={COLORS}
-        starStyles={starStyles}
-        rating={post.rating}
-        isMyPost={true}   // always true on account screen
-        onRate={onRate}
-      />
-
+      <StarRating rating={post.rating} isMyPost={true} onRate={onRate} />
       <View style={styles.actionsDivider} />
 
-      {/* Actions */}
       <View style={styles.actionsRow}>
         <Pressable style={styles.actionButton} onPress={onToggleLike}>
-          <Ionicons name={post.likedByMe ? 'heart' : 'heart-outline'} size={24}
-            color={post.likedByMe ? COLORS.primary : COLORS.muted} />
+          <Ionicons name={post.likedByMe ? 'heart' : 'heart-outline'} size={24} color={post.likedByMe ? C.primaryGlow : C.muted} />
           <Text style={[styles.actionText, post.likedByMe && styles.actionTextActive]}>{post.likes}</Text>
         </Pressable>
         {post.allowComments === 'allow' && (
           <Pressable style={styles.actionButton} onPress={() => setCommentsVisible(v => !v)}>
-            <Ionicons name="chatbubble-outline" size={22} color={COLORS.muted} />
+            <Ionicons name="chatbubble-outline" size={22} color={C.muted} />
             <Text style={styles.actionText}>{post.comments.length}</Text>
           </Pressable>
         )}
       </View>
 
-      {/* Comments */}
       {post.allowComments === 'allow' && (
         <>
-          <View style={[styles.commentInputRow, { marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.divider, paddingTop: 12 }]}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Write a comment..."
-              placeholderTextColor={COLORS.mutedDark}
-              value={commentText}
-              onChangeText={setCommentText}
-              multiline
-            />
-            <Pressable style={styles.sendButton} onPress={handleSend}>
-              <Ionicons name="send" size={18} color={COLORS.text} />
-            </Pressable>
+          <View style={[styles.commentInputRow, { marginTop: 14, borderTopWidth: 1, borderTopColor: C.divider, paddingTop: 12 }]}>
+            <TextInput style={styles.commentInput} placeholder="Write a comment..." placeholderTextColor={C.mutedDark} value={commentText} onChangeText={setCommentText} multiline />
+            <Pressable style={styles.sendButton} onPress={handleSend}><Ionicons name="send" size={18} color={C.text} /></Pressable>
           </View>
           {commentsVisible && (
             <View style={styles.commentsWrap}>
               {post.comments.map(comment => (
-                <CommentItem
-                  styles={styles}
-                  COLORS={COLORS}
-                  key={comment.id}
-                  comment={comment}
-                  myUserId={myUserId}
-                  onEdit={t             => onEditComment(comment.id, t)}
-                  onDelete={()          => onDeleteComment(comment.id)}
-                  onAddReply={t         => onAddReply(comment.id, t)}
+                <CommentItem key={comment.id} comment={comment} myUserId={myUserId}
+                  onEdit={t => onEditComment(comment.id, t)}
+                  onDelete={() => onDeleteComment(comment.id)}
+                  onAddReply={t => onAddReply(comment.id, t)}
                   onEditReply={(rId, t) => onEditReply(comment.id, rId, t)}
-                  onDeleteReply={rId    => onDeleteReply(comment.id, rId)}
+                  onDeleteReply={rId => onDeleteReply(comment.id, rId)}
                 />
               ))}
             </View>
@@ -919,7 +621,6 @@ function AccountPostCard({
         </>
       )}
 
-      {/* POST OPTIONS MODAL */}
       <Modal visible={showOptions} transparent animationType="fade" onRequestClose={handleCloseOptions}>
         <Pressable style={styles.backdrop} onPress={handleCloseOptions}>
           <Pressable style={styles.sheet} onPress={e => e.stopPropagation()}>
@@ -928,44 +629,26 @@ function AccountPostCard({
                 <View style={styles.handle} />
                 <Text style={styles.sheetTitle}>Post Options</Text>
                 <Pressable style={styles.optionRow} onPress={() => { handleCloseOptions(); onEdit(); }}>
-                  <View style={[styles.iconWrap, { backgroundColor: 'rgba(50,104,247,0.12)' }]}>
-                    <Ionicons name="create-outline" size={20} color={COLORS.primary} />
-                  </View>
-                  <View style={styles.optionText}>
-                    <Text style={styles.optionLabel}>Edit Post</Text>
-                    <Text style={styles.optionSub}>Change your post content</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.primary}26` }]}><Ionicons name="create-outline" size={20} color={C.primaryGlow} /></View>
+                  <View style={styles.optionText}><Text style={styles.optionLabel}>Edit Post</Text><Text style={styles.optionSub}>Change your post content</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <View style={styles.separator} />
                 <Pressable style={styles.optionRow} onPress={() => setConfirmDelete(true)}>
-                  <View style={[styles.iconWrap, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
-                    <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
-                  </View>
-                  <View style={styles.optionText}>
-                    <Text style={[styles.optionLabel, { color: COLORS.danger }]}>Delete Post</Text>
-                    <Text style={styles.optionSub}>This action cannot be undone</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.danger}1F` }]}><Ionicons name="trash-outline" size={20} color={C.danger} /></View>
+                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: C.danger }]}>Delete Post</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
-                <Pressable style={styles.cancelBtn} onPress={handleCloseOptions}>
-                  <Text style={styles.cancelText}>Cancel</Text>
-                </Pressable>
+                <Pressable style={styles.cancelBtn} onPress={handleCloseOptions}><Text style={styles.cancelText}>Cancel</Text></Pressable>
               </>
             ) : (
               <>
                 <View style={styles.handle} />
-                <View style={styles.confirmIcon}>
-                  <Ionicons name="trash" size={32} color={COLORS.danger} />
-                </View>
+                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={C.danger} /></View>
                 <Text style={styles.confirmTitle}>Delete Post?</Text>
                 <Text style={styles.confirmSub}>This post will be permanently deleted.</Text>
-                <Pressable style={styles.deleteBtn} onPress={() => { handleCloseOptions(); onDelete(); }}>
-                  <Text style={styles.deleteBtnText}>Yes, Delete</Text>
-                </Pressable>
-                <Pressable style={styles.cancelBtn} onPress={() => setConfirmDelete(false)}>
-                  <Text style={styles.cancelText}>Go Back</Text>
-                </Pressable>
+                <Pressable style={styles.deleteBtn} onPress={() => { handleCloseOptions(); onDelete(); }}><Text style={styles.deleteBtnText}>Yes, Delete</Text></Pressable>
+                <Pressable style={styles.cancelBtn} onPress={() => setConfirmDelete(false)}><Text style={styles.cancelText}>Go Back</Text></Pressable>
               </>
             )}
           </Pressable>
@@ -975,17 +658,16 @@ function AccountPostCard({
   );
 }
 
-/* ════════════════════════════════════════
-   COMMENT ITEM
-════════════════════════════════════════ */
-function CommentItem({ styles, COLORS, comment, myUserId, onEdit, onDelete, onAddReply, onEditReply, onDeleteReply }: {
-  styles: any; COLORS: AppColors;
+/* ─── Comment Item ─── */
+function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditReply, onDeleteReply }: {
   comment: PostComment; myUserId: string;
   onEdit: (t: string) => void; onDelete: () => void;
-  onAddReply: (t: string) => void;
-  onEditReply: (rId: string, t: string) => void;
-  onDeleteReply: (rId: string) => void;
+  onAddReply: (t: string) => void; onEditReply: (rId: string, t: string) => void; onDeleteReply: (rId: string) => void;
 }) {
+  const themeColors = useThemeColors();
+  const C = useMemo(() => getAccountColors(themeColors), [themeColors]);
+  const styles = useMemo(() => createStyles(C), [C]);
+
   const [repliesVisible, setRepliesVisible] = useState(false);
   const [replyText,      setReplyText]      = useState('');
   const [editing,        setEditing]        = useState(false);
@@ -999,12 +681,10 @@ function CommentItem({ styles, COLORS, comment, myUserId, onEdit, onDelete, onAd
     <View style={styles.commentItem}>
       {editing ? (
         <View>
-          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline autoFocus placeholderTextColor={COLORS.mutedDark} />
+          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline autoFocus placeholderTextColor={C.mutedDark} />
           <View style={styles.editActions}>
             <Pressable onPress={() => setEditing(false)}><Text style={styles.cancelEditText}>Cancel</Text></Pressable>
-            <Pressable style={styles.saveEditBtn} onPress={() => { onEdit(editText); setEditing(false); }}>
-              <Text style={styles.saveEditText}>Save</Text>
-            </Pressable>
+            <Pressable style={styles.saveEditBtn} onPress={() => { onEdit(editText); setEditing(false); }}><Text style={styles.saveEditText}>Save</Text></Pressable>
           </View>
         </View>
       ) : (
@@ -1013,44 +693,27 @@ function CommentItem({ styles, COLORS, comment, myUserId, onEdit, onDelete, onAd
             <Text style={styles.commentAuthor}>{comment.author}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={styles.commentTime}>{comment.createdAtLabel}</Text>
-              {isMyComment && (
-                <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={8}>
-                  <Ionicons name="ellipsis-horizontal" size={16} color={COLORS.mutedDark} />
-                </Pressable>
-              )}
+              {isMyComment && <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={8}><Ionicons name="ellipsis-horizontal" size={16} color={C.mutedDark} /></Pressable>}
             </View>
           </View>
           <Text style={styles.commentText}>{comment.text}</Text>
           <Pressable style={styles.replyTrigger} onPress={() => setRepliesVisible(v => !v)}>
-            <Ionicons name="return-down-forward-outline" size={13} color={COLORS.primary} />
-            <Text style={styles.replyTriggerText}>
-              {repliesVisible ? 'Hide replies' : `Reply${comment.replies.length > 0 ? ` (${comment.replies.length})` : ''}`}
-            </Text>
+            <Ionicons name="return-down-forward-outline" size={13} color={C.primaryGlow} />
+            <Text style={styles.replyTriggerText}>{repliesVisible ? 'Hide replies' : `Reply${comment.replies.length > 0 ? ` (${comment.replies.length})` : ''}`}</Text>
           </Pressable>
         </>
       )}
-
       {repliesVisible && (
         <View style={styles.repliesWrap}>
           {comment.replies.map(reply => (
-            <ReplyItem key={reply.id} styles={styles} COLORS={COLORS} reply={reply} myUserId={myUserId}
-              onEdit={t => onEditReply(reply.id, t)}
-              onDelete={() => onDeleteReply(reply.id)}
-            />
+            <ReplyItem key={reply.id} reply={reply} myUserId={myUserId} onEdit={t => onEditReply(reply.id, t)} onDelete={() => onDeleteReply(reply.id)} />
           ))}
           <View style={styles.commentInputRow}>
-            <TextInput style={styles.commentInput} placeholder="Write a reply..." placeholderTextColor={COLORS.mutedDark}
-              value={replyText} onChangeText={setReplyText} multiline />
-            <Pressable style={styles.sendButton} onPress={() => {
-              if (!replyText.trim()) return;
-              onAddReply(replyText); setReplyText(''); setRepliesVisible(true);
-            }}>
-              <Ionicons name="send" size={16} color={COLORS.text} />
-            </Pressable>
+            <TextInput style={styles.commentInput} placeholder="Write a reply..." placeholderTextColor={C.mutedDark} value={replyText} onChangeText={setReplyText} multiline />
+            <Pressable style={styles.sendButton} onPress={() => { if (!replyText.trim()) return; onAddReply(replyText); setReplyText(''); setRepliesVisible(true); }}><Ionicons name="send" size={16} color={C.text} /></Pressable>
           </View>
         </View>
       )}
-
       <Modal visible={showOptions} transparent animationType="fade" onRequestClose={handleClose}>
         <Pressable style={styles.backdrop} onPress={handleClose}>
           <Pressable style={styles.sheet} onPress={e => e.stopPropagation()}>
@@ -1059,22 +722,22 @@ function CommentItem({ styles, COLORS, comment, myUserId, onEdit, onDelete, onAd
                 <View style={styles.handle} />
                 <Text style={styles.sheetTitle}>Comment Options</Text>
                 <Pressable style={styles.optionRow} onPress={() => { setEditText(comment.text); handleClose(); setEditing(true); }}>
-                  <View style={[styles.iconWrap, { backgroundColor: 'rgba(50,104,247,0.12)' }]}><Ionicons name="create-outline" size={20} color={COLORS.primary} /></View>
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.primary}26` }]}><Ionicons name="create-outline" size={20} color={C.primaryGlow} /></View>
                   <View style={styles.optionText}><Text style={styles.optionLabel}>Edit Comment</Text><Text style={styles.optionSub}>Change your comment</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <View style={styles.separator} />
                 <Pressable style={styles.optionRow} onPress={() => setConfirmDelete(true)}>
-                  <View style={[styles.iconWrap, { backgroundColor: 'rgba(239,68,68,0.12)' }]}><Ionicons name="trash-outline" size={20} color={COLORS.danger} /></View>
-                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: COLORS.danger }]}>Delete Comment</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.danger}1F` }]}><Ionicons name="trash-outline" size={20} color={C.danger} /></View>
+                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: C.danger }]}>Delete Comment</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <Pressable style={styles.cancelBtn} onPress={handleClose}><Text style={styles.cancelText}>Cancel</Text></Pressable>
               </>
             ) : (
               <>
                 <View style={styles.handle} />
-                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={COLORS.danger} /></View>
+                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={C.danger} /></View>
                 <Text style={styles.confirmTitle}>Delete Comment?</Text>
                 <Text style={styles.confirmSub}>This comment will be permanently deleted.</Text>
                 <Pressable style={styles.deleteBtn} onPress={() => { handleClose(); onDelete(); }}><Text style={styles.deleteBtnText}>Yes, Delete</Text></Pressable>
@@ -1088,17 +751,15 @@ function CommentItem({ styles, COLORS, comment, myUserId, onEdit, onDelete, onAd
   );
 }
 
-/* ════════════════════════════════════════
-   REPLY ITEM
-════════════════════════════════════════ */
-function ReplyItem({ styles, COLORS, reply, myUserId, onEdit, onDelete }: {
-  styles: any; COLORS: AppColors;
-  reply: PostReply; myUserId: string;
-  onEdit: (t: string) => void; onDelete: () => void;
-}) {
-  const [editing,       setEditing]       = useState(false);
-  const [editText,      setEditText]      = useState(reply.text);
-  const [showOptions,   setShowOptions]   = useState(false);
+/* ─── Reply Item ─── */
+function ReplyItem({ reply, myUserId, onEdit, onDelete }: { reply: PostReply; myUserId: string; onEdit: (t: string) => void; onDelete: () => void; }) {
+  const themeColors = useThemeColors();
+  const C = useMemo(() => getAccountColors(themeColors), [themeColors]);
+  const styles = useMemo(() => createStyles(C), [C]);
+
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(reply.text);
+  const [showOptions, setShowOptions] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const isMyReply = reply.authorId === myUserId;
   const handleClose = () => { setShowOptions(false); setConfirmDelete(false); };
@@ -1107,12 +768,10 @@ function ReplyItem({ styles, COLORS, reply, myUserId, onEdit, onDelete }: {
     <View style={styles.replyItem}>
       {editing ? (
         <View>
-          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline autoFocus placeholderTextColor={COLORS.mutedDark} />
+          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline autoFocus placeholderTextColor={C.mutedDark} />
           <View style={styles.editActions}>
             <Pressable onPress={() => setEditing(false)}><Text style={styles.cancelEditText}>Cancel</Text></Pressable>
-            <Pressable style={styles.saveEditBtn} onPress={() => { onEdit(editText); setEditing(false); }}>
-              <Text style={styles.saveEditText}>Save</Text>
-            </Pressable>
+            <Pressable style={styles.saveEditBtn} onPress={() => { onEdit(editText); setEditing(false); }}><Text style={styles.saveEditText}>Save</Text></Pressable>
           </View>
         </View>
       ) : (
@@ -1121,11 +780,7 @@ function ReplyItem({ styles, COLORS, reply, myUserId, onEdit, onDelete }: {
             <Text style={styles.commentAuthor}>{reply.author}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={styles.commentTime}>{reply.createdAtLabel}</Text>
-              {isMyReply && (
-                <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={8}>
-                  <Ionicons name="ellipsis-horizontal" size={14} color={COLORS.mutedDark} />
-                </Pressable>
-              )}
+              {isMyReply && <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={8}><Ionicons name="ellipsis-horizontal" size={14} color={C.mutedDark} /></Pressable>}
             </View>
           </View>
           <Text style={styles.commentText}>{reply.text}</Text>
@@ -1139,22 +794,22 @@ function ReplyItem({ styles, COLORS, reply, myUserId, onEdit, onDelete }: {
                 <View style={styles.handle} />
                 <Text style={styles.sheetTitle}>Reply Options</Text>
                 <Pressable style={styles.optionRow} onPress={() => { setEditText(reply.text); handleClose(); setEditing(true); }}>
-                  <View style={[styles.iconWrap, { backgroundColor: 'rgba(50,104,247,0.12)' }]}><Ionicons name="create-outline" size={20} color={COLORS.primary} /></View>
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.primary}26` }]}><Ionicons name="create-outline" size={20} color={C.primaryGlow} /></View>
                   <View style={styles.optionText}><Text style={styles.optionLabel}>Edit Reply</Text><Text style={styles.optionSub}>Change your reply</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <View style={styles.separator} />
                 <Pressable style={styles.optionRow} onPress={() => setConfirmDelete(true)}>
-                  <View style={[styles.iconWrap, { backgroundColor: 'rgba(239,68,68,0.12)' }]}><Ionicons name="trash-outline" size={20} color={COLORS.danger} /></View>
-                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: COLORS.danger }]}>Delete Reply</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.danger}1F` }]}><Ionicons name="trash-outline" size={20} color={C.danger} /></View>
+                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: C.danger }]}>Delete Reply</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <Pressable style={styles.cancelBtn} onPress={handleClose}><Text style={styles.cancelText}>Cancel</Text></Pressable>
               </>
             ) : (
               <>
                 <View style={styles.handle} />
-                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={COLORS.danger} /></View>
+                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={C.danger} /></View>
                 <Text style={styles.confirmTitle}>Delete Reply?</Text>
                 <Text style={styles.confirmSub}>This reply will be permanently deleted.</Text>
                 <Pressable style={styles.deleteBtn} onPress={() => { handleClose(); onDelete(); }}><Text style={styles.deleteBtnText}>Yes, Delete</Text></Pressable>
@@ -1168,107 +823,124 @@ function ReplyItem({ styles, COLORS, reply, myUserId, onEdit, onDelete }: {
   );
 }
 
-
-const createStyles = (COLORS: AppColors) => StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.background },
-  header:       { paddingHorizontal: 16, paddingVertical: 8 },
-  backButton:   { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  backText:     { color: COLORS.text, fontSize: 15 },
+/* ════════════════════════════════════════
+   STYLES
+════════════════════════════════════════ */
+const createStyles = (C: AccountColors) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: C.bg },
+  header:       { paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerTitle:  { fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: 0.5 },
+  headerAccent: { color: C.primaryGlow },
+  backButton:   { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  divider:      { height: 1, backgroundColor: C.divider },
   scroll:       { flex: 1 },
-  content:      { paddingHorizontal: 20 },
-  title:        { color: COLORS.text, fontSize: 30, fontWeight: '700', marginBottom: 14 },
-  card:         { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 14, marginBottom: 14 },
+  content:      { paddingHorizontal: 20, paddingTop: 20 },
+  pageTitle:    { color: C.text, fontSize: 28, fontWeight: '800', marginBottom: 16, letterSpacing: 0.3 },
+
+  // Cards
+  card:         { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 14 },
   identityRow:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar:       { width: 56, height: 56, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  avatarText:   { color: COLORS.text, fontSize: 22, fontWeight: '700' },
+  avatar:       { width: 56, height: 56, borderRadius: 14, backgroundColor: C.primary, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  avatarText:   { color: C.text, fontSize: 22, fontWeight: '700' },
   identityText: { flex: 1 },
-  name:         { color: COLORS.text, fontSize: 24, fontWeight: '700' },
-  meta:         { color: COLORS.muted, fontSize: 14, marginTop: 2 },
-  sectionTitle: { color: COLORS.text, fontSize: 21, fontWeight: '700', marginBottom: 8 },
-  infoRow:      { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 10 },
-  label:        { color: COLORS.muted, fontSize: 15 },
-  value:        { color: COLORS.text, fontSize: 15, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
+  name:         { color: C.text, fontSize: 22, fontWeight: '700' },
+  meta:         { color: C.muted, fontSize: 14, marginTop: 2 },
+  sectionTitle: { color: C.text, fontSize: 20, fontWeight: '700', marginBottom: 10 },
+  infoRow:      { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 10, borderBottomWidth: 1, borderBottomColor: C.divider },
+  infoLabel:    { color: C.muted, fontSize: 14 },
+  infoValue:    { color: C.text, fontSize: 14, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
   statsRow:     { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   statBox:      { alignItems: 'center', flex: 1 },
-  statNumber:   { color: COLORS.text, fontSize: 20, fontWeight: '700' },
-  statLabel:    { color: COLORS.muted, fontSize: 13, marginTop: 4 },
-  postCard:      { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 18, marginBottom: 16 },
-  postHeader:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
-  postAvatar:    { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  postAvatarText:{ color: COLORS.text, fontWeight: '800', fontSize: 16 },
-  postAuthor:    { color: COLORS.text, fontWeight: '800', fontSize: 16 },
+  statNumber:   { color: C.text, fontSize: 22, fontWeight: '800' },
+  statLabel:    { color: C.muted, fontSize: 13, marginTop: 4 },
+
+  // Theme toggle — sign-in input style
+  themeToggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 14 },
+  themeToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  themeIconBox:    { width: 44, height: 44, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  themeTextBox:    { flex: 1 },
+  themeTitle:      { color: C.text, fontSize: 15, fontWeight: '700' },
+  themeSub:        { color: C.mutedDark, fontSize: 12, marginTop: 3 },
+  themeModeText:   { color: C.primaryGlow, fontSize: 13, fontWeight: '700', marginRight: 8 },
+
+  // Admin / logout
+  adminButton:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: C.primary },
+  adminButtonText: { color: C.text, fontSize: 14, fontWeight: '700' },
+  logoutButton:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: `${C.danger}1A`, borderWidth: 1, borderColor: `${C.danger}33` },
+  logoutText:      { color: C.danger, fontSize: 14, fontWeight: '600' },
+  logoutOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
+  logoutBox:       { width: '80%', backgroundColor: C.surface, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: C.border },
+  modalBtn:        { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+
+  // Post cards
+  postCard:      { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 16, marginBottom: 14 },
+  postHeader:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
+  postAvatar:    { width: 46, height: 46, borderRadius: 23, backgroundColor: C.primary, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  postAvatarText:{ color: C.text, fontWeight: '800', fontSize: 15 },
+  postAuthor:    { color: C.text, fontWeight: '800', fontSize: 15 },
   postMetaRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' },
-  postVehicle:   { color: '#5da0ff', fontSize: 14 },
-  postDot:       { color: COLORS.mutedDark, fontSize: 14 },
-  postTime:      { color: COLORS.mutedDark, fontSize: 14 },
-  postContent:   { color: COLORS.muted, fontSize: 17, lineHeight: 28, marginBottom: 12 },
-  tagsRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  tagPill:       { backgroundColor: COLORS.surfaceLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  tagText:       { color: COLORS.primary, fontSize: 13, fontWeight: '600' },
-  actionsDivider:{ height: 1, backgroundColor: COLORS.divider, marginBottom: 14 },
+  postVehicle:   { color: C.primaryGlow, fontSize: 13 },
+  postDot:       { color: C.mutedDark, fontSize: 13 },
+  postTime:      { color: C.mutedDark, fontSize: 13 },
+  postContent:   { color: C.muted, fontSize: 15, lineHeight: 24, marginBottom: 12 },
+  tagsRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  tagPill:       { backgroundColor: `${C.primary}1F`, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
+  tagText:       { color: C.primaryGlow, fontSize: 12, fontWeight: '600' },
+  actionsDivider:{ height: 1, backgroundColor: C.divider, marginBottom: 12 },
   actionsRow:    { flexDirection: 'row', alignItems: 'center' },
-  actionButton:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 26 },
-  actionText:    { color: COLORS.muted, fontSize: 16 },
-  actionTextActive: { color: COLORS.primary, fontWeight: '700' },
+  actionButton:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 24 },
+  actionText:    { color: C.muted, fontSize: 15 },
+  actionTextActive: { color: C.primaryGlow, fontWeight: '700' },
   dotsBtn:       { padding: 6 },
+
+  // Comments
   commentsWrap:     { marginTop: 10, gap: 10 },
-  commentItem:      { backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 10, gap: 6 },
+  commentItem:      { backgroundColor: C.input, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10, gap: 6 },
   commentHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  commentAuthor:    { color: COLORS.text, fontSize: 13, fontWeight: '700' },
-  commentText:      { color: COLORS.muted, fontSize: 14, lineHeight: 20 },
-  commentTime:      { color: COLORS.mutedDark, fontSize: 11 },
+  commentAuthor:    { color: C.text, fontSize: 13, fontWeight: '700' },
+  commentText:      { color: C.muted, fontSize: 14, lineHeight: 20 },
+  commentTime:      { color: C.mutedDark, fontSize: 11 },
   replyTrigger:     { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  replyTriggerText: { color: COLORS.primary, fontSize: 12, fontWeight: '700' },
-  repliesWrap:      { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: COLORS.primary, gap: 8 },
-  replyItem:        { backgroundColor: COLORS.input, borderRadius: 10, padding: 8, gap: 4 },
-  editInput:        { backgroundColor: COLORS.input, borderRadius: 10, padding: 10, color: COLORS.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
+  replyTriggerText: { color: C.primaryGlow, fontSize: 12, fontWeight: '700' },
+  repliesWrap:      { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: C.border, gap: 8 },
+  replyItem:        { backgroundColor: C.surfaceLight, borderRadius: 10, padding: 8, gap: 4 },
+  editInput:        { backgroundColor: C.input, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 10, color: C.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
   editActions:      { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
-  cancelEditText:   { color: COLORS.muted, fontSize: 13, fontWeight: '700', paddingVertical: 6 },
-  saveEditBtn:      { backgroundColor: COLORS.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
-  saveEditText:     { color: COLORS.text, fontSize: 13, fontWeight: '700' },
+  cancelEditText:   { color: C.muted, fontSize: 13, fontWeight: '700', paddingVertical: 6 },
+  saveEditBtn:      { backgroundColor: C.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
+  saveEditText:     { color: C.text, fontSize: 13, fontWeight: '700' },
   commentInputRow:  { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
-  commentInput:     { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 14, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
-  sendButton:       { width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
-  modalOverlay:    { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.58)' },
-  composerSheet:   { backgroundColor: COLORS.surface, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 20, paddingTop: 18, borderWidth: 1, borderColor: COLORS.border, maxHeight: '90%' },
-  sheetHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
-  sheetTitle:      { color: COLORS.text, fontSize: 20, fontWeight: '800' },
-  closeButton:     { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.input, alignItems: 'center', justifyContent: 'center' },
-  composerInput:   { minHeight: 120, borderRadius: 16, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, lineHeight: 23, marginBottom: 14 },
-  sheetLabel:      { color: COLORS.muted, fontSize: 14, fontWeight: '700', marginBottom: 10 },
-  tagsInput:       { height: 44, borderRadius: 12, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 12, fontSize: 14, marginBottom: 14 },
-  publishButton:         { height: 54, borderRadius: 17, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  commentInput:     { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  sendButton:       { width: 42, height: 42, borderRadius: 12, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
+
+  // Modals
+  modalOverlay:  { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)' },
+  composerSheet: { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 14, borderWidth: 1, borderColor: C.border, maxHeight: '90%' },
+  sheetHandle:   { width: 40, height: 4, backgroundColor: C.border, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  sheetHeader:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  sheetTitle:    { color: C.text, fontSize: 20, fontWeight: '800', letterSpacing: 0.3 },
+  closeButton:   { width: 34, height: 34, borderRadius: 17, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  composerInput: { minHeight: 120, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, lineHeight: 22, marginBottom: 14 },
+  sheetLabel:    { fontSize: 13, fontWeight: '600', color: C.muted, marginBottom: 8, marginTop: 4 },
+  tagsInput:     { height: 52, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, fontSize: 15, marginBottom: 14 },
+  publishButton:         { height: 54, borderRadius: 14, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 8, marginTop: 8 },
   publishButtonDisabled: { opacity: 0.45 },
-  publishButtonText:     { color: COLORS.text, fontSize: 17, fontWeight: '800' },
-  backdrop:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  sheet:        { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: COLORS.border },
-  handle:       { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 20, opacity: 0.5 },
+  publishButtonText:     { color: C.text, fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  backdrop:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+  sheet:     { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: C.border },
+  handle:    { width: 40, height: 4, backgroundColor: C.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   optionRow:    { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
   iconWrap:     { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   optionText:   { flex: 1 },
-  optionLabel:  { color: COLORS.text, fontSize: 15, fontWeight: '700' },
-  optionSub:    { color: COLORS.mutedDark, fontSize: 12, marginTop: 2 },
-  separator:    { height: 1, backgroundColor: COLORS.divider, marginVertical: 4 },
-  cancelBtn:    { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
-  cancelText:   { color: COLORS.muted, fontSize: 15, fontWeight: '700' },
-  confirmIcon:  { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(239,68,68,0.12)', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
-  confirmTitle: { color: COLORS.text, fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
-  confirmSub:   { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
-  deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
-  deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: '800' },
-  adminButton:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, backgroundColor: '#3268f7' },
-  adminButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  logoutButton:  { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(239,68,68,0.08)' },
-  logoutText:    { color: COLORS.danger, fontSize: 14, fontWeight: '600' },
-  logoutOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
-  logoutBox:     { width: '80%', backgroundColor: COLORS.surface, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
-  themeToggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 14, marginBottom: 14 },
-  themeToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  themeIconBox: { width: 44, height: 44, borderRadius: 12, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
-  themeTextBox: { flex: 1 },
-  themeTitle: { color: COLORS.text, fontSize: 16, fontWeight: '700' },
-  themeSub: { color: COLORS.mutedDark, fontSize: 12, marginTop: 3 },
-  themeModeText: { color: COLORS.primary, fontSize: 13, fontWeight: '700', marginRight: 8 },
-  modalBtn:      { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  optionLabel:  { color: C.text, fontSize: 15, fontWeight: '700' },
+  optionSub:    { color: C.mutedDark, fontSize: 12, marginTop: 2 },
+  separator:    { height: 1, backgroundColor: C.divider, marginVertical: 4 },
+  cancelBtn:    { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  cancelText:   { color: C.muted, fontSize: 15, fontWeight: '700' },
+  confirmIcon:  { width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.danger}1F`, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
+  confirmTitle: { color: C.text, fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
+  confirmSub:   { color: C.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center' },
+  deleteBtnText:{ color: C.text, fontSize: 15, fontWeight: '800' },
 });

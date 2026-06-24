@@ -16,12 +16,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
 import { NotificationBell } from "@/components/notification-bell";
-import { useThemeColors, AppColors } from "@/context/theme-context";
+import { useAppTheme, useThemeColors } from "@/context/theme-context";
+
+type ThemeColors = ReturnType<typeof useThemeColors>;
 
 /* ════════════════════════════════════════
    TYPES
@@ -152,8 +155,9 @@ function normalizePost(p: ApiPost, myUserId: string, myName: string, followedAut
 
 export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
-  const COLORS = useThemeColors();
-  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const C = useThemeColors();
+  const { isDark } = useAppTheme();
+  const styles = useMemo(() => createStyles(C), [C]);
   const { profile } = useUserProfile();
   const [myUserId, setMyUserId] = useState("");
   const [activeFilter, setActiveFilter] = useState<BrandFilter>("All");
@@ -182,17 +186,17 @@ export default function CommunityScreen() {
   const myVehicle = profile.vehicle
     ? [profile.vehicle.brand, profile.vehicle.model, profile.vehicle.year].filter(Boolean).join(" ")
     : "";
-    const [myRole, setMyRole] = useState<'user' | 'admin'>('user');
+  const [myRole, setMyRole] = useState<'user' | 'admin'>('user');
 
-    useEffect(() => {
-      AsyncStorage.getItem('access_token').then(raw => {
-        try {
-          const token   = raw?.replace(/"/g, '') ?? '';
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          setMyRole(payload.role === 'admin' ? 'admin' : 'user');
-        } catch { setMyRole('user'); }
-      });
-    }, []);
+  useEffect(() => {
+    AsyncStorage.getItem('access_token').then(raw => {
+      try {
+        const token   = raw?.replace(/"/g, '') ?? '';
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setMyRole(payload.role === 'admin' ? 'admin' : 'user');
+      } catch { setMyRole('user'); }
+    });
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem("userId").then(id => setMyUserId(id?.replace(/"/g, "") ?? ""));
@@ -476,15 +480,29 @@ export default function CommunityScreen() {
   ════════════════════════════════════════ */
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Same gradient as sign-in - Dark Mode only */}
+      {isDark && (
+        <LinearGradient
+          colors={['#0f2040', '#0d1a35', '#0a1225', '#080A0F']}
+          locations={[0, 0.25, 0.55, 1]}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      )}
+
       <View style={styles.header}>
-        <Text style={styles.title}>Community</Text>
+        <Text style={styles.title}>
+          Auto<Text style={styles.titleAccent}>Care</Text>
+          <Text style={styles.titleSub}> · Community</Text>
+        </Text>
         <View style={styles.headerActions}>
-          <NotificationBell iconSize={20} color={COLORS.text} />
+          <NotificationBell iconSize={20} color={C.text} />
           <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => router.push("/account")}>
-            <Ionicons name="person-outline" size={20} color={COLORS.text} />
+            <Ionicons name="person-outline" size={20} color={C.text} />
           </Pressable>
         </View>
       </View>
+
       <View style={styles.divider} />
 
       <ScrollView
@@ -499,7 +517,7 @@ export default function CommunityScreen() {
         scrollEventThrottle={400}
       >
         <Pressable style={styles.createButton} onPress={() => setComposerVisible(true)}>
-          <Ionicons name="add" size={28} color={COLORS.text} />
+          <Ionicons name="add" size={26} color={C.text} />
           <Text style={styles.createButtonText}>Create Post</Text>
         </Pressable>
 
@@ -512,7 +530,7 @@ export default function CommunityScreen() {
         </ScrollView>
 
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} size="large" style={{ marginTop: 40 }} />
+          <ActivityIndicator color={C.primarySoft} size="large" style={{ marginTop: 40 }} />
         ) : filteredPosts.length > 0 ? (
           <>
             {filteredPosts.map(post => (
@@ -532,11 +550,11 @@ export default function CommunityScreen() {
                 onRate={v                  => handleRate(post.id, v)}
               />
             ))}
-            {loadingMore && <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 16 }} />}
+            {loadingMore && <ActivityIndicator color={C.primarySoft} style={{ marginVertical: 16 }} />}
           </>
         ) : (
           <View style={styles.emptyCard}>
-            <Ionicons name="chatbubbles-outline" size={34} color={COLORS.muted} />
+            <Ionicons name="chatbubbles-outline" size={34} color={C.mutedDark} />
             <Text style={styles.emptyTitle}>No posts yet</Text>
             <Text style={styles.emptyText}>Be the first one to share a post{activeFilter !== "All" ? ` for ${activeFilter} owners` : ""}.</Text>
           </View>
@@ -550,10 +568,11 @@ export default function CommunityScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setComposerVisible(false)} />
           <View style={[styles.composerSheet, { paddingBottom: insets.bottom + 18 }]}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Create Post</Text>
               <Pressable style={styles.closeButton} onPress={() => setComposerVisible(false)} hitSlop={10}>
-                <Ionicons name="close" size={22} color={COLORS.text} />
+                <Ionicons name="close" size={22} color={C.text} />
               </Pressable>
             </View>
             <View style={styles.composerIdentityRow}>
@@ -566,14 +585,14 @@ export default function CommunityScreen() {
               </View>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <TextInput style={styles.composerInput} placeholder="Write your post..." placeholderTextColor={COLORS.mutedDark} value={newPostText} onChangeText={setNewPostText} multiline textAlignVertical="top" />
+              <TextInput style={styles.composerInput} placeholder="Write your post..." placeholderTextColor={C.mutedDark} value={newPostText} onChangeText={setNewPostText} multiline textAlignVertical="top" />
               <Text style={styles.sheetLabel}>Tags (comma separated)</Text>
-              <TextInput style={styles.tagsInput} placeholder="e.g. oil, maintenance, tips" placeholderTextColor={COLORS.mutedDark} value={newPostTags} onChangeText={setNewPostTags} />
+              <TextInput style={styles.tagsInput} placeholder="e.g. oil, maintenance, tips" placeholderTextColor={C.mutedDark} value={newPostTags} onChangeText={setNewPostTags} />
               <Text style={styles.sheetLabel}>Comments</Text>
               <View style={styles.toggleRow}>
                 {(["allow","disable"] as AllowComments[]).map(opt => (
                   <Pressable key={opt} style={[styles.togglePill, newPostAllowComments === opt && styles.togglePillActive]} onPress={() => setNewPostAllowComments(opt)}>
-                    <Ionicons name={opt === "allow" ? "chatbubble-outline" : "chatbubble-ellipses-outline"} size={13} color={newPostAllowComments === opt ? COLORS.text : COLORS.muted} />
+                    <Ionicons name={opt === "allow" ? "chatbubble-outline" : "chatbubble-ellipses-outline"} size={13} color={newPostAllowComments === opt ? C.text : C.muted} />
                     <Text style={[styles.toggleText, newPostAllowComments === opt && styles.toggleTextActive]}>{opt === "allow" ? "Allow" : "Disable"}</Text>
                   </Pressable>
                 ))}
@@ -582,13 +601,13 @@ export default function CommunityScreen() {
               <View style={styles.toggleRow}>
                 {AVAIL_OPTIONS.map(opt => (
                   <Pressable key={opt.value} style={[styles.togglePill, newPostAvailability === opt.value && styles.togglePillActive]} onPress={() => setNewPostAvailability(opt.value)}>
-                    <Ionicons name={opt.icon as any} size={13} color={newPostAvailability === opt.value ? COLORS.text : COLORS.muted} />
+                    <Ionicons name={opt.icon as any} size={13} color={newPostAvailability === opt.value ? C.text : C.muted} />
                     <Text style={[styles.toggleText, newPostAvailability === opt.value && styles.toggleTextActive]}>{opt.label}</Text>
                   </Pressable>
                 ))}
               </View>
               <Pressable style={[styles.publishButton, (!newPostText.trim() || publishing) && styles.publishButtonDisabled]} onPress={handleCreatePost} disabled={!newPostText.trim() || publishing}>
-                {publishing ? <ActivityIndicator color={COLORS.text} size="small" /> : <Text style={styles.publishButtonText}>Publish</Text>}
+                {publishing ? <ActivityIndicator color={C.text} size="small" /> : <Text style={styles.publishButtonText}>Publish</Text>}
               </Pressable>
             </ScrollView>
           </View>
@@ -600,18 +619,19 @@ export default function CommunityScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.modalOverlay}>
           <Pressable style={styles.modalBackdrop} onPress={() => setEditPostId(null)} />
           <View style={[styles.composerSheet, { paddingBottom: insets.bottom + 18 }]}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Edit Post</Text>
               <Pressable style={styles.closeButton} onPress={() => setEditPostId(null)} hitSlop={10}>
-                <Ionicons name="close" size={22} color={COLORS.text} />
+                <Ionicons name="close" size={22} color={C.text} />
               </Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <TextInput style={styles.composerInput} value={editPostText} onChangeText={setEditPostText} multiline textAlignVertical="top" placeholderTextColor={COLORS.mutedDark} />
+              <TextInput style={styles.composerInput} value={editPostText} onChangeText={setEditPostText} multiline textAlignVertical="top" placeholderTextColor={C.mutedDark} />
               <Text style={styles.sheetLabel}>Tags (comma separated)</Text>
-              <TextInput style={styles.tagsInput} placeholder="e.g. oil, maintenance, tips" placeholderTextColor={COLORS.mutedDark} value={editPostTags} onChangeText={setEditPostTags} />
+              <TextInput style={styles.tagsInput} placeholder="e.g. oil, maintenance, tips" placeholderTextColor={C.mutedDark} value={editPostTags} onChangeText={setEditPostTags} />
               <Pressable style={[styles.publishButton, (!editPostText.trim() || saving) && styles.publishButtonDisabled]} onPress={handleSaveEditPost} disabled={!editPostText.trim() || saving}>
-                {saving ? <ActivityIndicator color={COLORS.text} size="small" /> : <Text style={styles.publishButtonText}>Save Changes</Text>}
+                {saving ? <ActivityIndicator color={C.text} size="small" /> : <Text style={styles.publishButtonText}>Save Changes</Text>}
               </Pressable>
             </ScrollView>
           </View>
@@ -630,8 +650,8 @@ function StarRating({
   rating: PostRating; postId: string; isMyPost: boolean; isPending: boolean;
   onRate: (value: number) => void;
 }) {
-  const COLORS = useThemeColors();
-  const starStyles = useMemo(() => createStarStyles(COLORS), [COLORS]);
+  const C = useThemeColors();
+  const starStyles = useMemo(() => createStarStyles(C), [C]);
   const canRate = !isMyPost && !isPending;
 
   return (
@@ -653,7 +673,7 @@ function StarRating({
               <Ionicons
                 name={filled ? "star" : "star-outline"}
                 size={18}
-                color={isMine ? COLORS.star : filled ? `${COLORS.star}99` : COLORS.starEmpty}
+                color={isMine ? C.star : filled ? `${C.star}99` : C.starEmpty}
               />
             </Pressable>
           );
@@ -679,17 +699,16 @@ function StarRating({
   );
 }
 
-const createStarStyles = (COLORS: AppColors) =>
-  StyleSheet.create({
+const createStarStyles = (C: ThemeColors) => StyleSheet.create({
   wrap:        { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12, marginBottom: 4 },
   starsRow:    { flexDirection: "row", alignItems: "center", gap: 3 },
   star:        { padding: 2 },
   info:        { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
-  avg:         { color: COLORS.star, fontSize: 14, fontWeight: "700" },
-  count:       { color: COLORS.mutedDark, fontSize: 13 },
-  noRating:    { color: COLORS.mutedDark, fontSize: 12 },
+  avg:         { color: C.star, fontSize: 14, fontWeight: "700" },
+  count:       { color: C.mutedDark, fontSize: 13 },
+  noRating:    { color: C.mutedDark, fontSize: 12 },
   myBadge:     { backgroundColor: "rgba(245,158,11,0.12)", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2, borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" },
-  myBadgeText: { color: COLORS.star, fontSize: 11, fontWeight: "700" },
+  myBadgeText: { color: C.star, fontSize: 11, fontWeight: "700" },
 });
 
 /* ════════════════════════════════════════
@@ -715,8 +734,8 @@ function CommunityPostCard({
   onMounted: () => void;
   onRate: (value: number) => void;
 }) {
-  const COLORS = useThemeColors();
-  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const C = useThemeColors();
+  const styles = useMemo(() => createStyles(C), [C]);
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [commentText,     setCommentText]     = useState("");
   const [showOptions,     setShowOptions]     = useState(false);
@@ -740,7 +759,7 @@ function CommunityPostCard({
             {isPending && <View style={styles.pendingBadge}><Text style={styles.pendingText}>Pending approval</Text></View>}
             {!isMyPost && !isPending && (
               <Pressable style={[styles.followBtn, post.followedAuthor && styles.followBtnActive]} onPress={onToggleFollow}>
-                <Ionicons name={post.followedAuthor ? "checkmark" : "person-add-outline"} size={12} color={post.followedAuthor ? COLORS.text : COLORS.primary} />
+                <Ionicons name={post.followedAuthor ? "checkmark" : "person-add-outline"} size={12} color={post.followedAuthor ? C.text : C.primarySoft} />
                 <Text style={[styles.followText, post.followedAuthor && styles.followTextActive]}>{post.followedAuthor ? "Following" : "Follow"}</Text>
               </Pressable>
             )}
@@ -749,12 +768,12 @@ function CommunityPostCard({
             {!!post.vehicle && <><Text style={styles.vehicle}>{post.vehicle}</Text><Text style={styles.dot}>•</Text></>}
             <Text style={styles.time}>{post.createdAtLabel}</Text>
             <Text style={styles.dot}>•</Text>
-            <Ionicons name={availIcon as any} size={12} color={COLORS.mutedDark} />
+            <Ionicons name={availIcon as any} size={12} color={C.mutedDark} />
           </View>
         </View>
         {isMyPost && !isPending && (
           <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={12} style={styles.dotsBtn}>
-            <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.muted} />
+            <Ionicons name="ellipsis-horizontal" size={20} color={C.muted} />
           </Pressable>
         )}
       </View>
@@ -787,12 +806,12 @@ function CommunityPostCard({
 
       <View style={[styles.actionsRow, isPending && { opacity: 0.4 }]}>
         <Pressable style={styles.actionButton} onPress={onToggleLike} disabled={isPending}>
-          <Ionicons name={post.likedByMe ? "heart" : "heart-outline"} size={25} color={post.likedByMe ? COLORS.primary : COLORS.muted} />
+          <Ionicons name={post.likedByMe ? "heart" : "heart-outline"} size={25} color={post.likedByMe ? C.primarySoft : C.muted} />
           <Text style={[styles.actionText, post.likedByMe && styles.actionTextActive]}>{post.likes}</Text>
         </Pressable>
         {post.allowComments === "allow" && (
           <Pressable style={styles.actionButton} onPress={() => setCommentsVisible(v => !v)} disabled={isPending}>
-            <Ionicons name="chatbubble-outline" size={24} color={COLORS.muted} />
+            <Ionicons name="chatbubble-outline" size={24} color={C.muted} />
             <Text style={styles.actionText}>{post.comments.length}</Text>
           </Pressable>
         )}
@@ -800,10 +819,10 @@ function CommunityPostCard({
 
       {post.allowComments === "allow" && !isPending && (
         <>
-          <View style={[styles.commentInputRow, { marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.divider, paddingTop: 12 }]}>
-            <TextInput style={styles.commentInput} placeholder="Write a comment..." placeholderTextColor={COLORS.mutedDark} value={commentText} onChangeText={setCommentText} multiline />
+          <View style={[styles.commentInputRow, { marginTop: 14, borderTopWidth: 1, borderTopColor: C.divider, paddingTop: 12 }]}>
+            <TextInput style={styles.commentInput} placeholder="Write a comment..." placeholderTextColor={C.mutedDark} value={commentText} onChangeText={setCommentText} multiline />
             <Pressable style={styles.sendButton} onPress={handleSendComment}>
-              <Ionicons name="send" size={18} color={COLORS.text} />
+              <Ionicons name="send" size={18} color={C.text} />
             </Pressable>
           </View>
           {commentsVisible && (
@@ -830,26 +849,26 @@ function CommunityPostCard({
                 <View style={styles.handle} />
                 <Text style={styles.sheetTitle}>Post Options</Text>
                 <Pressable style={styles.optionRow} onPress={() => { handleCloseOptions(); onEdit(); }}>
-                  <View style={[styles.iconWrap, { backgroundColor: "rgba(50,104,247,0.12)" }]}>
-                    <Ionicons name="create-outline" size={20} color={COLORS.primary} />
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.primary}26` }]}>
+                    <Ionicons name="create-outline" size={20} color={C.primarySoft} />
                   </View>
                   <View style={styles.optionText}><Text style={styles.optionLabel}>Edit Post</Text><Text style={styles.optionSub}>Change your post content</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <View style={styles.separator} />
                 <Pressable style={styles.optionRow} onPress={() => setConfirmDelete(true)}>
                   <View style={[styles.iconWrap, { backgroundColor: "rgba(239,68,68,0.12)" }]}>
-                    <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+                    <Ionicons name="trash-outline" size={20} color={C.danger} />
                   </View>
-                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: COLORS.danger }]}>Delete Post</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: C.danger }]}>Delete Post</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <Pressable style={styles.cancelBtn} onPress={handleCloseOptions}><Text style={styles.cancelText}>Cancel</Text></Pressable>
               </>
             ) : (
               <>
                 <View style={styles.handle} />
-                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={COLORS.danger} /></View>
+                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={C.danger} /></View>
                 <Text style={styles.confirmTitle}>Delete Post?</Text>
                 <Text style={styles.confirmSub}>This post will be permanently deleted and cannot be recovered.</Text>
                 <Pressable style={styles.deleteBtn} onPress={() => { handleCloseOptions(); onDelete(); }}><Text style={styles.deleteBtnText}>Yes, Delete</Text></Pressable>
@@ -871,8 +890,8 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
   onEdit: (t: string) => void; onDelete: () => void;
   onAddReply: (t: string) => void; onEditReply: (rId: string, t: string) => void; onDeleteReply: (rId: string) => void;
 }) {
-  const COLORS = useThemeColors();
-  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const C = useThemeColors();
+  const styles = useMemo(() => createStyles(C), [C]);
   const [repliesVisible, setRepliesVisible] = useState(false);
   const [replyText,      setReplyText]      = useState("");
   const [editing,        setEditing]        = useState(false);
@@ -887,7 +906,7 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
     <View style={styles.commentItem}>
       {editing ? (
         <View>
-          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline placeholderTextColor={COLORS.mutedDark} autoFocus />
+          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline placeholderTextColor={C.mutedDark} autoFocus />
           <View style={styles.editActions}>
             <Pressable onPress={() => setEditing(false)}><Text style={styles.cancelEditText}>Cancel</Text></Pressable>
             <Pressable style={styles.saveEditBtn} onPress={() => { onEdit(editText); setEditing(false); }}><Text style={styles.saveEditText}>Save</Text></Pressable>
@@ -901,14 +920,14 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
               <Text style={styles.commentTime}>{comment.createdAtLabel}</Text>
               {isMyComment && (
                 <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={8}>
-                  <Ionicons name="ellipsis-horizontal" size={16} color={COLORS.mutedDark} />
+                  <Ionicons name="ellipsis-horizontal" size={16} color={C.mutedDark} />
                 </Pressable>
               )}
             </View>
           </View>
           <Text style={styles.commentText}>{comment.text}</Text>
           <Pressable style={styles.replyTrigger} onPress={() => setRepliesVisible(v => !v)}>
-            <Ionicons name="return-down-forward-outline" size={13} color={COLORS.primary} />
+            <Ionicons name="return-down-forward-outline" size={13} color={C.primarySoft} />
             <Text style={styles.replyTriggerText}>{repliesVisible ? "Hide replies" : `Reply${comment.replies.length > 0 ? ` (${comment.replies.length})` : ""}`}</Text>
           </Pressable>
         </>
@@ -919,8 +938,8 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
             <ReplyItem key={reply.id} reply={reply} myUserId={myUserId} onEdit={t => onEditReply(reply.id, t)} onDelete={() => onDeleteReply(reply.id)} />
           ))}
           <View style={styles.commentInputRow}>
-            <TextInput style={styles.commentInput} placeholder="Write a reply..." placeholderTextColor={COLORS.mutedDark} value={replyText} onChangeText={setReplyText} multiline />
-            <Pressable style={styles.sendButton} onPress={handleSendReply}><Ionicons name="send" size={16} color={COLORS.text} /></Pressable>
+            <TextInput style={styles.commentInput} placeholder="Write a reply..." placeholderTextColor={C.mutedDark} value={replyText} onChangeText={setReplyText} multiline />
+            <Pressable style={styles.sendButton} onPress={handleSendReply}><Ionicons name="send" size={16} color={C.text} /></Pressable>
           </View>
         </View>
       )}
@@ -932,22 +951,22 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
                 <View style={styles.handle} />
                 <Text style={styles.sheetTitle}>Comment Options</Text>
                 <Pressable style={styles.optionRow} onPress={() => { setEditText(comment.text); handleCloseOptions(); setEditing(true); }}>
-                  <View style={[styles.iconWrap, { backgroundColor: "rgba(50,104,247,0.12)" }]}><Ionicons name="create-outline" size={20} color={COLORS.primary} /></View>
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.primary}26` }]}><Ionicons name="create-outline" size={20} color={C.primarySoft} /></View>
                   <View style={styles.optionText}><Text style={styles.optionLabel}>Edit Comment</Text><Text style={styles.optionSub}>Change your comment</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <View style={styles.separator} />
                 <Pressable style={styles.optionRow} onPress={() => setConfirmDelete(true)}>
-                  <View style={[styles.iconWrap, { backgroundColor: "rgba(239,68,68,0.12)" }]}><Ionicons name="trash-outline" size={20} color={COLORS.danger} /></View>
-                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: COLORS.danger }]}>Delete Comment</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={[styles.iconWrap, { backgroundColor: "rgba(239,68,68,0.12)" }]}><Ionicons name="trash-outline" size={20} color={C.danger} /></View>
+                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: C.danger }]}>Delete Comment</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <Pressable style={styles.cancelBtn} onPress={handleCloseOptions}><Text style={styles.cancelText}>Cancel</Text></Pressable>
               </>
             ) : (
               <>
                 <View style={styles.handle} />
-                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={COLORS.danger} /></View>
+                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={C.danger} /></View>
                 <Text style={styles.confirmTitle}>Delete Comment?</Text>
                 <Text style={styles.confirmSub}>This comment will be permanently deleted and cannot be recovered.</Text>
                 <Pressable style={styles.deleteBtn} onPress={() => { handleCloseOptions(); onDelete(); }}><Text style={styles.deleteBtnText}>Yes, Delete</Text></Pressable>
@@ -967,8 +986,8 @@ function CommentItem({ comment, myUserId, onEdit, onDelete, onAddReply, onEditRe
 function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
   reply: CommunityReply; myUserId: string; onEdit: (t: string) => void; onDelete: () => void;
 }) {
-  const COLORS = useThemeColors();
-  const styles = useMemo(() => createStyles(COLORS), [COLORS]);
+  const C = useThemeColors();
+  const styles = useMemo(() => createStyles(C), [C]);
   const [editing,       setEditing]       = useState(false);
   const [editText,      setEditText]      = useState(reply.text);
   const [showOptions,   setShowOptions]   = useState(false);
@@ -980,7 +999,7 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
     <View style={styles.replyItem}>
       {editing ? (
         <View>
-          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline placeholderTextColor={COLORS.mutedDark} autoFocus />
+          <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} multiline placeholderTextColor={C.mutedDark} autoFocus />
           <View style={styles.editActions}>
             <Pressable onPress={() => setEditing(false)}><Text style={styles.cancelEditText}>Cancel</Text></Pressable>
             <Pressable style={styles.saveEditBtn} onPress={() => { onEdit(editText); setEditing(false); }}><Text style={styles.saveEditText}>Save</Text></Pressable>
@@ -994,7 +1013,7 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
               <Text style={styles.commentTime}>{reply.createdAtLabel}</Text>
               {isMyReply && (
                 <Pressable onPress={() => { setConfirmDelete(false); setShowOptions(true); }} hitSlop={8}>
-                  <Ionicons name="ellipsis-horizontal" size={14} color={COLORS.mutedDark} />
+                  <Ionicons name="ellipsis-horizontal" size={14} color={C.mutedDark} />
                 </Pressable>
               )}
             </View>
@@ -1010,22 +1029,22 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
                 <View style={styles.handle} />
                 <Text style={styles.sheetTitle}>Reply Options</Text>
                 <Pressable style={styles.optionRow} onPress={() => { setEditText(reply.text); handleCloseOptions(); setEditing(true); }}>
-                  <View style={[styles.iconWrap, { backgroundColor: "rgba(50,104,247,0.12)" }]}><Ionicons name="create-outline" size={20} color={COLORS.primary} /></View>
+                  <View style={[styles.iconWrap, { backgroundColor: `${C.primary}26` }]}><Ionicons name="create-outline" size={20} color={C.primarySoft} /></View>
                   <View style={styles.optionText}><Text style={styles.optionLabel}>Edit Reply</Text><Text style={styles.optionSub}>Change your reply</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <View style={styles.separator} />
                 <Pressable style={styles.optionRow} onPress={() => setConfirmDelete(true)}>
-                  <View style={[styles.iconWrap, { backgroundColor: "rgba(239,68,68,0.12)" }]}><Ionicons name="trash-outline" size={20} color={COLORS.danger} /></View>
-                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: COLORS.danger }]}>Delete Reply</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
-                  <Ionicons name="chevron-forward" size={16} color={COLORS.mutedDark} />
+                  <View style={[styles.iconWrap, { backgroundColor: "rgba(239,68,68,0.12)" }]}><Ionicons name="trash-outline" size={20} color={C.danger} /></View>
+                  <View style={styles.optionText}><Text style={[styles.optionLabel, { color: C.danger }]}>Delete Reply</Text><Text style={styles.optionSub}>This action cannot be undone</Text></View>
+                  <Ionicons name="chevron-forward" size={16} color={C.mutedDark} />
                 </Pressable>
                 <Pressable style={styles.cancelBtn} onPress={handleCloseOptions}><Text style={styles.cancelText}>Cancel</Text></Pressable>
               </>
             ) : (
               <>
                 <View style={styles.handle} />
-                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={COLORS.danger} /></View>
+                <View style={styles.confirmIcon}><Ionicons name="trash" size={32} color={C.danger} /></View>
                 <Text style={styles.confirmTitle}>Delete Reply?</Text>
                 <Text style={styles.confirmSub}>This reply will be permanently deleted and cannot be recovered.</Text>
                 <Pressable style={styles.deleteBtn} onPress={() => { handleCloseOptions(); onDelete(); }}><Text style={styles.deleteBtnText}>Yes, Delete</Text></Pressable>
@@ -1040,114 +1059,141 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
 }
 
 /* ════════════════════════════════════════
-   STYLES
+   STYLES — theme-aware palette
 ════════════════════════════════════════ */
-const createStyles = (COLORS: AppColors) =>
-  StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.background },
-  header:       { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  title:        { color: COLORS.text, fontSize: 24, fontWeight: "800" },
+const createStyles = (C: ThemeColors) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: C.background },
+
+  // Header — matches sign-in header bar
+  header:       { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 0 },
+  title:        { fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: 0.5 },
+  titleAccent:  { color: C.primarySoft },
+  titleSub:     { color: C.muted, fontWeight: '600', fontSize: 18 },
   headerActions:{ flexDirection: "row", alignItems: "center", gap: 16 },
-  headerIcon:   { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: COLORS.surfaceLight, borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
-  divider:      { height: 1, backgroundColor: COLORS.divider },
+  headerIcon:   { width: 36, height: 36, borderRadius: 18, borderWidth: 1, backgroundColor: C.input, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  divider:      { height: 1, backgroundColor: C.divider },
+
   scroll:       { flex: 1 },
   content:      { paddingTop: 20, paddingHorizontal: 20 },
-  createButton:     { height: 60, borderRadius: 17, backgroundColor: COLORS.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 },
-  createButtonText: { color: COLORS.text, fontSize: 17, fontWeight: "700" },
+
+  // Create button — same solid blue as sign-in button
+  createButton:     { height: 54, borderRadius: 14, backgroundColor: C.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 },
+  createButtonText: { color: C.text, fontSize: 16, fontWeight: "700", letterSpacing: 0.3 },
+
+  // Filter pills — matches sign-in input border style
   filtersRow:       { gap: 10, paddingBottom: 20 },
-  filterPill:       { minWidth: 68, height: 46, borderRadius: 23, paddingHorizontal: 18, borderWidth: 1, borderColor: "rgba(255,255,255,0.46)", alignItems: "center", justifyContent: "center" },
-  filterPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  filterText:       { color: COLORS.muted, fontSize: 15, fontWeight: "700" },
-  filterTextActive: { color: COLORS.text },
-  postCard:     { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 18, marginBottom: 16 },
+  filterPill:       { minWidth: 68, height: 40, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1, borderColor: C.border, backgroundColor: C.input, alignItems: "center", justifyContent: "center" },
+  filterPillActive: { backgroundColor: C.primary, borderColor: C.primary },
+  filterText:       { color: C.muted, fontSize: 14, fontWeight: "700" },
+  filterTextActive: { color: C.text },
+
+  // Post card — matches sign-in form surface
+  postCard:     { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 16, marginBottom: 14 },
   postHeader:   { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 14 },
-  avatar:       { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
-  avatarText:   { color: COLORS.text, fontSize: 18, fontWeight: "800" },
+  avatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: C.primary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.border },
+  avatarText:   { color: C.text, fontSize: 16, fontWeight: "800" },
   postIdentity: { flex: 1 },
   authorRow:    { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  author:       { color: COLORS.text, fontSize: 16, fontWeight: "800" },
-  followBtn:       { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: COLORS.primary },
-  followBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  followText:      { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
-  followTextActive:{ color: COLORS.text },
+  author:       { color: C.text, fontSize: 15, fontWeight: "800" },
+  followBtn:       { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1, borderColor: C.primarySoft },
+  followBtnActive: { backgroundColor: C.primary, borderColor: C.primary },
+  followText:      { color: C.primarySoft, fontSize: 12, fontWeight: "700" },
+  followTextActive:{ color: C.text },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3, flexWrap: "wrap" },
-  vehicle: { color: "#5da0ff", fontSize: 14 },
-  dot:     { color: COLORS.mutedDark, fontSize: 14 },
-  time:    { color: COLORS.mutedDark, fontSize: 14 },
-  postText: { color: COLORS.muted, fontSize: 17, lineHeight: 28, marginBottom: 12 },
+  vehicle: { color: C.primarySoft, fontSize: 13 },
+  dot:     { color: C.mutedDark, fontSize: 13 },
+  time:    { color: C.mutedDark, fontSize: 13 },
+  postText: { color: C.muted, fontSize: 15, lineHeight: 24, marginBottom: 12 },
   tagsRow:  { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  tagPill:  { backgroundColor: COLORS.surfaceLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  tagText:  { color: COLORS.primary, fontSize: 13, fontWeight: "600" },
+  tagPill:  { backgroundColor: `${C.primary}1F`, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
+  tagText:  { color: C.primarySoft, fontSize: 12, fontWeight: "600" },
   imagesGrid:    { width: "100%", height: 210, borderRadius: 12, overflow: "hidden", marginBottom: 16 },
   imagesGridTwo: { flexDirection: "row", gap: 8 },
-  postImage:     { flex: 1, width: "100%", height: "100%", backgroundColor: COLORS.input, borderRadius: 12 },
-  actionsDivider: { height: 1, backgroundColor: COLORS.divider, marginBottom: 14 },
+  postImage:     { flex: 1, width: "100%", height: "100%", backgroundColor: C.input, borderRadius: 12 },
+  actionsDivider: { height: 1, backgroundColor: C.divider, marginBottom: 12 },
   actionsRow:     { flexDirection: "row", alignItems: "center" },
   actionButton:   { flexDirection: "row", alignItems: "center", gap: 8, marginRight: 26 },
-  actionText:     { color: COLORS.muted, fontSize: 16 },
-  actionTextActive:{ color: COLORS.primary, fontWeight: "700" },
+  actionText:     { color: C.muted, fontSize: 15 },
+  actionTextActive:{ color: C.primarySoft, fontWeight: "700" },
   commentsWrap:  { marginTop: 10, gap: 10 },
-  commentItem:   { backgroundColor: COLORS.surfaceLight, borderRadius: 12, padding: 10, gap: 6 },
+
+  // Comment — matches input style
+  commentItem:   { backgroundColor: C.input, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10, gap: 6 },
   commentHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  commentAuthor: { color: COLORS.text, fontSize: 13, fontWeight: "700" },
-  commentText:   { color: COLORS.muted, fontSize: 14, lineHeight: 20 },
-  commentTime:   { color: COLORS.mutedDark, fontSize: 11 },
+  commentAuthor: { color: C.text, fontSize: 13, fontWeight: "700" },
+  commentText:   { color: C.muted, fontSize: 14, lineHeight: 20 },
+  commentTime:   { color: C.mutedDark, fontSize: 11 },
   replyTrigger:     { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  replyTriggerText: { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
-  repliesWrap: { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: COLORS.primary, gap: 8 },
-  replyItem:   { backgroundColor: COLORS.input, borderRadius: 10, padding: 8, gap: 4 },
-  editInput:      { backgroundColor: COLORS.input, borderRadius: 10, padding: 10, color: COLORS.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
+  replyTriggerText: { color: C.primarySoft, fontSize: 12, fontWeight: "700" },
+  repliesWrap: { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: C.border, gap: 8 },
+  replyItem:   { backgroundColor: C.surfaceLight, borderRadius: 10, padding: 8, gap: 4 },
+
+  editInput:      { backgroundColor: C.input, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 10, color: C.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
   editActions:    { flexDirection: "row", justifyContent: "flex-end", gap: 10 },
-  cancelEditText: { color: COLORS.muted, fontSize: 13, fontWeight: "700", paddingVertical: 6 },
-  saveEditBtn:    { backgroundColor: COLORS.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
-  saveEditText:   { color: COLORS.text, fontSize: 13, fontWeight: "700" },
+  cancelEditText: { color: C.muted, fontSize: 13, fontWeight: "700", paddingVertical: 6 },
+  saveEditBtn:    { backgroundColor: C.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
+  saveEditText:   { color: C.text, fontSize: 13, fontWeight: "700" },
+
   commentInputRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 4 },
-  commentInput:    { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 14, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
-  sendButton:      { width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
-  emptyCard:  { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 22, alignItems: "center", gap: 8 },
-  emptyTitle: { color: COLORS.text, fontSize: 18, fontWeight: "800" },
-  emptyText:  { color: COLORS.muted, fontSize: 14, textAlign: "center", lineHeight: 20 },
+  commentInput:    { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  sendButton:      { width: 42, height: 42, borderRadius: 12, backgroundColor: C.primary, alignItems: "center", justifyContent: "center" },
+
+  emptyCard:  { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 22, alignItems: "center", gap: 8 },
+  emptyTitle: { color: C.text, fontSize: 17, fontWeight: "800" },
+  emptyText:  { color: C.muted, fontSize: 14, textAlign: "center", lineHeight: 20 },
+
+  // Modals — same dark sheet as sign-in feel
   modalOverlay:   { flex: 1, justifyContent: "flex-end" },
-  modalBackdrop:  { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.58)" },
-  composerSheet:  { backgroundColor: COLORS.surface, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 20, paddingTop: 18, borderWidth: 1, borderColor: COLORS.border, maxHeight: "90%" },
+  modalBackdrop:  { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.65)" },
+  composerSheet:  { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 14, borderWidth: 1, borderColor: C.border, maxHeight: "90%" },
+  sheetHandle:    { width: 40, height: 4, backgroundColor: 'rgba(96,165,250,0.25)', borderRadius: 2, alignSelf: "center", marginBottom: 16 },
   sheetHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
-  sheetTitle:     { color: COLORS.text, fontSize: 22, fontWeight: "800" },
-  closeButton:    { width: 34, height: 34, borderRadius: 17, backgroundColor: COLORS.input, alignItems: "center", justifyContent: "center" },
+  sheetTitle:     { color: C.text, fontSize: 20, fontWeight: "800", letterSpacing: 0.3 },
+  closeButton:    { width: 34, height: 34, borderRadius: 17, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+
   composerIdentityRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
-  avatarSmall:         { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
-  avatarTextSmall:     { color: COLORS.text, fontSize: 14, fontWeight: "800" },
-  composerName:        { color: COLORS.text, fontSize: 15, fontWeight: "800" },
-  composerMeta:        { color: COLORS.mutedDark, fontSize: 13, marginTop: 2 },
-  composerInput:       { minHeight: 120, borderRadius: 16, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, lineHeight: 23, marginBottom: 14 },
-  sheetLabel:    { color: COLORS.muted, fontSize: 14, fontWeight: "700", marginBottom: 10 },
-  tagsInput:     { height: 44, borderRadius: 12, backgroundColor: COLORS.input, color: COLORS.text, paddingHorizontal: 12, fontSize: 14, marginBottom: 14 },
+  avatarSmall:         { width: 42, height: 42, borderRadius: 21, backgroundColor: C.primary, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  avatarTextSmall:     { color: C.text, fontSize: 14, fontWeight: "800" },
+  composerName:        { color: C.text, fontSize: 15, fontWeight: "800" },
+  composerMeta:        { color: C.mutedDark, fontSize: 13, marginTop: 2 },
+
+  // Composer inputs — exactly like sign-in TextInput
+  composerInput:       { minHeight: 120, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, lineHeight: 22, marginBottom: 14 },
+  sheetLabel:    { fontSize: 13, fontWeight: '600', color: 'rgba(186,214,255,0.85)', marginBottom: 8, marginTop: 4 },
+  tagsInput:     { height: 52, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, fontSize: 15, marginBottom: 14 },
+
   toggleRow:     { flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" },
-  togglePill:    { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
-  togglePillActive:  { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  toggleText:        { color: COLORS.muted, fontSize: 13, fontWeight: "700" },
-  toggleTextActive:  { color: COLORS.text },
-  publishButton:         { height: 54, borderRadius: 17, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  togglePill:    { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.input },
+  togglePillActive:  { backgroundColor: C.primary, borderColor: C.primary },
+  toggleText:        { color: C.muted, fontSize: 13, fontWeight: "700" },
+  toggleTextActive:  { color: C.text },
+
+  // Publish button — same as sign-in button
+  publishButton:         { height: 54, borderRadius: 14, backgroundColor: C.primary, alignItems: "center", justifyContent: "center", marginBottom: 8, marginTop: 8 },
   publishButtonDisabled: { opacity: 0.45 },
-  publishButtonText:     { color: COLORS.text, fontSize: 17, fontWeight: "800" },
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
-  sheet:    { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: COLORS.border },
-  handle:   { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: "center", marginBottom: 20, opacity: 0.5 },
+  publishButtonText:     { color: C.text, fontSize: 16, fontWeight: "700", letterSpacing: 0.3 },
+
+  // Bottom sheets
+  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
+  sheet:    { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: C.border },
+  handle:   { width: 40, height: 4, backgroundColor: 'rgba(96,165,250,0.25)', borderRadius: 2, alignSelf: "center", marginBottom: 20 },
+
   optionRow:  { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
   iconWrap:   { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   optionText: { flex: 1 },
-  optionLabel:{ color: COLORS.text, fontSize: 15, fontWeight: "700" },
-  optionSub:  { color: COLORS.mutedDark, fontSize: 12, marginTop: 2 },
-  separator:  { height: 1, backgroundColor: COLORS.divider, marginVertical: 4 },
-  cancelBtn:  { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: COLORS.surfaceLight, alignItems: "center", justifyContent: "center" },
-  cancelText: { color: COLORS.muted, fontSize: 15, fontWeight: "700" },
+  optionLabel:{ color: C.text, fontSize: 15, fontWeight: "700" },
+  optionSub:  { color: C.mutedDark, fontSize: 12, marginTop: 2 },
+  separator:  { height: 1, backgroundColor: C.divider, marginVertical: 4 },
+  cancelBtn:  { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  cancelText: { color: C.muted, fontSize: 15, fontWeight: "700" },
+
   confirmIcon:  { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(239,68,68,0.12)", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 },
-  confirmTitle: { color: COLORS.text, fontSize: 20, fontWeight: "800", textAlign: "center", marginBottom: 8 },
-  confirmSub:   { color: COLORS.mutedDark, fontSize: 14, textAlign: "center", lineHeight: 20, marginBottom: 24 },
-  deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: "center", justifyContent: "center" },
-  deleteBtnText:{ color: COLORS.text, fontSize: 15, fontWeight: "800" },
+  confirmTitle: { color: C.text, fontSize: 20, fontWeight: "800", textAlign: "center", marginBottom: 8 },
+  confirmSub:   { color: C.mutedDark, fontSize: 14, textAlign: "center", lineHeight: 20, marginBottom: 24 },
+  deleteBtn:    { height: 50, borderRadius: 14, backgroundColor: C.danger, alignItems: "center", justifyContent: "center" },
+  deleteBtnText:{ color: C.text, fontSize: 15, fontWeight: "800" },
+
   dotsBtn: { padding: 6, zIndex: 999, elevation: 10 },
-  pendingBadge: { backgroundColor: "rgba(255,200,0,0.15)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "rgba(255,200,0,0.3)" },
+  pendingBadge: { backgroundColor: "rgba(255,200,0,0.12)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "rgba(255,200,0,0.25)" },
   pendingText:  { color: "#f5c400", fontSize: 11, fontWeight: "700" },
-  sheetFiltersRow: { gap: 10, paddingBottom: 16 },
-  sheetFilterPill: { height: 40, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.35)", alignItems: "center", justifyContent: "center" },
 });
