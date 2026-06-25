@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,7 +26,7 @@ const TABS: {
   { key: 'ai', label: 'AI', icon: 'chatbox-ellipses-outline', route: '/ai-assistant' },
 ];
 
-const ICON_SIZE = 22;
+const ICON_SIZE = 20;
 
 function TabItem({
   tab,
@@ -38,17 +39,19 @@ function TabItem({
   styles: ReturnType<typeof createStyles>;
   COLORS: AppColors;
 }) {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+  const activeColor = isDark ? '#60A5FA' : COLORS.primary;
+  const inactiveColor = isDark ? '#334155' : COLORS.mutedDark;
+
   const progress = useSharedValue(active ? 1 : 0);
 
   useEffect(() => {
     progress.value = withTiming(active ? 1 : 0, { duration: 180 });
   }, [active]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + progress.value * 0.1 }],
+  const iconBgStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(96,165,250,${progress.value * 0.12})`,
   }));
-
-  const color = active ? COLORS.text : COLORS.mutedDark;
 
   return (
     <PressableScale
@@ -58,8 +61,12 @@ function TabItem({
         if (tab.route) router.push(tab.route);
       }}
     >
-      <Animated.View style={animatedStyle}>
-        <Ionicons name={tab.icon} size={ICON_SIZE} color={color} />
+      <Animated.View style={[styles.iconWrap, iconBgStyle]}>
+        <Ionicons
+          name={tab.icon}
+          size={ICON_SIZE}
+          color={active ? activeColor : inactiveColor}
+        />
       </Animated.View>
 
       <Text style={[styles.label, active && styles.labelActive]}>
@@ -85,24 +92,18 @@ function TrackTabItem({
   }, [active]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + progress.value * 0.06 }],
-    shadowOpacity: 0.4 + progress.value * 0.4,
+    transform: [{ scale: 1 + progress.value * 0.04 }],
+    shadowOpacity: 0.28 + progress.value * 0.15,
   }));
 
   return (
     <PressableScale
-      style={styles.trackButton}
+      style={styles.item}
       scaleTo={0.95}
       onPress={() => router.push('/track')}
     >
-      <Animated.View
-        style={[
-          styles.trackInner,
-          active && styles.trackInnerActive,
-          animatedStyle,
-        ]}
-      >
-        <Ionicons name="radio-outline" size={26} color="#fff" />
+      <Animated.View style={[styles.trackInner, animatedStyle]}>
+        <Ionicons name="navigate-outline" size={22} color="#fff" />
       </Animated.View>
 
       <Text style={[styles.label, active && styles.labelActive]}>
@@ -114,11 +115,12 @@ function TrackTabItem({
 
 export function BottomNavbar({ activeTab }: { activeTab: TabKey }) {
   const COLORS = useThemeColors();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(COLORS), [COLORS]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.wrap}>
+      <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 10) + 8 }]}>
         {TABS.map((tab) =>
           tab.key === 'track' ? (
             <TrackTabItem
@@ -142,68 +144,82 @@ export function BottomNavbar({ activeTab }: { activeTab: TabKey }) {
   );
 }
 
-const createStyles = (COLORS: AppColors) =>
-  StyleSheet.create({
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  const navbarBg = isDark ? '#07111F' : COLORS.surface;
+  const borderColor = isDark ? 'rgba(96,165,250,0.15)' : COLORS.border;
+  const activeColor = isDark ? '#60A5FA' : COLORS.primary;
+
+  return StyleSheet.create({
     container: {
-      backgroundColor: COLORS.surface,
-      borderTopWidth: 1,
-      borderTopColor: COLORS.border,
+      backgroundColor: 'transparent',
       overflow: 'visible',
     },
 
     wrap: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 16,
+      justifyContent: 'space-around',
+      alignItems: 'flex-end',
+      paddingHorizontal: 8,
       paddingTop: 12,
-      paddingBottom: 20,
+      borderTopWidth: 1,
+      borderTopColor: borderColor,
+      backgroundColor: navbarBg,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
       overflow: 'visible',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -6 },
+      shadowOpacity: isDark ? 0.25 : 0.07,
+      shadowRadius: 16,
+      elevation: 16,
     },
 
     item: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 8,
+      paddingBottom: 8,
       gap: 5,
     },
 
-    trackButton: {
-      flex: 1,
+    iconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 5,
-      paddingVertical: 8,
+    },
+
+    label: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: isDark ? '#334155' : COLORS.mutedDark,
+      letterSpacing: 0.3,
+      textAlign: 'center',
+    },
+
+    labelActive: {
+      color: activeColor,
+      fontWeight: '700',
     },
 
     trackInner: {
-      width: 62,
-      height: 62,
+      width: 48,
+      height: 48,
       borderRadius: 16,
       backgroundColor: COLORS.primary,
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: -50,
+      marginTop: -22,
+      borderWidth: 2,
+      borderColor: isDark ? 'rgba(147,197,253,0.25)' : 'rgba(255,255,255,0.55)',
       shadowColor: COLORS.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.28,
       shadowRadius: 12,
       elevation: 8,
     },
-
-    trackInnerActive: {
-      backgroundColor: COLORS.primary,
-    },
-
-    label: {
-      color: COLORS.mutedDark,
-      fontSize: 12,
-      fontWeight: '500',
-    },
-
-    labelActive: {
-      color: COLORS.text,
-      fontWeight: '600',
-    },
   });
+};

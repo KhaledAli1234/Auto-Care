@@ -7,7 +7,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomNavbar } from '@/components/bottom-navbar';
-import { NotificationBell } from '@/components/notification-bell';
 import { PressableScale } from '@/components/pressable-scale';
 import { apiGet } from '@/constants/api-client';
 import { useThemeColors, AppColors } from '@/context/theme-context';
@@ -163,7 +162,9 @@ export default function DashboardScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Dashboard</Text>
         <View style={styles.headerActions}>
-          <NotificationBell iconSize={20} color={COLORS.text} />
+          <PressableScale style={styles.headerIcon} onPress={() => setShowNotifModal(true)}>
+            <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+          </PressableScale>
           <PressableScale style={styles.headerIcon} onPress={() => router.push('/account')}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </PressableScale>
@@ -309,23 +310,38 @@ export default function DashboardScreen() {
   );
 }
 
-const createStyles = (COLORS: AppColors) => StyleSheet.create({
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  // Dark-only block colors. Light mode still uses the original theme colors.
+  const blockBg       = isDark ? 'rgba(7,16,32,0.90)'       : COLORS.card;
+  const blockSoftBg   = isDark ? 'rgba(9,21,42,0.88)'       : COLORS.cardSoft;
+  const smallBlockBg  = isDark ? 'rgba(10,24,48,0.92)'      : COLORS.surfaceLight;
+  const modalBg       = isDark ? 'rgba(8,18,36,0.98)'       : COLORS.surface;
+  const blockBorder   = isDark ? 'rgba(96,165,250,0.18)'    : 'rgba(96,165,250,0.12)';
+  const softBorder    = isDark ? 'rgba(96,165,250,0.16)'    : COLORS.border;
+  const dividerColor  = isDark ? 'rgba(96,165,250,0.18)'    : 'rgba(96,165,250,0.15)';
+  const alertBg       = isDark ? 'rgba(56,43,12,0.72)'      : 'rgba(245,200,76,0.07)';
+  const alertBorder   = isDark ? 'rgba(245,200,76,0.28)'    : 'rgba(245,200,76,0.22)';
+  const streakTrackBg = isDark ? 'rgba(148,163,184,0.18)'   : COLORS.divider;
+
+  return StyleSheet.create({
   container:          { flex: 1, backgroundColor: COLORS.background },
   scroll:             { flex: 1 },
   content:            { paddingHorizontal: 20, paddingTop: 14, gap: 14 },
   header:             { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14 },
   title:              { color: COLORS.text, fontSize: 24, fontWeight: '800' },
   headerActions:      { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  headerIcon:         { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: COLORS.surfaceLight, borderColor: 'rgba(96,165,250,0.25)', alignItems: 'center', justifyContent: 'center' },
-  divider:            { height: 1, backgroundColor: 'rgba(96,165,250,0.15)' },
+  headerIcon:         { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: smallBlockBg, borderColor: isDark ? 'rgba(96,165,250,0.22)' : 'rgba(96,165,250,0.25)', alignItems: 'center', justifyContent: 'center' },
+  divider:            { height: 1, backgroundColor: dividerColor },
 
-  alertCard:          { backgroundColor: 'rgba(245,200,76,0.07)', borderWidth: 1, borderColor: 'rgba(245,200,76,0.22)', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14 },
+  alertCard:          { backgroundColor: alertBg, borderWidth: 1, borderColor: alertBorder, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14 },
   alertTitleRow:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   alertTitle:         { color: COLORS.warning, fontSize: 17, fontWeight: '700' },
   alertBody:          { color: COLORS.muted, lineHeight: 20, fontSize: 14 },
 
   metricsGrid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  metricCard:         { width: '48%', flexGrow: 1, backgroundColor: COLORS.card, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', padding: 12, minHeight: 168 },
+  metricCard:         { width: '48%', flexGrow: 1, backgroundColor: blockBg, borderRadius: 18, borderWidth: 1, borderColor: blockBorder, padding: 12, minHeight: 168 },
   metricHeader:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   metricTitle:        { color: COLORS.muted, fontSize: 14, fontWeight: '500' },
   metricValueRow:     { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
@@ -335,13 +351,13 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   trendText:          { fontSize: 15, fontWeight: '700' },
   metricDescription:  { color: COLORS.muted, fontSize: 13, lineHeight: 18 },
 
-  streakCard:         { borderRadius: 16, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', backgroundColor: COLORS.cardSoft, padding: 16 },
+  streakCard:         { borderRadius: 16, borderWidth: 1, borderColor: blockBorder, backgroundColor: blockBg, padding: 16 },
   streakTopRow:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   streakLabel:        { color: COLORS.muted, fontSize: 14, marginBottom: 4 },
   streakValue:        { color: COLORS.text, fontSize: 44, fontWeight: '700' },
   streakUnit:         { color: COLORS.muted, fontSize: 18, fontWeight: '500' },
   streakIconWrap:     { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(51,209,122,0.12)' },
-  streakBarTrack:     { height: 8, backgroundColor: COLORS.divider, borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
+  streakBarTrack:     { height: 8, backgroundColor: streakTrackBg, borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
   streakBarFill:      { height: '100%', backgroundColor: COLORS.success, borderRadius: 4 },
   streakBottomRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   streakDescription:  { color: COLORS.muted, fontSize: 14, lineHeight: 20, flex: 1, marginRight: 8 },
@@ -349,26 +365,27 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   badgesChipText:     { color: COLORS.warning, fontSize: 12, fontWeight: '700' },
 
   bottomStatsRow:     { flexDirection: 'row', gap: 10, marginTop: 2 },
-  bottomStatCard:     { flex: 1, borderRadius: 12, backgroundColor: COLORS.card, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', paddingVertical: 12, paddingHorizontal: 10 },
+  bottomStatCard:     { flex: 1, borderRadius: 12, backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, paddingVertical: 12, paddingHorizontal: 10 },
   bottomStatTitle:    { color: COLORS.muted, fontSize: 12, marginBottom: 4 },
   bottomStatValue:    { color: COLORS.text, fontSize: 28, fontWeight: '800' },
   bottomStatUnit:     { color: COLORS.muted, fontSize: 12, marginTop: 2 },
 
-  emptyCard:          { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 18, padding: 32, alignItems: 'center', gap: 10 },
+  emptyCard:          { backgroundColor: blockSoftBg, borderWidth: 1, borderColor: softBorder, borderRadius: 18, padding: 32, alignItems: 'center', gap: 10 },
   emptyTitle:         { color: COLORS.text, fontSize: 18, fontWeight: '800' },
   emptyText:          { color: COLORS.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
 
   modalBackdrop:      { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
-  notifSheet:         { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 12, maxHeight: '75%', borderWidth: 1, borderColor: COLORS.border },
+  notifSheet:         { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: modalBg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 12, maxHeight: '75%', borderWidth: 1, borderColor: softBorder },
   sheetHandle:        { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 16, opacity: 0.5 },
   notifHeader:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   notifTitle:         { color: COLORS.text, fontSize: 20, fontWeight: '800' },
-  closeBtn:           { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
-  notifItem:          { flexDirection: 'row', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.divider, borderLeftWidth: 3, paddingLeft: 12, marginBottom: 2 },
+  closeBtn:           { width: 32, height: 32, borderRadius: 16, backgroundColor: smallBlockBg, alignItems: 'center', justifyContent: 'center' },
+  notifItem:          { flexDirection: 'row', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: dividerColor, borderLeftWidth: 3, paddingLeft: 12, marginBottom: 2 },
   notifIconWrap:      { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   notifItemTitle:     { color: COLORS.text, fontSize: 14, fontWeight: '700', marginBottom: 3 },
   notifItemBody:      { color: COLORS.muted, fontSize: 13, lineHeight: 18 },
   notifItemTime:      { color: COLORS.mutedDark, fontSize: 11, marginTop: 4 },
   notifEmpty:         { alignItems: 'center', paddingVertical: 40, gap: 12 },
   notifEmptyText:     { color: COLORS.muted, fontSize: 15 },
-});
+  });
+};

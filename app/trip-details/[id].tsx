@@ -37,10 +37,11 @@ function healthColor(score: number | undefined, COLORS: AppColors) {
 }
 
 function scoreCardBackground(score: number | undefined, COLORS: AppColors) {
-  if (!score)      return COLORS.surface;
-  if (score >= 75) return COLORS.primary;
-  if (score >= 60) return COLORS.warning;
-  return COLORS.danger;
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+  if (!score)      return isDark ? 'rgba(7,16,32,0.90)' : COLORS.surface;
+  if (score >= 75) return isDark ? 'rgba(37,99,235,0.38)' : COLORS.primary;
+  if (score >= 60) return isDark ? 'rgba(245,158,11,0.32)' : COLORS.warning;
+  return isDark ? 'rgba(239,68,68,0.34)' : COLORS.danger;
 }
 
 export default function TripDetailsScreen() {
@@ -241,54 +242,84 @@ function HealthBar({ label, value, styles, COLORS }: { label: string; value: num
   );
 }
 
-const createStyles = (COLORS: AppColors) => StyleSheet.create({
-  container:        { flex: 1, backgroundColor: COLORS.background },
-  centered:         { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, gap: 16 },
-  errorText:        { color: COLORS.text, fontSize: 16, textAlign: 'center' },
-  backAction:       { borderWidth: 1, borderColor: 'rgba(96,165,250,0.25)', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, backgroundColor: COLORS.surface },
-  backActionText:   { color: COLORS.text, fontWeight: '700' },
-  header:           { paddingHorizontal: 18, paddingVertical: 10 },
-  backRow:          { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  backText:         { color: COLORS.text, fontSize: 15 },
-  scroll:           { flex: 1 },
-  content:          { paddingHorizontal: 18 },
-  title:            { color: COLORS.text, fontSize: 30, fontWeight: '800', marginBottom: 4 },
-  dateSubtitle:     { color: COLORS.muted, fontSize: 14, marginBottom: 16 },
-  scoreCard:        { borderRadius: 20, alignItems: 'center', paddingVertical: 22, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(96,165,250,0.15)' },
-  scoreCardLabel:   { color: 'rgba(255,255,255,0.78)', fontSize: 14, marginBottom: 4 },
-  scoreCardValue:   { color: '#fff', fontSize: 60, fontWeight: '800', lineHeight: 64 },
-  scoreCardStatus:  { color: '#fff', fontSize: 22, fontWeight: '700', marginTop: 2 },
-  scoreCardStyle:   { color: 'rgba(255,255,255,0.72)', fontSize: 14, marginTop: 4 },
-  sectionTitle:     { color: COLORS.text, fontSize: 20, fontWeight: '800', marginBottom: 12, marginTop: 4 },
-  metricsGrid:      { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, marginBottom: 16 },
-  metricCard:       { width: '48.5%', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', borderRadius: 14, padding: 14 },
-  metricLabelRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  metricLabel:      { color: COLORS.muted, fontSize: 13 },
-  metricValue:      { color: COLORS.text, fontSize: 26, fontWeight: '800', lineHeight: 30 },
-  card:             { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', borderRadius: 16, padding: 16, marginBottom: 16 },
-  rowDivider:       { height: 1, backgroundColor: COLORS.divider, marginVertical: 12 },
-  behaviorRow:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  behaviorLabel:    { flex: 1, color: COLORS.muted, fontSize: 15 },
-  behaviorValue:    { fontSize: 22, fontWeight: '800' },
-  healthOverviewRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  healthStatusText: { color: COLORS.text, fontSize: 18, fontWeight: '800' },
-  healthRiskText:   { color: COLORS.muted, fontSize: 13, marginTop: 4 },
-  healthScore:      { fontSize: 42, fontWeight: '800' },
-  healthBarWrap:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  healthBarLabel:   { color: COLORS.muted, fontSize: 14, width: 55 },
-  healthBarTrack:   { flex: 1, height: 8, backgroundColor: COLORS.input, borderRadius: 4, overflow: 'hidden' },
-  healthBarFill:    { height: '100%', borderRadius: 4 },
-  healthBarValue:   { fontSize: 13, fontWeight: '700', width: 36, textAlign: 'right' },
-  alertsLabel:      { color: COLORS.yellow, fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  alertText:        { color: COLORS.muted, fontSize: 14, lineHeight: 22 },
-  fuelRow:          { flexDirection: 'row', alignItems: 'center' },
-  fuelItem:         { flex: 1, alignItems: 'center' },
-  fuelLabel:        { color: COLORS.muted, fontSize: 13, marginBottom: 4 },
-  fuelValue:        { color: COLORS.text, fontSize: 18, fontWeight: '800' },
-  fuelDivider:      { width: 1, height: 40, backgroundColor: COLORS.divider },
-  fuelBadgesRow:    { flexDirection: 'row', gap: 10 },
-  fuelBadge:        { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.surfaceLight, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
-  fuelBadgeText:    { color: COLORS.text, fontSize: 13, fontWeight: '600' },
-  statusBadge:      { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 8 },
-  statusText:       { fontSize: 14, fontWeight: '700' },
-});
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  // Dark-only colors. Light mode keeps the original theme colors.
+  const blockBg     = isDark ? 'rgba(7,16,32,0.90)'    : COLORS.surface;
+  const chipBg      = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight;
+  const blockBorder = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.12)';
+  const softBorder  = isDark ? 'rgba(96,165,250,0.22)' : 'rgba(96,165,250,0.25)';
+  const dividerBg   = isDark ? 'rgba(96,165,250,0.14)' : COLORS.divider;
+  const trackBg     = isDark ? 'rgba(148,163,184,0.16)' : COLORS.input;
+
+  return StyleSheet.create({
+    container:        { flex: 1, backgroundColor: COLORS.background },
+    centered:         { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, gap: 16 },
+    errorText:        { color: COLORS.text, fontSize: 16, textAlign: 'center' },
+    backAction:       { borderWidth: 1, borderColor: softBorder, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10, backgroundColor: blockBg },
+    backActionText:   { color: COLORS.text, fontWeight: '700' },
+
+    header:           { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 10 },
+    backRow:          { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40 },
+    backText:         { color: COLORS.text, fontSize: 15 },
+    headerActions:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    headerIcon:       {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: softBorder,
+      backgroundColor: chipBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    scroll:           { flex: 1 },
+    content:          { paddingHorizontal: 18 },
+    title:            { color: COLORS.text, fontSize: 30, fontWeight: '800', marginBottom: 4 },
+    dateSubtitle:     { color: COLORS.muted, fontSize: 14, marginBottom: 16 },
+    scoreCard:        { borderRadius: 20, alignItems: 'center', paddingVertical: 22, marginBottom: 20, borderWidth: 1, borderColor: blockBorder },
+    scoreCardLabel:   { color: 'rgba(255,255,255,0.78)', fontSize: 14, marginBottom: 4 },
+    scoreCardValue:   { color: '#fff', fontSize: 60, fontWeight: '800', lineHeight: 64 },
+    scoreCardStatus:  { color: '#fff', fontSize: 22, fontWeight: '700', marginTop: 2 },
+    scoreCardStyle:   { color: 'rgba(255,255,255,0.72)', fontSize: 14, marginTop: 4 },
+
+    sectionTitle:     { color: COLORS.text, fontSize: 20, fontWeight: '800', marginBottom: 12, marginTop: 4 },
+    metricsGrid:      { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10, marginBottom: 16 },
+    metricCard:       { width: '48.5%', backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 14, padding: 14 },
+    metricLabelRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+    metricLabel:      { color: COLORS.muted, fontSize: 13 },
+    metricValue:      { color: COLORS.text, fontSize: 26, fontWeight: '800', lineHeight: 30 },
+
+    card:             { backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 16, padding: 16, marginBottom: 16 },
+    rowDivider:       { height: 1, backgroundColor: dividerBg, marginVertical: 12 },
+    behaviorRow:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    behaviorLabel:    { flex: 1, color: COLORS.muted, fontSize: 15 },
+    behaviorValue:    { fontSize: 22, fontWeight: '800' },
+
+    healthOverviewRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    healthStatusText: { color: COLORS.text, fontSize: 18, fontWeight: '800' },
+    healthRiskText:   { color: COLORS.muted, fontSize: 13, marginTop: 4 },
+    healthScore:      { fontSize: 42, fontWeight: '800' },
+    healthBarWrap:    { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+    healthBarLabel:   { color: COLORS.muted, fontSize: 14, width: 55 },
+    healthBarTrack:   { flex: 1, height: 8, backgroundColor: trackBg, borderRadius: 4, overflow: 'hidden' },
+    healthBarFill:    { height: '100%', borderRadius: 4 },
+    healthBarValue:   { fontSize: 13, fontWeight: '700', width: 36, textAlign: 'right' },
+    alertsLabel:      { color: COLORS.yellow, fontSize: 14, fontWeight: '700', marginBottom: 6 },
+    alertText:        { color: COLORS.muted, fontSize: 14, lineHeight: 22 },
+
+    fuelRow:          { flexDirection: 'row', alignItems: 'center' },
+    fuelItem:         { flex: 1, alignItems: 'center' },
+    fuelLabel:        { color: COLORS.muted, fontSize: 13, marginBottom: 4 },
+    fuelValue:        { color: COLORS.text, fontSize: 18, fontWeight: '800' },
+    fuelDivider:      { width: 1, height: 40, backgroundColor: dividerBg },
+    fuelBadgesRow:    { flexDirection: 'row', gap: 10 },
+    fuelBadge:        { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: chipBg, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
+    fuelBadgeText:    { color: COLORS.text, fontSize: 13, fontWeight: '600' },
+
+    statusBadge:      { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 8 },
+    statusText:       { fontSize: 14, fontWeight: '700' },
+  });
+};

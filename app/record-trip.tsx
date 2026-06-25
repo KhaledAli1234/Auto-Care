@@ -140,7 +140,7 @@ export default function RecordTripScreen() {
           <Ionicons name="arrow-back" size={20} color={COLORS.text} />
         </Pressable>
         <Text style={styles.title}>Record Trip</Text>
-        <View style={{ width: 36 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
@@ -212,14 +212,28 @@ export default function RecordTripScreen() {
   );
 }
 
-const createStyles = (COLORS: AppColors) => StyleSheet.create({
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  // Dark-mode only block colors. Light mode keeps the original theme colors.
+  const blockBg       = isDark ? 'rgba(7,16,32,0.90)'    : COLORS.surface;
+  const chipBg        = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight;
+  const blockBorder   = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.12)';
+  const headerBorder  = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.15)';
+  const infoBg        = isDark ? 'rgba(10,24,48,0.78)'   : 'rgba(37,99,235,0.08)';
+  const dividerBg     = isDark ? 'rgba(96,165,250,0.16)' : COLORS.border;
+
+  return StyleSheet.create({
   container:        { flex: 1, backgroundColor: COLORS.background },
-  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(96,165,250,0.15)' },
-  backBtn:          { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
-  title:            { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+  header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: headerBorder },
+  backBtn:          { width: 40, height: 40, borderRadius: 20, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer:    { width: 40, height: 40 },
+  title:            { flex: 1, color: COLORS.text, fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  headerActions:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerIcon:       { width: 40, height: 40, borderRadius: 20, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, alignItems: 'center', justifyContent: 'center' },
   content:          { paddingHorizontal: 20, paddingTop: 20, gap: 14 },
-  timerCard:        { backgroundColor: COLORS.surface, borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)' },
-  timerCardActive:  { borderColor: `${COLORS.danger}66`, backgroundColor: COLORS.surface },
+  timerCard:        { backgroundColor: blockBg, borderRadius: 24, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: blockBorder },
+  timerCardActive:  { borderColor: `${COLORS.danger}66`, backgroundColor: blockBg },
   timerLabel:       { color: COLORS.muted, fontSize: 14, fontWeight: '600', marginBottom: 8, letterSpacing: 1, textTransform: 'uppercase' },
   timerValue:       { color: COLORS.text, fontSize: 68, fontWeight: '800', letterSpacing: 2, fontVariant: ['tabular-nums'] },
   timerHint:        { color: COLORS.mutedDark, fontSize: 13, marginTop: 10 },
@@ -227,14 +241,14 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   recordingDot:     { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.danger },
   recordingText:    { color: COLORS.danger, fontSize: 13, fontWeight: '700' },
   statsRow:         { flexDirection: 'row', gap: 10 },
-  statCard:         { flex: 1, backgroundColor: COLORS.surface, borderRadius: 16, padding: 14, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)' },
-  statIconWrap:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(37,99,235,0.12)' },
+  statCard:         { flex: 1, backgroundColor: blockBg, borderRadius: 16, padding: 14, alignItems: 'center', gap: 8, borderWidth: 1, borderColor: blockBorder },
+  statIconWrap:     { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(96,165,250,0.14)' : 'rgba(37,99,235,0.12)' },
   statValue:        { color: COLORS.text, fontSize: 22, fontWeight: '800' },
   statLabel:        { color: COLORS.muted, fontSize: 12 },
-  breakdownCard:    { backgroundColor: COLORS.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)' },
+  breakdownCard:    { backgroundColor: blockBg, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: blockBorder },
   breakdownRow:     { flexDirection: 'row', alignItems: 'center' },
   breakdownItem:    { flex: 1, alignItems: 'center', gap: 6 },
-  breakdownDivider: { width: 1, height: 40, backgroundColor: COLORS.border },
+  breakdownDivider: { width: 1, height: 40, backgroundColor: dividerBg },
   breakdownLabel:   { color: COLORS.muted, fontSize: 11, textAlign: 'center' },
   breakdownValue:   { color: COLORS.text, fontSize: 20, fontWeight: '800' },
   startBtn:         { height: 64, borderRadius: 20, backgroundColor: COLORS.green, alignItems: 'center', justifyContent: 'center' },
@@ -243,10 +257,11 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   stopBtn:          { height: 64, borderRadius: 20, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
   stopBtnText:      { color: '#fff', fontSize: 20, fontWeight: '800' },
   btnDisabled:      { opacity: 0.6 },
-  infoCard:         { flexDirection: 'row', gap: 10, backgroundColor: 'rgba(37,99,235,0.08)', borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: 'rgba(96,165,250,0.2)' },
+  infoCard:         { flexDirection: 'row', gap: 10, backgroundColor: infoBg, borderRadius: 14, padding: 14, alignItems: 'flex-start', borderWidth: 1, borderColor: isDark ? blockBorder : 'rgba(96,165,250,0.2)' },
   infoText:         { color: COLORS.muted, fontSize: 13, lineHeight: 20, flex: 1 },
-  tipsCard:         { backgroundColor: COLORS.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', gap: 10 },
+  tipsCard:         { backgroundColor: blockBg, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: blockBorder, gap: 10 },
   tipsTitle:        { color: COLORS.text, fontSize: 14, fontWeight: '700', marginBottom: 4 },
   tipRow:           { flexDirection: 'row', alignItems: 'center', gap: 8 },
   tipText:          { color: COLORS.mutedDark, fontSize: 13, flex: 1 },
-});
+  });
+};

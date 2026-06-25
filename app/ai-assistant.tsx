@@ -327,7 +327,7 @@ export default function AIAssistantScreen() {
           <Pressable onPress={() => setActiveTab("ai")} style={styles.backBtn} hitSlop={10}>
             <Ionicons name="arrow-back-outline" size={22} color={COLORS.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Auto<Text style={styles.headerAccent}>Care</Text></Text>
+          <Text style={styles.headerTitle}>AI-Assistant</Text>
           <Pressable style={styles.headerIcon} onPress={() => router.push("/account")} hitSlop={10}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
@@ -420,7 +420,7 @@ export default function AIAssistantScreen() {
             </Text>
           </Pressable>
         ) : (
-          <Text style={styles.headerTitle}>Auto<Text style={styles.headerAccent}>Care</Text></Text>
+          <Text style={styles.headerTitle}>AI-Assistant</Text>
         )}
         <Pressable style={styles.headerIcon} onPress={() => router.push("/account")} hitSlop={10}>
           <Ionicons name="person-outline" size={20} color={COLORS.text} />
@@ -559,15 +559,26 @@ function ChatBubble({ message, isAdminView }: {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const createStyles = (COLORS: AppColors) => StyleSheet.create({
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  // Same dark-mode block colors used in the other pages. Light mode stays unchanged.
+  const blockBg          = isDark ? 'rgba(7,16,32,0.90)'    : COLORS.surface;
+  const chipBg           = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight;
+  const blockBorder      = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.12)';
+  const headerIconBg     = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight;
+  const headerIconBorder = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.25)';
+  const dividerBg        = isDark ? 'rgba(96,165,250,0.15)' : COLORS.divider;
+
+  return StyleSheet.create({
   container:    { flex: 1, backgroundColor: COLORS.background },
 
   // Header — sign-in style
-  header:       { paddingHorizontal: 20, paddingVertical: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  headerTitle:  { fontSize: 22, fontWeight: '800', color: COLORS.text, letterSpacing: 0.5 },
+  header:       { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle:  { fontSize: 24, fontWeight: '800', color: COLORS.text },
   headerAccent: { color: COLORS.primary },
-  headerIcon:   { width: 36, height: 36, borderRadius: 18, borderWidth: 1, backgroundColor: COLORS.surfaceLight, borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
-  divider:      { height: 1, backgroundColor: COLORS.divider },
+  headerIcon:   { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: headerIconBg, borderColor: headerIconBorder, alignItems: "center", justifyContent: "center" },
+  divider:      { height: 1, backgroundColor: dividerBg },
 
   inboxLabel:     { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 14 },
   inboxLabelText: { color: COLORS.text, fontSize: 20, fontWeight: '800' },
@@ -579,7 +590,7 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   backBtnText:    { color: COLORS.text, fontSize: 17, fontWeight: "700" },
 
   // Segment — matches sign-in input style
-  segmentWrap:         { height: 54, borderRadius: 16, backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border, flexDirection: "row", padding: 4, gap: 4, marginBottom: 16 },
+  segmentWrap:         { height: 54, borderRadius: 16, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, flexDirection: "row", padding: 4, gap: 4, marginBottom: 16 },
   segmentButton:       { flex: 1, borderRadius: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   segmentButtonActive: { backgroundColor: COLORS.primary },
   segmentText:         { color: COLORS.muted, fontSize: 14, fontWeight: "700" },
@@ -600,19 +611,19 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   emptyText:         { color: COLORS.muted, fontSize: 15, marginTop: 8 },
 
   // Ticket cards — same surface as sign-in
-  ticketCard:      { backgroundColor: COLORS.surface, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 14, gap: 8 },
+  ticketCard:      { backgroundColor: blockBg, borderRadius: 14, borderWidth: 1, borderColor: blockBorder, padding: 14, gap: 8 },
   ticketCardTop:   { flexDirection: "row", alignItems: "center", gap: 12 },
-  ticketAvatar:    { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, borderWidth: 1, borderColor: COLORS.border, alignItems: "center", justifyContent: "center" },
+  ticketAvatar:    { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, borderWidth: 1, borderColor: blockBorder, alignItems: "center", justifyContent: "center" },
   ticketAvatarText:{ color: COLORS.text, fontSize: 16, fontWeight: "800" },
   ticketUser:      { color: COLORS.text, fontSize: 14, fontWeight: "700" },
   ticketPreview:   { color: COLORS.muted, fontSize: 13, marginTop: 2 },
-  ticketBadge:     { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: COLORS.surfaceLight, borderWidth: 1, borderColor: COLORS.border },
+  ticketBadge:     { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder },
   ticketBadgeOpen: { backgroundColor: "rgba(5,150,105,0.12)", borderColor: "rgba(5,150,105,0.3)" },
   ticketBadgeText: { color: COLORS.green, fontSize: 12, fontWeight: "700" },
   ticketTime:      { color: COLORS.mutedDark, fontSize: 11 },
 
   // Chat bubbles
-  messageBubble:      { width: "86%", alignSelf: "flex-start", backgroundColor: COLORS.surface, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 16, paddingVertical: 14 },
+  messageBubble:      { width: "86%", alignSelf: "flex-start", backgroundColor: blockBg, borderRadius: 16, borderWidth: 1, borderColor: blockBorder, paddingHorizontal: 16, paddingVertical: 14 },
   userMessageBubble:  { alignSelf: "flex-end", backgroundColor: COLORS.primary, borderColor: COLORS.primary, paddingVertical: 12 },
   errorMessageBubble: { borderColor: `${COLORS.danger}4D`, backgroundColor: `${COLORS.danger}14` },
   messageLabelRow:    { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 8 },
@@ -627,12 +638,13 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   quickQuestionsWrap:  { paddingTop: 6, paddingBottom: 10 },
   quickQuestionsTitle: { color: COLORS.muted, fontSize: 13, fontWeight: '600', marginBottom: 10 },
   quickQuestionsGrid:  { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  quickQuestionButton: { width: "48%", minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceLight, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 10 },
+  quickQuestionButton: { width: "48%", minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: blockBorder, backgroundColor: chipBg, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 10 },
   quickQuestionText:   { color: COLORS.text, fontSize: 13, lineHeight: 18, fontWeight: "600" },
 
   // Input — exactly like sign-in TextInput
-  inputRow:           { minHeight: 54, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surfaceLight, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 8, gap: 8 },
+  inputRow:           { minHeight: 54, borderRadius: 14, borderWidth: 1, borderColor: blockBorder, backgroundColor: chipBg, flexDirection: "row", alignItems: "center", paddingLeft: 16, paddingRight: 8, gap: 8 },
   messageInput:       { flex: 1, maxHeight: 100, color: COLORS.text, fontSize: 15, paddingVertical: 10 },
   sendButton:         { width: 42, height: 42, borderRadius: 12, backgroundColor: COLORS.primary, alignItems: "center", justifyContent: "center" },
   sendButtonDisabled: { opacity: 0.4 },
-});
+  });
+};

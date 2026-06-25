@@ -8,7 +8,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authHeaders, apiGet } from '@/constants/api-client';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
-import { NotificationBell } from '@/components/notification-bell';
 import { AppColors, useThemeColors } from '@/context/theme-context';
 
 export interface ApiTrip {
@@ -81,7 +80,9 @@ export default function TripsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Trip History</Text>
         <View style={styles.headerActions}>
-          <NotificationBell iconSize={20} color={COLORS.text} />
+          <Pressable style={styles.headerIcon} onPress={() => {}}>
+            <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+          </Pressable>
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>
@@ -227,19 +228,29 @@ function TripCard({ trip, onDeleted }: { trip: ApiTrip; onDeleted: () => void })
   );
 }
 
-const createStyles = (COLORS: AppColors) => StyleSheet.create({
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  // Dark-only block colors. Light mode still uses the original theme colors.
+  const blockBg      = isDark ? 'rgba(7,16,32,0.90)'    : COLORS.surface;
+  const chipBg       = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight;
+  const sheetBg      = isDark ? 'rgba(8,18,36,0.98)'    : COLORS.surface;
+  const blockBorder  = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.12)';
+  const iconBorder   = isDark ? 'rgba(96,165,250,0.20)' : 'rgba(96,165,250,0.25)';
+
+  return StyleSheet.create({
   container:      { flex: 1, backgroundColor: COLORS.background },
   scroll:         { flex: 1 },
   content:        { paddingHorizontal: 20, paddingTop: 8 },
   header:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 22, paddingTop: 14, paddingBottom: 16 },
   title:          { color: COLORS.text, fontSize: 24, fontWeight: '800' },
   headerActions:  { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  headerIcon:     { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(96,165,250,0.25)', backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+  headerIcon:     { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: iconBorder, backgroundColor: chipBg, alignItems: 'center', justifyContent: 'center' },
   divider:        { height: 1, backgroundColor: 'rgba(96,165,250,0.15)' },
   topRow:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   totalLabel:     { color: COLORS.muted, fontSize: 14 },
   totalValue:     { color: COLORS.text, fontSize: 34, fontWeight: '800', marginTop: 2 },
-  card:           { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', borderRadius: 18, padding: 16, marginBottom: 14 },
+  card:           { backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 18, padding: 16, marginBottom: 14 },
   cardHeader:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
   dateText:       { color: COLORS.text, fontSize: 15, fontWeight: '700' },
   styleText:      { color: COLORS.muted, fontSize: 13, marginTop: 3 },
@@ -249,16 +260,16 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   scoreNA:        { color: COLORS.mutedDark, fontSize: 20, fontWeight: '700' },
   dotsBtn:        { padding: 4, marginLeft: 4 },
   metricsRow:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  metricChip:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.surfaceLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
+  metricChip:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: chipBg, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5 },
   metricChipText: { color: COLORS.text, fontSize: 13, fontWeight: '600' },
   badgesRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  badge:          { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: 'rgba(96,165,250,0.15)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  badge:          { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: isDark ? 'rgba(96,165,250,0.18)' : 'rgba(96,165,250,0.15)', backgroundColor: isDark ? 'rgba(10,24,48,0.55)' : 'transparent', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   badgeText:      { color: COLORS.muted, fontSize: 12, fontWeight: '600' },
-  emptyCard:      { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)', borderRadius: 18, padding: 32, alignItems: 'center', gap: 10, marginTop: 20 },
+  emptyCard:      { backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 18, padding: 32, alignItems: 'center', gap: 10, marginTop: 20 },
   emptyTitle:     { color: COLORS.text, fontSize: 18, fontWeight: '800' },
   emptyText:      { color: COLORS.muted, fontSize: 14, textAlign: 'center' },
   backdrop:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  sheet:          { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: 'rgba(96,165,250,0.12)' },
+  sheet:          { backgroundColor: sheetBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: blockBorder },
   handle:         { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 20, opacity: 0.5 },
   sheetTitle:     { color: COLORS.text, fontSize: 20, fontWeight: '800', marginBottom: 16 },
   optionRow:      { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
@@ -267,11 +278,12 @@ const createStyles = (COLORS: AppColors) => StyleSheet.create({
   optionLabel:    { color: COLORS.text, fontSize: 15, fontWeight: '700' },
   optionSub:      { color: COLORS.mutedDark, fontSize: 12, marginTop: 2 },
   separator:      { height: 1, backgroundColor: COLORS.divider, marginVertical: 4 },
-  cancelBtn:      { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+  cancelBtn:      { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: chipBg, alignItems: 'center', justifyContent: 'center' },
   cancelText:     { color: COLORS.muted, fontSize: 15, fontWeight: '700' },
   confirmIcon:    { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(239,68,68,0.12)', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
   confirmTitle:   { color: COLORS.text, fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
   confirmSub:     { color: COLORS.mutedDark, fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
   deleteBtn:      { height: 50, borderRadius: 14, backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText:  { color: COLORS.text, fontSize: 15, fontWeight: '800' },
-});
+  });
+};

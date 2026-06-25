@@ -21,7 +21,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
-import { NotificationBell } from "@/components/notification-bell";
 import { useAppTheme, useThemeColors } from "@/context/theme-context";
 
 type ThemeColors = ReturnType<typeof useThemeColors>;
@@ -491,12 +490,12 @@ export default function CommunityScreen() {
       )}
 
       <View style={styles.header}>
-        <Text style={styles.title}>
-          Auto<Text style={styles.titleAccent}>Care</Text>
-          <Text style={styles.titleSub}> · Community</Text>
-        </Text>
+        <Text style={styles.title}>Community</Text>
         <View style={styles.headerActions}>
-          <NotificationBell iconSize={20} color={C.text} />
+          <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => {}}>
+            <Ionicons name="notifications-outline" size={20} color={C.text} />
+          </Pressable>
+
           <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => router.push("/account")}>
             <Ionicons name="person-outline" size={20} color={C.text} />
           </Pressable>
@@ -1061,17 +1060,30 @@ function ReplyItem({ reply, myUserId, onEdit, onDelete }: {
 /* ════════════════════════════════════════
    STYLES — theme-aware palette
 ════════════════════════════════════════ */
-const createStyles = (C: ThemeColors) => StyleSheet.create({
+const createStyles = (C: ThemeColors) => {
+  const isDark = C.background === '#080A0F' || C.background?.startsWith('#0');
+
+  // Dark-mode only block colors. Light mode keeps the original theme colors.
+  const blockBg      = isDark ? 'rgba(7,16,32,0.90)'    : C.surface;
+  const chipBg       = isDark ? 'rgba(10,24,48,0.92)'   : C.input;
+  const softBlockBg  = isDark ? 'rgba(9,21,42,0.88)'    : C.surfaceLight;
+  const sheetBg      = isDark ? 'rgba(8,18,36,0.98)'    : C.surface;
+  const blockBorder  = isDark ? 'rgba(96,165,250,0.18)' : C.border;
+  const headerBorder = isDark ? 'rgba(96,165,250,0.15)' : C.divider;
+  const dividerBg    = isDark ? 'rgba(96,165,250,0.16)' : C.divider;
+  const primaryChipBg = isDark ? 'rgba(96,165,250,0.14)' : `${C.primary}1F`;
+
+  return StyleSheet.create({
   container:    { flex: 1, backgroundColor: C.background },
 
   // Header — matches sign-in header bar
-  header:       { paddingHorizontal: 22, paddingTop: 14, paddingBottom: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 0 },
-  title:        { fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: 0.5 },
+  header:       { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 0 },
+  title:        { color: C.text, fontSize: 24, fontWeight: '800' },
   titleAccent:  { color: C.primarySoft },
   titleSub:     { color: C.muted, fontWeight: '600', fontSize: 18 },
   headerActions:{ flexDirection: "row", alignItems: "center", gap: 16 },
-  headerIcon:   { width: 36, height: 36, borderRadius: 18, borderWidth: 1, backgroundColor: C.input, borderColor: C.border, alignItems: "center", justifyContent: "center" },
-  divider:      { height: 1, backgroundColor: C.divider },
+  headerIcon:   { width: 40, height: 40, borderRadius: 20, borderWidth: 1, backgroundColor: chipBg, borderColor: isDark ? blockBorder : 'rgba(96,165,250,0.25)', alignItems: "center", justifyContent: "center" },
+  divider:      { height: 1, backgroundColor: headerBorder },
 
   scroll:       { flex: 1 },
   content:      { paddingTop: 20, paddingHorizontal: 20 },
@@ -1082,15 +1094,15 @@ const createStyles = (C: ThemeColors) => StyleSheet.create({
 
   // Filter pills — matches sign-in input border style
   filtersRow:       { gap: 10, paddingBottom: 20 },
-  filterPill:       { minWidth: 68, height: 40, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1, borderColor: C.border, backgroundColor: C.input, alignItems: "center", justifyContent: "center" },
+  filterPill:       { minWidth: 68, height: 40, borderRadius: 20, paddingHorizontal: 16, borderWidth: 1, borderColor: blockBorder, backgroundColor: chipBg, alignItems: "center", justifyContent: "center" },
   filterPillActive: { backgroundColor: C.primary, borderColor: C.primary },
   filterText:       { color: C.muted, fontSize: 14, fontWeight: "700" },
   filterTextActive: { color: C.text },
 
   // Post card — matches sign-in form surface
-  postCard:     { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 16, marginBottom: 14 },
+  postCard:     { backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 18, padding: 16, marginBottom: 14 },
   postHeader:   { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 14 },
-  avatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: C.primary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.border },
+  avatar:       { width: 48, height: 48, borderRadius: 24, backgroundColor: C.primary, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: blockBorder },
   avatarText:   { color: C.text, fontSize: 16, fontWeight: "800" },
   postIdentity: { flex: 1 },
   authorRow:    { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
@@ -1105,12 +1117,12 @@ const createStyles = (C: ThemeColors) => StyleSheet.create({
   time:    { color: C.mutedDark, fontSize: 13 },
   postText: { color: C.muted, fontSize: 15, lineHeight: 24, marginBottom: 12 },
   tagsRow:  { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  tagPill:  { backgroundColor: `${C.primary}1F`, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
+  tagPill:  { backgroundColor: primaryChipBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: blockBorder },
   tagText:  { color: C.primarySoft, fontSize: 12, fontWeight: "600" },
   imagesGrid:    { width: "100%", height: 210, borderRadius: 12, overflow: "hidden", marginBottom: 16 },
   imagesGridTwo: { flexDirection: "row", gap: 8 },
-  postImage:     { flex: 1, width: "100%", height: "100%", backgroundColor: C.input, borderRadius: 12 },
-  actionsDivider: { height: 1, backgroundColor: C.divider, marginBottom: 12 },
+  postImage:     { flex: 1, width: "100%", height: "100%", backgroundColor: chipBg, borderRadius: 12 },
+  actionsDivider: { height: 1, backgroundColor: dividerBg, marginBottom: 12 },
   actionsRow:     { flexDirection: "row", alignItems: "center" },
   actionButton:   { flexDirection: "row", alignItems: "center", gap: 8, marginRight: 26 },
   actionText:     { color: C.muted, fontSize: 15 },
@@ -1118,52 +1130,52 @@ const createStyles = (C: ThemeColors) => StyleSheet.create({
   commentsWrap:  { marginTop: 10, gap: 10 },
 
   // Comment — matches input style
-  commentItem:   { backgroundColor: C.input, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10, gap: 6 },
+  commentItem:   { backgroundColor: chipBg, borderRadius: 12, borderWidth: 1, borderColor: blockBorder, padding: 10, gap: 6 },
   commentHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   commentAuthor: { color: C.text, fontSize: 13, fontWeight: "700" },
   commentText:   { color: C.muted, fontSize: 14, lineHeight: 20 },
   commentTime:   { color: C.mutedDark, fontSize: 11 },
   replyTrigger:     { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   replyTriggerText: { color: C.primarySoft, fontSize: 12, fontWeight: "700" },
-  repliesWrap: { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: C.border, gap: 8 },
-  replyItem:   { backgroundColor: C.surfaceLight, borderRadius: 10, padding: 8, gap: 4 },
+  repliesWrap: { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: blockBorder, gap: 8 },
+  replyItem:   { backgroundColor: softBlockBg, borderRadius: 10, padding: 8, gap: 4 },
 
-  editInput:      { backgroundColor: C.input, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 10, color: C.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
+  editInput:      { backgroundColor: chipBg, borderRadius: 10, borderWidth: 1, borderColor: blockBorder, padding: 10, color: C.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
   editActions:    { flexDirection: "row", justifyContent: "flex-end", gap: 10 },
   cancelEditText: { color: C.muted, fontSize: 13, fontWeight: "700", paddingVertical: 6 },
   saveEditBtn:    { backgroundColor: C.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
   saveEditText:   { color: C.text, fontSize: 13, fontWeight: "700" },
 
   commentInputRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, marginTop: 4 },
-  commentInput:    { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  commentInput:    { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 12, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
   sendButton:      { width: 42, height: 42, borderRadius: 12, backgroundColor: C.primary, alignItems: "center", justifyContent: "center" },
 
-  emptyCard:  { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 22, alignItems: "center", gap: 8 },
+  emptyCard:  { backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 18, padding: 22, alignItems: "center", gap: 8 },
   emptyTitle: { color: C.text, fontSize: 17, fontWeight: "800" },
   emptyText:  { color: C.muted, fontSize: 14, textAlign: "center", lineHeight: 20 },
 
   // Modals — same dark sheet as sign-in feel
   modalOverlay:   { flex: 1, justifyContent: "flex-end" },
   modalBackdrop:  { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.65)" },
-  composerSheet:  { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 14, borderWidth: 1, borderColor: C.border, maxHeight: "90%" },
+  composerSheet:  { backgroundColor: sheetBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 14, borderWidth: 1, borderColor: blockBorder, maxHeight: "90%" },
   sheetHandle:    { width: 40, height: 4, backgroundColor: 'rgba(96,165,250,0.25)', borderRadius: 2, alignSelf: "center", marginBottom: 16 },
   sheetHeader:    { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 18 },
   sheetTitle:     { color: C.text, fontSize: 20, fontWeight: "800", letterSpacing: 0.3 },
-  closeButton:    { width: 34, height: 34, borderRadius: 17, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  closeButton:    { width: 34, height: 34, borderRadius: 17, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, alignItems: "center", justifyContent: "center" },
 
   composerIdentityRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
-  avatarSmall:         { width: 42, height: 42, borderRadius: 21, backgroundColor: C.primary, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  avatarSmall:         { width: 42, height: 42, borderRadius: 21, backgroundColor: C.primary, borderWidth: 1, borderColor: blockBorder, alignItems: "center", justifyContent: "center" },
   avatarTextSmall:     { color: C.text, fontSize: 14, fontWeight: "800" },
   composerName:        { color: C.text, fontSize: 15, fontWeight: "800" },
   composerMeta:        { color: C.mutedDark, fontSize: 13, marginTop: 2 },
 
   // Composer inputs — exactly like sign-in TextInput
-  composerInput:       { minHeight: 120, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, lineHeight: 22, marginBottom: 14 },
+  composerInput:       { minHeight: 120, borderRadius: 12, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, color: C.text, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, lineHeight: 22, marginBottom: 14 },
   sheetLabel:    { fontSize: 13, fontWeight: '600', color: 'rgba(186,214,255,0.85)', marginBottom: 8, marginTop: 4 },
-  tagsInput:     { height: 52, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, fontSize: 15, marginBottom: 14 },
+  tagsInput:     { height: 52, borderRadius: 12, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, color: C.text, paddingHorizontal: 16, fontSize: 15, marginBottom: 14 },
 
   toggleRow:     { flexDirection: "row", gap: 8, marginBottom: 14, flexWrap: "wrap" },
-  togglePill:    { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: C.border, backgroundColor: C.input },
+  togglePill:    { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: blockBorder, backgroundColor: chipBg },
   togglePillActive:  { backgroundColor: C.primary, borderColor: C.primary },
   toggleText:        { color: C.muted, fontSize: 13, fontWeight: "700" },
   toggleTextActive:  { color: C.text },
@@ -1175,7 +1187,7 @@ const createStyles = (C: ThemeColors) => StyleSheet.create({
 
   // Bottom sheets
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
-  sheet:    { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: C.border },
+  sheet:    { backgroundColor: sheetBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: blockBorder },
   handle:   { width: 40, height: 4, backgroundColor: 'rgba(96,165,250,0.25)', borderRadius: 2, alignSelf: "center", marginBottom: 20 },
 
   optionRow:  { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
@@ -1183,8 +1195,8 @@ const createStyles = (C: ThemeColors) => StyleSheet.create({
   optionText: { flex: 1 },
   optionLabel:{ color: C.text, fontSize: 15, fontWeight: "700" },
   optionSub:  { color: C.mutedDark, fontSize: 12, marginTop: 2 },
-  separator:  { height: 1, backgroundColor: C.divider, marginVertical: 4 },
-  cancelBtn:  { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  separator:  { height: 1, backgroundColor: dividerBg, marginVertical: 4 },
+  cancelBtn:  { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, alignItems: "center", justifyContent: "center" },
   cancelText: { color: C.muted, fontSize: 15, fontWeight: "700" },
 
   confirmIcon:  { width: 72, height: 72, borderRadius: 36, backgroundColor: "rgba(239,68,68,0.12)", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 },
@@ -1196,4 +1208,5 @@ const createStyles = (C: ThemeColors) => StyleSheet.create({
   dotsBtn: { padding: 6, zIndex: 999, elevation: 10 },
   pendingBadge: { backgroundColor: "rgba(255,200,0,0.12)", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: "rgba(255,200,0,0.25)" },
   pendingText:  { color: "#f5c400", fontSize: 11, fontWeight: "700" },
-});
+  });
+};

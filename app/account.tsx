@@ -33,15 +33,31 @@ type AccountColors = ThemeColors & {
   primaryGlow: string;
   star: string;
   starEmpty: string;
+  blockBg: string;
+  blockSoftBg: string;
+  chipBg: string;
+  blockBorder: string;
+  dividerSoft: string;
+  sheetBg: string;
 };
 
 function getAccountColors(COLORS: ThemeColors): AccountColors {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
   return {
     ...COLORS,
     bg: COLORS.background,
     primaryGlow: COLORS.primary,
     star: '#F59E0B',
     starEmpty: COLORS.mutedDark,
+
+    // Dark-mode only block colors. Light mode keeps the original theme colors.
+    blockBg:     isDark ? 'rgba(7,16,32,0.90)'    : COLORS.surface,
+    blockSoftBg: isDark ? 'rgba(9,21,42,0.88)'    : COLORS.surfaceLight,
+    chipBg:      isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight,
+    blockBorder: isDark ? 'rgba(96,165,250,0.18)' : COLORS.border,
+    dividerSoft: isDark ? 'rgba(96,165,250,0.16)' : COLORS.divider,
+    sheetBg:     isDark ? 'rgba(8,18,36,0.98)'    : COLORS.surface,
   };
 }
 
@@ -370,7 +386,7 @@ export default function AccountScreen() {
           <Ionicons name="arrow-back" size={22} color={C.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Auto<Text style={styles.headerAccent}>Care</Text></Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 40 }} />
       </View>
       <View style={styles.divider} />
 
@@ -831,22 +847,22 @@ const createStyles = (C: AccountColors) => StyleSheet.create({
   header:       { paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerTitle:  { fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: 0.5 },
   headerAccent: { color: C.primaryGlow },
-  backButton:   { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  divider:      { height: 1, backgroundColor: C.divider },
+  backButton:   { width: 40, height: 40, borderRadius: 20, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, alignItems: 'center', justifyContent: 'center' },
+  divider:      { height: 1, backgroundColor: C.dividerSoft },
   scroll:       { flex: 1 },
   content:      { paddingHorizontal: 20, paddingTop: 20 },
   pageTitle:    { color: C.text, fontSize: 28, fontWeight: '800', marginBottom: 16, letterSpacing: 0.3 },
 
   // Cards
-  card:         { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 14 },
+  card:         { backgroundColor: C.blockBg, borderWidth: 1, borderColor: C.blockBorder, borderRadius: 14, padding: 14, marginBottom: 14 },
   identityRow:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  avatar:       { width: 56, height: 56, borderRadius: 14, backgroundColor: C.primary, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  avatar:       { width: 56, height: 56, borderRadius: 14, backgroundColor: C.primary, borderWidth: 1, borderColor: C.blockBorder, alignItems: 'center', justifyContent: 'center' },
   avatarText:   { color: C.text, fontSize: 22, fontWeight: '700' },
   identityText: { flex: 1 },
   name:         { color: C.text, fontSize: 22, fontWeight: '700' },
   meta:         { color: C.muted, fontSize: 14, marginTop: 2 },
   sectionTitle: { color: C.text, fontSize: 20, fontWeight: '700', marginBottom: 10 },
-  infoRow:      { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 10, borderBottomWidth: 1, borderBottomColor: C.divider },
+  infoRow:      { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 10, borderBottomWidth: 1, borderBottomColor: C.dividerSoft },
   infoLabel:    { color: C.muted, fontSize: 14 },
   infoValue:    { color: C.text, fontSize: 14, fontWeight: '700', flexShrink: 1, textAlign: 'right' },
   statsRow:     { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
@@ -855,9 +871,9 @@ const createStyles = (C: AccountColors) => StyleSheet.create({
   statLabel:    { color: C.muted, fontSize: 13, marginTop: 4 },
 
   // Theme toggle — sign-in input style
-  themeToggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 14 },
+  themeToggleCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.blockBg, borderWidth: 1, borderColor: C.blockBorder, borderRadius: 14, padding: 14, marginBottom: 14 },
   themeToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  themeIconBox:    { width: 44, height: 44, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  themeIconBox:    { width: 44, height: 44, borderRadius: 12, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, alignItems: 'center', justifyContent: 'center' },
   themeTextBox:    { flex: 1 },
   themeTitle:      { color: C.text, fontSize: 15, fontWeight: '700' },
   themeSub:        { color: C.mutedDark, fontSize: 12, marginTop: 3 },
@@ -869,13 +885,13 @@ const createStyles = (C: AccountColors) => StyleSheet.create({
   logoutButton:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: `${C.danger}1A`, borderWidth: 1, borderColor: `${C.danger}33` },
   logoutText:      { color: C.danger, fontSize: 14, fontWeight: '600' },
   logoutOverlay:   { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
-  logoutBox:       { width: '80%', backgroundColor: C.surface, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: C.border },
+  logoutBox:       { width: '80%', backgroundColor: C.sheetBg, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: C.blockBorder },
   modalBtn:        { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
 
   // Post cards
-  postCard:      { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 16, marginBottom: 14 },
+  postCard:      { backgroundColor: C.blockBg, borderWidth: 1, borderColor: C.blockBorder, borderRadius: 14, padding: 16, marginBottom: 14 },
   postHeader:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 12 },
-  postAvatar:    { width: 46, height: 46, borderRadius: 23, backgroundColor: C.primary, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  postAvatar:    { width: 46, height: 46, borderRadius: 23, backgroundColor: C.primary, borderWidth: 1, borderColor: C.blockBorder, alignItems: 'center', justifyContent: 'center' },
   postAvatarText:{ color: C.text, fontWeight: '800', fontSize: 15 },
   postAuthor:    { color: C.text, fontWeight: '800', fontSize: 15 },
   postMetaRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' },
@@ -884,9 +900,9 @@ const createStyles = (C: AccountColors) => StyleSheet.create({
   postTime:      { color: C.mutedDark, fontSize: 13 },
   postContent:   { color: C.muted, fontSize: 15, lineHeight: 24, marginBottom: 12 },
   tagsRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  tagPill:       { backgroundColor: `${C.primary}1F`, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.border },
+  tagPill:       { backgroundColor: `${C.primary}1F`, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: C.blockBorder },
   tagText:       { color: C.primaryGlow, fontSize: 12, fontWeight: '600' },
-  actionsDivider:{ height: 1, backgroundColor: C.divider, marginBottom: 12 },
+  actionsDivider:{ height: 1, backgroundColor: C.dividerSoft, marginBottom: 12 },
   actionsRow:    { flexDirection: 'row', alignItems: 'center' },
   actionButton:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 24 },
   actionText:    { color: C.muted, fontSize: 15 },
@@ -895,48 +911,48 @@ const createStyles = (C: AccountColors) => StyleSheet.create({
 
   // Comments
   commentsWrap:     { marginTop: 10, gap: 10 },
-  commentItem:      { backgroundColor: C.input, borderRadius: 12, borderWidth: 1, borderColor: C.border, padding: 10, gap: 6 },
+  commentItem:      { backgroundColor: C.chipBg, borderRadius: 12, borderWidth: 1, borderColor: C.blockBorder, padding: 10, gap: 6 },
   commentHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   commentAuthor:    { color: C.text, fontSize: 13, fontWeight: '700' },
   commentText:      { color: C.muted, fontSize: 14, lineHeight: 20 },
   commentTime:      { color: C.mutedDark, fontSize: 11 },
   replyTrigger:     { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   replyTriggerText: { color: C.primaryGlow, fontSize: 12, fontWeight: '700' },
-  repliesWrap:      { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: C.border, gap: 8 },
-  replyItem:        { backgroundColor: C.surfaceLight, borderRadius: 10, padding: 8, gap: 4 },
-  editInput:        { backgroundColor: C.input, borderRadius: 10, borderWidth: 1, borderColor: C.border, padding: 10, color: C.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
+  repliesWrap:      { marginTop: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: C.blockBorder, gap: 8 },
+  replyItem:        { backgroundColor: C.blockSoftBg, borderRadius: 10, padding: 8, gap: 4 },
+  editInput:        { backgroundColor: C.chipBg, borderRadius: 10, borderWidth: 1, borderColor: C.blockBorder, padding: 10, color: C.text, fontSize: 14, minHeight: 60, marginBottom: 8 },
   editActions:      { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
   cancelEditText:   { color: C.muted, fontSize: 13, fontWeight: '700', paddingVertical: 6 },
   saveEditBtn:      { backgroundColor: C.primary, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
   saveEditText:     { color: C.text, fontSize: 13, fontWeight: '700' },
   commentInputRow:  { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 4 },
-  commentInput:     { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  commentInput:     { flex: 1, minHeight: 42, maxHeight: 92, borderRadius: 12, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
   sendButton:       { width: 42, height: 42, borderRadius: 12, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' },
 
   // Modals
   modalOverlay:  { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)' },
-  composerSheet: { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 14, borderWidth: 1, borderColor: C.border, maxHeight: '90%' },
-  sheetHandle:   { width: 40, height: 4, backgroundColor: C.border, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  composerSheet: { backgroundColor: C.sheetBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 14, borderWidth: 1, borderColor: C.blockBorder, maxHeight: '90%' },
+  sheetHandle:   { width: 40, height: 4, backgroundColor: C.blockBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   sheetHeader:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   sheetTitle:    { color: C.text, fontSize: 20, fontWeight: '800', letterSpacing: 0.3 },
-  closeButton:   { width: 34, height: 34, borderRadius: 17, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
-  composerInput: { minHeight: 120, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, lineHeight: 22, marginBottom: 14 },
+  closeButton:   { width: 34, height: 34, borderRadius: 17, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, alignItems: 'center', justifyContent: 'center' },
+  composerInput: { minHeight: 120, borderRadius: 12, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, color: C.text, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, lineHeight: 22, marginBottom: 14 },
   sheetLabel:    { fontSize: 13, fontWeight: '600', color: C.muted, marginBottom: 8, marginTop: 4 },
-  tagsInput:     { height: 52, borderRadius: 12, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, color: C.text, paddingHorizontal: 16, fontSize: 15, marginBottom: 14 },
+  tagsInput:     { height: 52, borderRadius: 12, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, color: C.text, paddingHorizontal: 16, fontSize: 15, marginBottom: 14 },
   publishButton:         { height: 54, borderRadius: 14, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 8, marginTop: 8 },
   publishButtonDisabled: { opacity: 0.45 },
   publishButtonText:     { color: C.text, fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
   backdrop:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  sheet:     { backgroundColor: C.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: C.border },
-  handle:    { width: 40, height: 4, backgroundColor: C.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  sheet:     { backgroundColor: C.sheetBg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 36, borderWidth: 1, borderColor: C.blockBorder },
+  handle:    { width: 40, height: 4, backgroundColor: C.blockBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   optionRow:    { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
   iconWrap:     { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   optionText:   { flex: 1 },
   optionLabel:  { color: C.text, fontSize: 15, fontWeight: '700' },
   optionSub:    { color: C.mutedDark, fontSize: 12, marginTop: 2 },
-  separator:    { height: 1, backgroundColor: C.divider, marginVertical: 4 },
-  cancelBtn:    { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: C.input, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  separator:    { height: 1, backgroundColor: C.dividerSoft, marginVertical: 4 },
+  cancelBtn:    { marginTop: 16, height: 50, borderRadius: 14, backgroundColor: C.chipBg, borderWidth: 1, borderColor: C.blockBorder, alignItems: 'center', justifyContent: 'center' },
   cancelText:   { color: C.muted, fontSize: 15, fontWeight: '700' },
   confirmIcon:  { width: 72, height: 72, borderRadius: 36, backgroundColor: `${C.danger}1F`, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 16 },
   confirmTitle: { color: C.text, fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 8 },

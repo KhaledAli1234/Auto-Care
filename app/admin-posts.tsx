@@ -333,25 +333,40 @@ function PostModerationCard({ post, onAction, styles, COLORS }: {
 /* ════════════════════════════════════════
    STYLES
 ════════════════════════════════════════ */
-const createStyles = (COLORS: ThemeColors) =>
-  StyleSheet.create({
+const createStyles = (COLORS: ThemeColors) => {
+  const isDark = COLORS.background === '#080A0F' || COLORS.background?.startsWith('#0');
+
+  // Dark-mode only block colors. Light mode keeps the original theme colors.
+  const blockBg      = isDark ? 'rgba(7,16,32,0.90)'    : COLORS.surface;
+  const chipBg       = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.surfaceLight;
+  const sheetBg      = isDark ? 'rgba(8,18,36,0.98)'    : COLORS.surface;
+  const inputBg      = isDark ? 'rgba(10,24,48,0.92)'   : COLORS.input;
+  const blockBorder  = isDark ? 'rgba(96,165,250,0.18)' : COLORS.border;
+  const dividerBg    = isDark ? 'rgba(96,165,250,0.16)' : COLORS.divider;
+  const headerBorder = isDark ? 'rgba(96,165,250,0.18)' : COLORS.border;
+
+  return StyleSheet.create({
     container:        { flex: 1, backgroundColor: COLORS.background },
-    header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-    backBtn:          { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+    header:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: headerBorder },
+    backBtn:          { width: 36, height: 36, borderRadius: 18, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, alignItems: 'center', justifyContent: 'center' },
     title:            { color: COLORS.text, fontSize: 20, fontWeight: '800' },
+
     statsRow:         { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingVertical: 14 },
-    statChip:         { flex: 1, borderRadius: 14, borderWidth: 1, backgroundColor: COLORS.surface, padding: 12, alignItems: 'center', gap: 4 },
+    statChip:         { flex: 1, borderRadius: 14, borderWidth: 1, backgroundColor: blockBg, padding: 12, alignItems: 'center', gap: 4 },
     statNum:          { fontSize: 22, fontWeight: '800' },
     statLabel:        { color: COLORS.muted, fontSize: 12 },
+
     tabsRow:          { flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 14 },
-    tab:              { flex: 1, height: 38, borderRadius: 19, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+    tab:              { flex: 1, height: 38, borderRadius: 19, borderWidth: 1, borderColor: blockBorder, backgroundColor: chipBg, alignItems: 'center', justifyContent: 'center' },
     tabActive:        { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
     tabText:          { color: COLORS.muted, fontSize: 13, fontWeight: '700' },
     tabTextActive:    { color: '#fff' },
     tabBadge:         { color: COLORS.warning, fontWeight: '800' },
+
     scroll:           { flex: 1 },
     content:          { paddingHorizontal: 20, gap: 12 },
-    postCard:         { backgroundColor: COLORS.surface, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: COLORS.border },
+
+    postCard:         { backgroundColor: blockBg, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: blockBorder },
     cardHeader:       { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
     avatar:           { width: 42, height: 42, borderRadius: 21, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
     avatarText:       { color: '#fff', fontSize: 15, fontWeight: '800' },
@@ -360,26 +375,32 @@ const createStyles = (COLORS: ThemeColors) =>
     statusBadge:      { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
     statusText:       { fontSize: 12, fontWeight: '700' },
     postContent:      { color: COLORS.muted, fontSize: 15, lineHeight: 22, marginBottom: 10 },
+
     tagsRow:          { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-    tagPill:          { backgroundColor: COLORS.surfaceLight, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    tagPill:          { backgroundColor: chipBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: blockBorder },
     tagText:          { color: COLORS.primary, fontSize: 12, fontWeight: '600' },
-    reviewBtn:        { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: `${COLORS.primary}14`, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: `${COLORS.primary}33` },
+
+    reviewBtn:        { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: isDark ? 'rgba(96,165,250,0.10)' : `${COLORS.primary}14`, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: isDark ? 'rgba(96,165,250,0.20)' : `${COLORS.primary}33` },
     reviewBtnText:    { color: COLORS.primary, fontSize: 14, fontWeight: '700', flex: 1 },
-    emptyCard:        { alignItems: 'center', paddingVertical: 60, gap: 12 },
+
+    emptyCard:        { alignItems: 'center', paddingVertical: 60, gap: 12, backgroundColor: blockBg, borderWidth: 1, borderColor: blockBorder, borderRadius: 18, paddingHorizontal: 20 },
     emptyTitle:       { color: COLORS.text, fontSize: 18, fontWeight: '800' },
     emptyText:        { color: COLORS.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+
     modalBackdrop:    { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
-    actionSheet:      { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 12, borderWidth: 1, borderColor: COLORS.border },
+    actionSheet:      { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: sheetBg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 12, borderWidth: 1, borderColor: blockBorder },
     handle:           { width: 40, height: 4, backgroundColor: COLORS.mutedDark, borderRadius: 2, alignSelf: 'center', marginBottom: 20, opacity: 0.5 },
     sheetTitle:       { color: COLORS.text, fontSize: 20, fontWeight: '800', marginBottom: 16 },
-    previewCard:      { backgroundColor: COLORS.input, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border },
+    previewCard:      { backgroundColor: inputBg, borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: blockBorder },
     previewAuthor:    { color: COLORS.primary, fontSize: 13, fontWeight: '700', marginBottom: 6 },
     previewContent:   { color: COLORS.muted, fontSize: 14, lineHeight: 20 },
     previewTags:      { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+
     approveBtn:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 16, backgroundColor: COLORS.success, marginBottom: 10 },
     approveBtnText:   { color: '#fff', fontSize: 16, fontWeight: '800' },
     rejectBtn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 16, borderWidth: 1, borderColor: COLORS.danger, backgroundColor: `${COLORS.danger}14`, marginBottom: 10 },
     rejectBtnText:    { color: COLORS.danger, fontSize: 16, fontWeight: '800' },
-    cancelBtn:        { height: 48, borderRadius: 14, backgroundColor: COLORS.surfaceLight, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+    cancelBtn:        { height: 48, borderRadius: 14, backgroundColor: chipBg, borderWidth: 1, borderColor: blockBorder, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
     cancelText:       { color: COLORS.muted, fontSize: 15, fontWeight: '700' },
   });
+};
