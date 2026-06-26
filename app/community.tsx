@@ -21,7 +21,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BottomNavbar } from "@/components/bottom-navbar";
 import { useUserProfile } from "@/context/user-profile-context";
 import { authHeaders, apiGet, apiPost, apiPatch, apiDelete } from '@/constants/api-client';
-import { useAppTheme, useThemeColors } from "@/context/theme-context";
+import { useAppTheme, useThemeColors, AppColors  } from "@/context/theme-context";
+import { NotificationBell } from '@/components/notification-bell';
+import { Colors } from "@/constants/theme";
+
 
 type ThemeColors = ReturnType<typeof useThemeColors>;
 
@@ -492,9 +495,7 @@ export default function CommunityScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Community</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => {}}>
-            <Ionicons name="notifications-outline" size={20} color={C.text} />
-          </Pressable>
+        <NotificationBell color={C.text} />
 
           <Pressable style={styles.headerIcon} hitSlop={10} onPress={() => router.push("/account")}>
             <Ionicons name="person-outline" size={20} color={C.text} />

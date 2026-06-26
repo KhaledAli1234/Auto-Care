@@ -244,19 +244,19 @@ function NotificationItem({
 /* ════════════════════════════════════════
    STYLES
 ════════════════════════════════════════ */
-const createStyles = (COLORS: AppColors) =>
-  StyleSheet.create({
+const createStyles = (COLORS: AppColors) => {
+  const isDark = COLORS.background === '#09182d';
+  return StyleSheet.create({
     bellWrap: {
       width: 40,
       height: 40,
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: COLORS.border,
-      backgroundColor: COLORS.surfaceLight,
+      backgroundColor: isDark ? 'rgba(10,24,48,0.92)' : COLORS.surfaceLight,
+      borderColor: isDark ? 'rgba(96,165,250,0.22)' : 'rgba(96,165,250,0.25)',
       alignItems: 'center',
       justifyContent: 'center',
     },
-
     badge: {
       position: 'absolute',
       top: -2,
@@ -269,33 +269,29 @@ const createStyles = (COLORS: AppColors) =>
       justifyContent: 'center',
       paddingHorizontal: 3,
     },
-
     badgeText: {
       color: '#fff',
       fontSize: 9,
       fontWeight: '800',
     },
-
     backdrop: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0,0,0,0.55)',
     },
-
     sheet: {
       position: 'absolute',
       bottom: 0,
       left: 0,
       right: 0,
-      backgroundColor: COLORS.surface,
+      backgroundColor: isDark ? 'rgba(8,18,36,0.98)' : COLORS.surface,
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
       paddingHorizontal: 20,
       paddingTop: 12,
       maxHeight: '80%',
       borderWidth: 1,
-      borderColor: COLORS.border,
+      borderColor: isDark ? 'rgba(96,165,250,0.16)' : COLORS.border,
     },
-
     handle: {
       width: 40,
       height: 4,
@@ -305,62 +301,53 @@ const createStyles = (COLORS: AppColors) =>
       marginBottom: 16,
       opacity: 0.5,
     },
-
     sheetHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 16,
     },
-
     sheetTitle: {
       color: COLORS.text,
       fontSize: 20,
       fontWeight: '800',
     },
-
     sheetActions: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
     },
-
     markReadBtn: {
       backgroundColor: `${COLORS.primary}18`,
       borderRadius: 8,
       paddingHorizontal: 12,
       paddingVertical: 6,
     },
-
     markReadText: {
       color: COLORS.primary,
       fontSize: 13,
       fontWeight: '700',
     },
-
     closeBtn: {
       width: 32,
       height: 32,
       borderRadius: 16,
-      backgroundColor: COLORS.input,
+      backgroundColor: isDark ? 'rgba(10,24,48,0.92)' : COLORS.input,
       alignItems: 'center',
       justifyContent: 'center',
     },
-
     notifItem: {
       flexDirection: 'row',
       gap: 12,
       paddingVertical: 14,
       borderBottomWidth: 1,
-      borderBottomColor: COLORS.divider,
+      borderBottomColor: isDark ? 'rgba(96,165,250,0.18)' : COLORS.divider,
     },
-
     notifItemUnread: {
       backgroundColor: `${COLORS.primary}0D`,
       marginHorizontal: -20,
       paddingHorizontal: 20,
     },
-
     notifIconWrap: {
       width: 42,
       height: 42,
@@ -369,54 +356,47 @@ const createStyles = (COLORS: AppColors) =>
       justifyContent: 'center',
       flexShrink: 0,
     },
-
     notifTopRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
       marginBottom: 3,
     },
-
     notifTitle: {
       color: COLORS.text,
       fontSize: 14,
       fontWeight: '700',
       flex: 1,
     },
-
     unreadDot: {
       width: 8,
       height: 8,
       borderRadius: 4,
       backgroundColor: COLORS.primary,
     },
-
     notifBody: {
       color: COLORS.muted,
       fontSize: 13,
       lineHeight: 18,
     },
-
     notifSender: {
       color: COLORS.mutedDark,
       fontSize: 12,
       marginTop: 2,
     },
-
     notifTime: {
       color: COLORS.mutedDark,
       fontSize: 11,
       marginTop: 4,
     },
-
     emptyWrap: {
       alignItems: 'center',
       paddingVertical: 50,
       gap: 12,
     },
-
     emptyText: {
       color: COLORS.muted,
       fontSize: 15,
     },
   });
+};

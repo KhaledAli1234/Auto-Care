@@ -31,7 +31,8 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACTIVITY_RECOGNITION"
-      ]
+      ],
+      "package": "com.khaled.autocare"
     },
     "web": {
       "output": "static",
@@ -67,6 +68,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "45f0f39c-9b54-4675-82b6-cfeac54cc070"
+      }
     }
   }
 }

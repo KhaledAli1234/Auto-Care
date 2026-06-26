@@ -9,6 +9,7 @@ import { authHeaders, apiGet } from '@/constants/api-client';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { BASE_URL } from '@/constants/api';
 import { AppColors, useThemeColors } from '@/context/theme-context';
+import { NotificationBell } from '@/components/notification-bell';
 
 export interface ApiTrip {
   _id: string; user: string; trip_id?: string; date?: string;
@@ -80,9 +81,7 @@ export default function TripsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Trip History</Text>
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon} onPress={() => {}}>
-            <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
-          </Pressable>
+        <NotificationBell color={COLORS.text} />
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </Pressable>

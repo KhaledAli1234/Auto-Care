@@ -10,6 +10,7 @@ import { BottomNavbar } from '@/components/bottom-navbar';
 import { PressableScale } from '@/components/pressable-scale';
 import { apiGet } from '@/constants/api-client';
 import { useThemeColors, AppColors } from '@/context/theme-context';
+import { NotificationBell } from '@/components/notification-bell';
 
 interface DashboardData {
   totalTrips: number;
@@ -162,9 +163,7 @@ export default function DashboardScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Dashboard</Text>
         <View style={styles.headerActions}>
-          <PressableScale style={styles.headerIcon} onPress={() => setShowNotifModal(true)}>
-            <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
-          </PressableScale>
+        <NotificationBell color={COLORS.text} />
           <PressableScale style={styles.headerIcon} onPress={() => router.push('/account')}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
           </PressableScale>

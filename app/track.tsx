@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomNavbar } from '@/components/bottom-navbar';
 import { AppColors, useThemeColors } from '@/context/theme-context';
+import { NotificationBell } from '@/components/notification-bell';
 
 export default function TrackScreen() {
   const insets = useSafeAreaInsets();
@@ -28,9 +29,7 @@ export default function TrackScreen() {
         <Text style={styles.title}>Live Tracking</Text>
 
         <View style={styles.headerActions}>
-          <Pressable style={styles.headerIcon} onPress={() => {}} hitSlop={10}>
-            <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
-          </Pressable>
+        <NotificationBell color={COLORS.text} />
 
           <Pressable style={styles.headerIcon} onPress={() => router.push('/account')} hitSlop={10}>
             <Ionicons name="person-outline" size={20} color={COLORS.text} />
