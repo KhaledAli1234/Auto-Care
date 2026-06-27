@@ -1,0 +1,18 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://44.201.238.33:3000/:path*"
+    },
+    {
+      "source": "/chatbot/:path*",
+      "destination": "http://34.229.216.49:8000/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
