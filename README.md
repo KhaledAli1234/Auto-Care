@@ -1,51 +1,51 @@
-# Welcome to your Expo app 👋
+# 🚗 Auto Care
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A comprehensive vehicle maintenance and community platform that helps users manage their vehicles, track maintenance schedules, monitor trips, receive real-time notifications, and interact with an AI-powered assistant.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+* 🔐 Secure Authentication & Authorization
+* 🚘 Vehicle Management
+* 🔧 Maintenance Scheduling & Reminders
+* 🗺️ GPS Trip Tracking
+* 📊 Driver Score & Trip Analytics
+* 🤖 AI Chatbot Assistant
+* 💬 Support Chat System
+* 🔔 Real-time Notifications (Socket.IO)
+* 👥 Community Posts
+* ❤️ Likes & Comments
+* ⭐ Ratings & Reviews
+* 👤 User Profiles
+* 🛡️ Admin Dashboard
+* ✅ Admin Approval for Community Posts
+* ☁️ Cloud Deployment (Docker & Vercel)
 
-   ```bash
-   npm install
-   ```
+## 🛠️ Tech Stack
 
-2. Start the app
+### Backend
 
-   ```bash
-   npx expo start
-   ```
+* NestJS
+* TypeScript
+* PostgreSQL
+* Prisma ORM
+* Socket.IO
+* JWT Authentication
+* Docker
 
-In the output, you'll find options to open the app in a
+### Mobile App
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+* React Native
+* Expo
+* TypeScript
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### AI
 
-## Get a fresh project
+* Google Gemini API
 
-When you're ready, run:
+## 👨‍💻 Team Project
 
-```bash
-npm run reset-project
-```
+This repository contains the complete project history and development progress. The project was developed collaboratively as a team project, with contributions from multiple team members reflected in the Git history.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 📌 Status
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-
+Completed and actively maintained for portfolio purposes.
